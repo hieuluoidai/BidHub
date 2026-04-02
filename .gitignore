@@ -1,0 +1,12 @@
+# Maven
+/target/
+
+# Eclipse
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+
+# Old folders
+HelloFx/
