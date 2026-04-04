@@ -11,10 +11,11 @@ public class Auction extends Entity {
     private Item item;
     private List<BidTransaction> bidHistory;
     private BidTransaction highestBid;
+    private String status; 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String status; 
-
+    
+    // Constructor
     public Auction(String id, Item item, LocalDateTime startTime, LocalDateTime endTime) {
         super(id);
         this.item = item;
@@ -23,7 +24,8 @@ public class Auction extends Entity {
         this.status = "OPEN"; 
         this.bidHistory = new ArrayList<>();
     }
-
+    
+    // Placing bid method
     public void placeBid(User bidder, double amount) throws IllegalStateException, IllegalArgumentException {
         // Exception: Bidding while the auction is not running.
         if (!"RUNNING".equals(this.status)) {
@@ -41,15 +43,19 @@ public class Auction extends Entity {
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
     }
+    
+    // Setters
+    public void setStatus(String status) { this.status = status; }
 
-    public String getAuctionId() {
-        return super.getId();
-    }
-
-    // Getters and Setters
+    // Getters
+    public String getAuctionId() { return super.getId(); }
     public Item getItem() 						{ return item; 			}
+    public List<BidTransaction> getBidHistory() { return bidHistory; 	}
     public BidTransaction getHighestBid()   	{ return highestBid; 	}
     public String getStatus() 					{ return status; 		}
-    public void setStatus(String status) 		{ this.status = status; }
-    public List<BidTransaction> getBidHistory() { return bidHistory; 	}
+    public String getDuration() {
+    	String start = String.valueOf(startTime.getDayOfMonth()) + " / " + String.valueOf(startTime.getMonth()) + " / " + String.valueOf(startTime.getYear());
+    	String end = String.valueOf(endTime.getDayOfMonth()) + " / " + String.valueOf(endTime.getMonth()) + " / " + String.valueOf(endTime.getYear());
+    	return "Duration: From " + start + " to " + end;
+    }
 }

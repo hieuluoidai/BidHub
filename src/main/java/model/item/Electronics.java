@@ -10,9 +10,8 @@ public class Electronics extends Item {
 	}
 	
 	@Override
-	public String getItemType() {
-		return "Electronics";
-	}
+	public String getItemType()		{ return "Electronics";   	  }
+	public int getWarrantyMonths () { return this.warrantyMonths; }
 	
 
 }

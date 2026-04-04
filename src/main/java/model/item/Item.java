@@ -22,5 +22,6 @@ public abstract class Item extends Entity {
 	public String getItemId() 		 { return super.getId(); }
 	public double getStartingPrice() { return startingPrice; }
 	public String getItemName() 	 { return itemName;		 }
+	public String getDescripstion()  { return description;	 }
 
 }
