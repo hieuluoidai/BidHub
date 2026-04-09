@@ -11,15 +11,20 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/view/hello.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("/view/login.fxml"));
             
             Scene scene = new Scene(root);
+            
+            Image logo = new Image(getClass().getResourceAsStream("/images/logo-uet.jpg"));
+            primaryStage.getIcons().add(logo);
+            
             primaryStage.setScene(scene);
             primaryStage.setTitle("JavaFX Test App");
             primaryStage.show();
@@ -31,8 +36,8 @@ public class Main extends Application {
     public static void main(String[] args) {
     		launch(args);
         
-    		/*
-    		System.out.println("========== TEST HỆ THỐNG ĐẤU GIÁ (FACTORY & SINGLETON) ==========");
+    	/*
+    	System.out.println("========== TEST HỆ THỐNG ĐẤU GIÁ (FACTORY & SINGLETON) ==========");
 
         AuctionManager manager = AuctionManager.getInstance();
 

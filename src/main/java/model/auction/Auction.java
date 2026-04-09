@@ -49,13 +49,23 @@ public class Auction extends Entity {
 
     // Getters
     public String getAuctionId() { return super.getId(); }
-    public Item getItem() 						{ return item; 			}
-    public List<BidTransaction> getBidHistory() { return bidHistory; 	}
-    public BidTransaction getHighestBid()   	{ return highestBid; 	}
-    public String getStatus() 					{ return status; 		}
+    public Item getItem() 						{ return item; 					}
+    public String getItemName()					{ return item.getItemName(); 	}
+    public List<BidTransaction> getBidHistory() { return bidHistory; 			}
+    public BidTransaction getHighestBid()   	{ return highestBid; 			}
+    public String getStatus() 					{ return status; 				}
+    
     public String getDuration() {
     	String start = String.valueOf(startTime.getDayOfMonth()) + " / " + String.valueOf(startTime.getMonth()) + " / " + String.valueOf(startTime.getYear());
     	String end = String.valueOf(endTime.getDayOfMonth()) + " / " + String.valueOf(endTime.getMonth()) + " / " + String.valueOf(endTime.getYear());
     	return "Duration: From " + start + " to " + end;
+    }
+    
+    public double getCurrentPrice() {
+        if (highestBid != null) {
+            return highestBid.getBidAmount(); 
+        } else {
+            return item.getStartingPrice(); 
+        }
     }
 }
