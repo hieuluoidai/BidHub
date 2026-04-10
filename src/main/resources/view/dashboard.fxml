@@ -41,9 +41,9 @@
    <right>
       <VBox prefHeight="300.0" prefWidth="143.0" spacing="15.0" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="bidButton" mnemonicParsing="false" text="Bid" />
+            <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" text="Bid" />
             <Button fx:id="detailsButton" mnemonicParsing="false" text="View details" />
-            <Button mnemonicParsing="false" onAction="#handleCreateNewSession" text="Create new session" />
+            <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" text="Create new session" />
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

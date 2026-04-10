@@ -29,6 +29,6 @@ public abstract class User extends Entity {
 	public String getUserId()   { return super.getId(); }
 	public String getUsername() { return username; 		}
 	public String getEmail()    { return email; 	    }
-	public String getPassWord() { return password; 		}
+	public String getPassword() { return password; 		}
 
 }
