@@ -82,6 +82,7 @@ public class AuctionClient implements Closeable {
                 }
             }
         } catch (Exception ignored) {
+            // connection closed or interrupted
         }
     }
 
