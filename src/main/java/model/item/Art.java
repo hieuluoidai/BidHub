@@ -10,7 +10,6 @@ public class Art extends Item{
     }
     
     @Override 
-    public String getItemType() {
-    	return "Art Piece"; 
-    }
+    public String getItemType()   { return "Art"; 	   }
+    public String getArtistName() { return artistName; }
 }

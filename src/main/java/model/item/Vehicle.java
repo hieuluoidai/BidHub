@@ -10,7 +10,6 @@ class Vehicle extends Item {
     }
 
     @Override
-    public String getItemType() { 
-        return "Vehicle";
-    }
+    public String getItemType() { return "Vehicle"; }
+    public String getEngineType() { return this.engineType; }
 }

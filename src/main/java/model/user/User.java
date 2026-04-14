@@ -3,14 +3,14 @@ package model.user;
 import model.core.Entity;
 
 public abstract class User extends Entity {
-	private String fullName;
+	private String username;
 	private String email;
 	private String password;
 	
 	// Constructor 
-	public User(String userId, String fullName, String email, String password) {
+	public User(String userId, String username, String email, String password) {
 		super(userId);
-		this.fullName = fullName;
+		this.username = username;
 		this.email = email;
 		this.password = password;
 	}
@@ -20,15 +20,15 @@ public abstract class User extends Entity {
 	
 	// Setters
 	public void setUserId(String userId) 	 { super.setId(userId);    	 }
-	public void setfullName(String fullName) { this.fullName = fullName; }
+	public void setfullName(String username) { this.username = username; }
 	public void setEmail(String email) 		 { this.email = email; 		 }
 	public void setPassWord(String password) { this.password = password; }
 	
 	
 	// Getters
 	public String getUserId()   { return super.getId(); }
-	public String getFullName() { return this.fullName; }
-	public String getEmail()    { return this.email;    }
-	public String getPassWord() { return this.password; }
+	public String getUsername() { return username; 		}
+	public String getEmail()    { return email; 	    }
+	public String getPassword() { return password; 		}
 
 }

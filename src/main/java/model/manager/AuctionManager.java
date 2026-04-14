@@ -21,12 +21,8 @@ public class AuctionManager {
     public void addAuction(Auction auction) {
         if (auction != null) {
             auctions.add(auction);
-            System.out.println("Success: Auction " + auction.getAuctionId() + " has been added to the manager.");
+            System.out.println("Auction " + auction.getAuctionId() + " has been added to the manager successfully.");
         }
-    }
-
-    public List<Auction> getAllAuctions() {
-        return auctions;
     }
 
     public Auction getAuctionById(String auctionId) {
@@ -36,5 +32,10 @@ public class AuctionManager {
             }
         }
         return null; 
+    }
+    
+    // All auction getter
+    public List<Auction> getAllAuctions() {
+        return new ArrayList<>(this.auctions);
     }
 }
