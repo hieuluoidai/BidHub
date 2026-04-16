@@ -54,7 +54,9 @@ public class Auction extends Entity {
     public List<BidTransaction> getBidHistory() { return bidHistory; 			}
     public BidTransaction getHighestBid()   	{ return highestBid; 			}
     public String getStatus() 					{ return status; 				}
-    
+    public LocalDateTime getEndTime()           { return endTime;               }
+    public LocalDateTime getStartTime()         { return startTime;             }
+
     public String getDuration() {
     	String start = String.valueOf(startTime.getDayOfMonth()) + " / " + String.valueOf(startTime.getMonth()) + " / " + String.valueOf(startTime.getYear());
     	String end = String.valueOf(endTime.getDayOfMonth()) + " / " + String.valueOf(endTime.getMonth()) + " / " + String.valueOf(endTime.getYear());

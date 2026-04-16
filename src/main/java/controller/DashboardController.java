@@ -135,4 +135,37 @@ public class DashboardController {
             e.printStackTrace();
         }
     }
+
+
+    @FXML
+    void handleViewDetails(ActionEvent event) {
+        Auction selectedAuction = auctionTable.getSelectionModel().getSelectedItem();
+
+        if (selectedAuction == null) {
+            System.out.println("Please select an auction to view details!");
+            return;
+        }
+
+        try {
+            // Tải file FXML item_details
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_details.fxml"));
+            Parent root = loader.load();
+
+            // Lấy controller của trang chi tiết và truyền dữ liệu sang
+            ItemDetailsController controller = loader.getController();
+            controller.setItemData(selectedAuction);
+
+            // Hiển thị dưới dạng cửa sổ mới (Popup)
+            Stage stage = new Stage();
+            stage.setTitle("Auction Item Details");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+
+            // Cập nhật lại bảng sau khi xem (phòng trường hợp có thay đổi)
+            auctionTable.refresh();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
