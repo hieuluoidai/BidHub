@@ -8,9 +8,6 @@ import model.manager.AuctionManager;
 import java.time.LocalDateTime;
 */
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import model.manager.AppState;
@@ -20,7 +17,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            Image logo = new Image(getClass().getResourceAsStream("/images/logo-uet.jpg"));
+            Image logo = new Image(getClass().getResourceAsStream("/Images/logo-uet.jpg"));
             primaryStage.getIcons().add(logo);
 
             SceneManager sceneManager = new SceneManager(primaryStage);
