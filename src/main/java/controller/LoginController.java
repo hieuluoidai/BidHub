@@ -41,17 +41,12 @@ public class LoginController {
         }
 
         if (foundUser != null) {
-            try {
-                SessionManager.getInstance().setCurrentUser(foundUser);
-                
-                System.out.println("Logged in as: " + foundUser.getClass().getSimpleName());
-                
-                SceneSwitcher.changeScene(event, "/view/dashboard.fxml");
-                
-            } catch (IOException e) {
-                messageLabel.setText("Error: Couldn't find dashboard!");
-                e.printStackTrace();
-            }
+            SessionManager.getInstance().setCurrentUser(foundUser);
+
+            System.out.println("Logged in as: " + foundUser.getClass().getSimpleName());
+
+            SceneSwitcher.switchScene(event, "/view/dashboard.fxml");
+
         } else {
             messageLabel.setText("Invalid username or password!");
             messageLabel.setTextFill(Color.RED);

@@ -9,7 +9,7 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
-
+import java.time.format.DateTimeFormatter;
 import javafx.event.ActionEvent;
 import java.io.IOException;
 
@@ -20,20 +20,27 @@ public class ItemDetailsController {
     @FXML private Label lblCurrentPrice;
     @FXML private Label lblTimeLeft;
     @FXML private TextArea txtDescription;
+    @FXML private Label lblEndTime;
 
     private Auction auction;
 
     public void setItemData(Auction auction) {
         this.auction = auction;
 
-        // Đề bài yêu cầu hiển thị tên, mô tả, giá hiện tại [cite: 42, 44]
+        // Đề bài yêu cầu hiển thị tên, mô tả, giá hiện tại
         lblItemName.setText(auction.getItemName());
         lblCategory.setText("Category: " + auction.getItem().getClass().getSimpleName());
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
         txtDescription.setText(auction.getItem().getDescription());
 
-        // Hiển thị thời gian kết thúc [cite: 45]
-        lblTimeLeft.setText("Ends at: " + auction.getEndTime().toString());
+        // 1. Tạo một bộ định dạng thời gian theo ý muốn (Ngày/Tháng/Năm Giờ:Phút:Giây)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+        // 2. Ép thời gian của phiên đấu giá qua bộ định dạng này
+        String formattedTime = auction.getEndTime().format(formatter);
+
+        // 3. Hiển thị lên màn hình
+        lblEndTime.setText("Ends at: " + formattedTime);
     }
 
     @FXML
@@ -41,6 +48,7 @@ public class ItemDetailsController {
         // Đóng cửa sổ chi tiết
         lblItemName.getScene().getWindow().hide();
     }
+
 
     // Trong ItemDetailsController.java
     @FXML

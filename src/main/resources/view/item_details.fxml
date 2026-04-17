@@ -30,7 +30,7 @@
             </Label>
         </HBox>
 
-        <Label fx:id="lblTimeLeft" text="Thời gian còn lại: 00:05:30" textFill="#e74c3c" />
+        <Label fx:id="lblEndTime" text="Thời gian còn lại: 00:05:30" textFill="#e74c3c" />
 
         <TextArea fx:id="txtDescription" editable="false" prefHeight="100.0" text="Mô tả chi tiết sản phẩm..." wrapText="true" />
 
