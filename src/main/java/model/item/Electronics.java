@@ -1,17 +1,15 @@
 package model.item;
 
 public class Electronics extends Item {
-	private int warrantyMonths;
+	private String brand;
 	
 	// Constructor
-	public Electronics(String itemId, String itemName, String description, double startingPrice, int warrantyMonths) {
+	public Electronics(String itemId, String itemName, String description, double startingPrice, String brand) {
 		super(itemId, itemName, description, startingPrice);
-		this.warrantyMonths = warrantyMonths;
+		this.brand = brand;
 	}
 	
 	@Override
 	public String getItemType()		{ return "Electronics";   	  }
-	public int getWarrantyMonths () { return this.warrantyMonths; }
-	
-
+	public String getBrand() {	return this.brand;}
 }

@@ -5,18 +5,53 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #f0f2f5;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
+   <center>
+      <StackPane BorderPane.alignment="CENTER">
+         <children>
+            <VBox alignment="CENTER" maxHeight="400.0" maxWidth="450.0" spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+               <padding>
+                  <Insets bottom="50.0" left="40.0" right="40.0" top="50.0" />
+               </padding>
+               <children>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
-   <children>
-      <Label text="Auction System Login" />
-      <TextField fx:id="usernameField" promptText="Username" />
-      <PasswordField fx:id="passwordField" promptText="Password" />
-      <Button mnemonicParsing="false" onAction="#handleLogin" text="Login" />
-      <Label fx:id="messageLabel" />
-   </children>
-   <padding>
-      <Insets top="10.0" />
-   </padding>
-</VBox>
+                  <Label text="Welcome Back!">
+                     <font>
+                        <Font name="System Bold" size="30.0" />
+                     </font>
+                  </Label>
+                  <Label text="Please login to access the Auction System" textFill="#666666">
+                     <font>
+                        <Font size="15.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets bottom="15.0" />
+                     </VBox.margin>
+                  </Label>
+
+                  <TextField fx:id="usernameField" prefHeight="45.0" promptText="Username" style="-fx-background-radius: 5; -fx-font-size: 14px;" />
+                  <PasswordField fx:id="passwordField" prefHeight="45.0" promptText="Password" style="-fx-background-radius: 5; -fx-font-size: 14px;" />
+
+                  <Label fx:id="messageLabel" textFill="#ff3333" wrapText="true">
+                     <font>
+                        <Font size="13.0" />
+                     </font>
+                  </Label>
+
+                  <Button defaultButton="true" mnemonicParsing="false" onAction="#handleLogin" prefHeight="50.0" prefWidth="400.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 18px; -fx-background-radius: 5; -fx-cursor: hand;" text="LOGIN">
+                     <VBox.margin>
+                        <Insets top="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+               </children>
+            </VBox>
+         </children>
+      </StackPane>
+   </center>
+</BorderPane>

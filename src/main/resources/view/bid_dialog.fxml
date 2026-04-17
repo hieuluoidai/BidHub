@@ -4,21 +4,66 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="5.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
-   <children>
-      <Label fx:id="labelItemName" text="Item Name" />
-      <Label fx:id="labelCurrentPrice" text="Current Price" />
-      <TextField fx:id="textBidAmount" promptText="Bid Amount" />
-      <Label fx:id="labelError" text="Label Error" />
-      <Button mnemonicParsing="false" onAction="#handleConfirm" text="Confirm" />
-   </children>
-   <opaqueInsets>
-      <Insets />
-   </opaqueInsets>
+<VBox prefHeight="380.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
    <padding>
-      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+      <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
    </padding>
+   <children>
+
+      <VBox spacing="5.0">
+         <children>
+            <Label text="Place Your Bid">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            <Label text="Enter an amount higher than the current price" textFill="#666666" />
+         </children>
+         <VBox.margin>
+            <Insets bottom="5.0" />
+         </VBox.margin>
+      </VBox>
+
+      <VBox spacing="8.0" style="-fx-background-color: #f8f9fa; -fx-background-radius: 5; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-radius: 5;">
+         <children>
+            <Label fx:id="labelItemName" text="Item Name" wrapText="true">
+               <font>
+                  <Font name="System Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="labelCurrentPrice" text="Current Price: $0.00" textFill="#e65100">
+               <font>
+                  <Font name="System Bold" size="15.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+
+      <VBox spacing="5.0">
+         <Label text="Your Bid Amount ($)">
+            <font><Font name="System Bold" size="12.0" /></font>
+         </Label>
+         <TextField fx:id="textBidAmount" prefHeight="45.0" promptText="e.g. 250.0" style="-fx-background-radius: 5; -fx-font-size: 15px;" />
+      </VBox>
+
+      <Label fx:id="labelError" textFill="#ff3333" wrapText="true">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Label>
+
+      <Region VBox.vgrow="ALWAYS" />
+
+      <HBox alignment="CENTER_RIGHT">
+         <children>
+            <Button defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Confirm Bid" />
+         </children>
+      </HBox>
+
+   </children>
 </VBox>

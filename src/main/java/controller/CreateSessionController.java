@@ -23,45 +23,54 @@ public class CreateSessionController {
     @FXML private TextField textExtraInfo;
     @FXML private Label labelError;
     @FXML private ComboBox<String> cbItemType;
-    
+
+    @FXML
+    private Label labelExtraInfo; // Nhớ khai báo @FXML cho cái Label này nhé
+
     @FXML
     public void initialize() {
-        cbItemType.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
-        
-        cbItemType.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                switch (newValue) {
-                    case "ELECTRONICS":
-                        textExtraInfo.setPromptText("Warranty months");
-                        break;
-                    case "ART":
-                        textExtraInfo.setPromptText("Artist name");
-                        break;
-                    case "VEHICLE":
-                        textExtraInfo.setPromptText("Engine type");
-                        break;
-                    default:
-                        textExtraInfo.setPromptText("Fill out extra info");
-                }
+
+        cbItemType.getItems().addAll("Electronics", "Art", "Vehicle");
+
+        cbItemType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) return;
+
+            switch (newVal.toString()) {
+                case "Electronics":
+                    labelExtraInfo.setText("Brand (Hãng sản xuất)");
+                    textExtraInfo.setPromptText("e.g. Apple, Samsung...");
+                    break;
+                case "Art":
+                    labelExtraInfo.setText("Author (Tác giả)");
+                    textExtraInfo.setPromptText("e.g. Picasso, Van Gogh...");
+                    break;
+                case "Vehicle":
+                    labelExtraInfo.setText("Manufacturer (Hãng xe)");
+                    textExtraInfo.setPromptText("e.g. Toyota, Honda...");
+                    break;
+                default:
+                    labelExtraInfo.setText("Extra Information");
             }
         });
-
-        cbItemType.getSelectionModel().selectFirst(); 
     }
 
     @FXML
     void handleSave(ActionEvent event) {
         try {
+            // ... (Giữ nguyên đoạn lấy dữ liệu và validate của cậu) ...
             String type = cbItemType.getValue();
             String name = textItemName.getText();
             String priceStr = textStartingPrice.getText();
             String desc = textDescription.getText();
-            String extraInfo = textExtraInfo.getText(); 
-            
-            if (desc.isEmpty()) {
-                desc = "No description";
+            String extraInfo = textExtraInfo.getText();
+
+            // Check nếu chưa chọn loại sản phẩm
+            if (type == null) {
+                labelError.setTextFill(Color.RED);
+                labelError.setText("Please select an item type!");
+                return;
             }
-            
+
             if (name.isEmpty() || priceStr.isEmpty() || extraInfo.isEmpty()) {
                 labelError.setTextFill(Color.RED);
                 labelError.setText("Please fill in all the required information!");
@@ -74,24 +83,24 @@ public class CreateSessionController {
                 labelError.setText("Starting price must be greater than 0!");
                 return;
             }
-            
+
             String id = "ITEM_" + System.currentTimeMillis();
-
             Item newItem = ItemFactory.createItem(type, id, name, desc, startingPrice, extraInfo);
-            
-            String auctionId = "AUC_" + System.currentTimeMillis();
 
+            String auctionId = "AUC_" + System.currentTimeMillis();
             LocalDateTime startTime = LocalDateTime.now();
             LocalDateTime endTime = startTime.plusDays(7);
-            
+
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
             AuctionManager.getInstance().addAuction(newAuction);
-            
+
             closeWindow(event);
 
         } catch (NumberFormatException e) {
             labelError.setTextFill(Color.RED);
-            labelError.setText("Error: Price or Warranty Months (for electronics) must be a number!");
+            // --- SỬA LẠI THÔNG BÁO LỖI CHO KHỚP ---
+            labelError.setText("Error: Price must be a valid number!");
+            // --------------------------------------
         } catch (IllegalArgumentException e) {
             labelError.setTextFill(Color.RED);
             labelError.setText("Error: Couldn't recognize item type!");

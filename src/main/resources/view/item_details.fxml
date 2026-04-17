@@ -10,13 +10,18 @@
 
 <VBox prefWidth="400.0" spacing="15.0" style="-fx-padding: 20;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
     <children>
-        <Label fx:id="lblItemName" text="Tên sản phẩm">
+        <Label fx:id="lblItemName" text="Tên sản phẩm" wrapText="true">
             <font><Font name="System Bold" size="24.0" /></font>
         </Label>
 
         <HBox spacing="10.0">
             <Label text="Loại hàng:" />
             <Label fx:id="lblCategory" text="Item" textFill="#616161" />
+        </HBox>
+
+        <HBox spacing="10.0">
+            <Label text="Bảo hành/Thông tin thêm:" />
+            <Label fx:id="lblExtraInfo" text="Không có thông tin" textFill="#616161" />
         </HBox>
 
         <Separator />
@@ -34,6 +39,6 @@
 
         <TextArea fx:id="txtDescription" editable="false" prefHeight="100.0" text="Mô tả chi tiết sản phẩm..." wrapText="true" />
 
-        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" style="-fx-background-color: #2ecc71; -fx-text-fill: white;" text="Tham gia đấu giá ngay" />
+        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="Tham gia đấu giá ngay" />
     </children>
 </VBox>

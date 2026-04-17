@@ -8,46 +8,64 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
+<?import javafx.scene.control.ComboBox?>
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
+
    <top>
-      <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="15.0" BorderPane.alignment="CENTER">
-         <children>
-            <Label fx:id="titleLabel" prefHeight="18.0" prefWidth="343.0" text="Online Auction Bidding System">
-               <font>
-                  <Font size="25.0" />
-               </font>
-            </Label>
-            <TextField fx:id="textSearch" promptText="Search" />
-            <Button mnemonicParsing="false" onAction="#handleLogout" text="Log out" textFill="RED" />
-         </children>
+      <VBox spacing="10.0" BorderPane.alignment="CENTER">
          <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+            <Insets bottom="10.0" left="15.0" right="15.0" top="15.0" />
          </padding>
-      </HBox>
+         <children>
+
+            <HBox alignment="CENTER_LEFT" spacing="15.0">
+               <children>
+                  <Label fx:id="titleLabel" text="Online Auction Bidding System">
+                     <font>
+                        <Font name="System Bold" size="24.0" />
+                     </font>
+                  </Label>
+                  <Region HBox.hgrow="ALWAYS" />
+
+                  <Label text="Filter:" />
+                  <ComboBox fx:id="comboFilter" prefWidth="120.0" promptText="All Categories" />
+
+                  <TextField fx:id="textSearch" prefWidth="180.0" promptText="Search items..." />
+                  <Button mnemonicParsing="false" onAction="#handleLogout" style="-fx-font-weight: bold;" text="Log out" textFill="RED" />
+               </children>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="15.0">
+               <children>
+                  <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" prefHeight="30.0" prefWidth="100.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" text="Place Bid" />
+                  <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="30.0" prefWidth="150.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;" text="+ Create Session" />
+               </children>
+            </HBox>
+
+         </children>
+      </VBox>
    </top>
+
    <center>
-      <TableView fx:id="auctionTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-        <columns>
-          <TableColumn fx:id="colId" prefWidth="75.0" text="Id" />
-          <TableColumn fx:id="colItemName" prefWidth="75.0" text="Name" />
-            <TableColumn fx:id="colCurrentPrice" prefWidth="75.0" text="Price" />
-            <TableColumn fx:id="colStatus" prefWidth="75.0" text="Status" />
-        </columns>
+      <TableView fx:id="auctionTable" BorderPane.alignment="CENTER">
+         <columns>
+            <TableColumn fx:id="colId" prefWidth="100.0" text="ID" />
+            <TableColumn fx:id="colItemName" prefWidth="250.0" text="Item Name" />
+            <TableColumn fx:id="colCurrentPrice" prefWidth="120.0" text="Current Price ($)" />
+            <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
+            <TableColumn fx:id="colCategory" prefWidth="150.0" text="Category" />
+         </columns>
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
+         <BorderPane.margin>
+            <Insets bottom="15.0" left="15.0" right="15.0" top="5.0" />
+         </BorderPane.margin>
       </TableView>
    </center>
-   <right>
-      <VBox prefHeight="300.0" prefWidth="143.0" spacing="15.0" BorderPane.alignment="CENTER">
-         <children>
-            <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" text="Bid" />
-            <Button fx:id="detailsButton" mnemonicParsing="false" text="View details" />
-            <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" text="Create new session" />
-         </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
-      </VBox>
-   </right>
+
 </BorderPane>

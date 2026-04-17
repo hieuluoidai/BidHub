@@ -12,6 +12,10 @@ import model.auction.Auction;
 import java.time.format.DateTimeFormatter;
 import javafx.event.ActionEvent;
 import java.io.IOException;
+import model.item.Art;
+import model.item.Electronics;
+import model.item.Vehicle;
+import model.item.Item;
 
 public class ItemDetailsController {
 
@@ -21,26 +25,34 @@ public class ItemDetailsController {
     @FXML private Label lblTimeLeft;
     @FXML private TextArea txtDescription;
     @FXML private Label lblEndTime;
+    @FXML private Label lblExtraInfo;
 
     private Auction auction;
 
     public void setItemData(Auction auction) {
         this.auction = auction;
-
-        // Đề bài yêu cầu hiển thị tên, mô tả, giá hiện tại
         lblItemName.setText(auction.getItemName());
         lblCategory.setText("Category: " + auction.getItem().getClass().getSimpleName());
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
         txtDescription.setText(auction.getItem().getDescription());
 
-        // 1. Tạo một bộ định dạng thời gian theo ý muốn (Ngày/Tháng/Năm Giờ:Phút:Giây)
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
-        // 2. Ép thời gian của phiên đấu giá qua bộ định dạng này
         String formattedTime = auction.getEndTime().format(formatter);
 
         // 3. Hiển thị lên màn hình
         lblEndTime.setText("Ends at: " + formattedTime);
+
+        model.item.Item item = auction.getItem();
+        String extraInfoText = "Không có thông tin chi tiết";
+
+        if (item instanceof Electronics elec) {
+            extraInfoText = "Hãng sản xuất: " + elec.getBrand();
+        } else if (item instanceof Art art) {
+            extraInfoText = "Tác giả: " + art.getAuthor();
+        } else if (item instanceof Vehicle veh) {
+            extraInfoText = "Hãng xe: " + veh.getBrand();
+        }
+        lblExtraInfo.setText(extraInfoText);
     }
 
     @FXML

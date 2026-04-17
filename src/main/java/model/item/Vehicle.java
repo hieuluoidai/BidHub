@@ -1,15 +1,15 @@
 package model.item;
 
-class Vehicle extends Item {
-    private String engineType;
+public class Vehicle extends Item {
+    private String brand;
     
     // Constructor
-    public Vehicle(String itemId, String itemName, String description, double startingPrice, String engineType) {
+    public Vehicle(String itemId, String itemName, String description, double startingPrice, String brand) {
         super(itemId, itemName, description, startingPrice);
-        this.engineType = engineType;
+        this.brand = brand;
     }
 
     @Override
     public String getItemType() { return "Vehicle"; }
-    public String getEngineType() { return this.engineType; }
+    public String getBrand() { return this.brand; }
 }
