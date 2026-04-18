@@ -3,71 +3,83 @@ package model.auction;
 import model.core.Entity;
 import model.item.Item;
 import model.user.User;
+import java.io.Serializable; // Bắt buộc để chạy Client-Server 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Auction extends Entity {
+/**
+ * Class Auction quản lý trung tâm một phiên đấu giá[cite: 8, 116].
+ * Triển khai Serializable để truyền dữ liệu qua Socket[cite: 126].
+ */
+public class Auction extends Entity implements Serializable {
+    private static final long serialVersionUID = 1L; // Đảm bảo đồng bộ giữa Client và Server
+
     private Item item;
     private List<BidTransaction> bidHistory;
     private BidTransaction highestBid;
     private String status; 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    
-    // Constructor
+
+    // KHÔNG dùng DoubleProperty ở đây vì nó không Serializable.
+    // Việc update giao diện realtime đã có AppState và ObservableList lo (Observer Pattern)[cite: 7, 143].
+
     public Auction(String id, Item item, LocalDateTime startTime, LocalDateTime endTime) {
         super(id);
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.status = "OPEN"; 
+        this.status = "OPEN"; // Trạng thái ban đầu [cite: 5, 55]
         this.bidHistory = new ArrayList<>();
     }
-    
-    // Placing bid method
-    public void placeBid(User bidder, double amount) throws IllegalStateException, IllegalArgumentException {
-        // Exception: Bidding while the auction is not running.
+
+    /**
+     * Tham gia đấu giá: Kiểm tra tính hợp lệ và cập nhật người dẫn đầu[cite: 5, 46, 47].
+     * Sử dụng synchronized để xử lý đấu giá đồng thời (Concurrent Bidding)[cite: 7, 83, 147].
+     */
+    public synchronized void placeBid(User bidder, double amount) throws IllegalStateException, IllegalArgumentException {
+        
+        // 1. Kiểm tra trạng thái phiên: Chỉ cho phép đặt giá khi đang RUNNING[cite: 5, 55, 59].
         if (!"RUNNING".equals(this.status)) {
-            throw new IllegalStateException("Auction is closed or not started yet.");
+            throw new IllegalStateException("Phiên đấu giá không ở trạng thái RUNNING (Hiện tại: " + this.status + ") [cite: 5, 59]");
         }
 
-        // Validation: Bid amount must be higher than current price
-        double currentPrice = (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
+        // 2. Kiểm tra tính hợp lệ: Giá đặt phải cao hơn giá hiện tại[cite: 5, 48, 49].
+        double currentPrice = getCurrentPrice(); 
         if (amount <= currentPrice) {
-            throw new IllegalArgumentException("Bid amount must be strictly higher than $" + currentPrice);
+            throw new IllegalArgumentException("Giá đặt ($" + amount + ") phải cao hơn giá hiện tại ($" + currentPrice + ")! [cite: 5, 58]");
         }
 
-        // Update the leading bidder
+        // 3. Cập nhật giao dịch đặt giá mới[cite: 5, 50, 117].
         BidTransaction newBid = new BidTransaction(bidder, amount);
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
+        
+        if (bidder != null) {
+            System.out.println(">>> Bid thành công: " + bidder.getUsername() + " trả $" + amount);
+        }
     }
+
+    // --- Getters & Setters ---
     
-    // Setters
     public void setStatus(String status) { this.status = status; }
 
-    // Getters
-    public String getAuctionId() { return super.getId(); }
-    public Item getItem() 						{ return item; 					}
-    public String getItemName()					{ return item.getItemName(); 	}
-    public List<BidTransaction> getBidHistory() { return bidHistory; 			}
-    public BidTransaction getHighestBid()   	{ return highestBid; 			}
-    public String getStatus() 					{ return status; 				}
-    public LocalDateTime getEndTime()           { return endTime;               }
-    public LocalDateTime getStartTime()         { return startTime;             }
+    public double getCurrentPrice() {
+        // Giá hiện tại cao nhất hoặc giá khởi điểm nếu chưa có ai đặt[cite: 4, 42, 44].
+        return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
+    }
+
+    public String getAuctionId()     { return super.getId(); }
+    public Item getItem()            { return item; }
+    public String getItemName()      { return item != null ? item.getItemName() : "N/A"; }
+    public String getStatus()        { return status; }
+    public LocalDateTime getEndTime()   { return endTime; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public List<BidTransaction> getBidHistory() { return new ArrayList<>(bidHistory); }
+    public BidTransaction getHighestBid() { return highestBid; }
 
     public String getDuration() {
-    	String start = String.valueOf(startTime.getDayOfMonth()) + " / " + String.valueOf(startTime.getMonth()) + " / " + String.valueOf(startTime.getYear());
-    	String end = String.valueOf(endTime.getDayOfMonth()) + " / " + String.valueOf(endTime.getMonth()) + " / " + String.valueOf(endTime.getYear());
-    	return "Duration: From " + start + " to " + end;
-    }
-    
-    public double getCurrentPrice() {
-        if (highestBid != null) {
-            return highestBid.getBidAmount(); 
-        } else {
-            return item.getStartingPrice(); 
-        }
+        return "From " + startTime.toLocalDate() + " to " + endTime.toLocalDate();
     }
 }

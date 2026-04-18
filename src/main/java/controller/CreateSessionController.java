@@ -88,11 +88,13 @@ public class CreateSessionController {
             Item newItem = ItemFactory.createItem(type, id, name, desc, startingPrice, extraInfo);
 
             String auctionId = "AUC_" + System.currentTimeMillis();
-            LocalDateTime startTime = LocalDateTime.now();
+            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15);
             LocalDateTime endTime = startTime.plusDays(7);
 
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
-            AuctionManager.getInstance().addAuction(newAuction);
+            model.manager.AppState.getInstance().getClient().send(newAuction);
+
+            System.out.println(">>> Đã gửi yêu cầu tạo phiên đấu giá lên Server: " + auctionId);
 
             closeWindow(event);
 

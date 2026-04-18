@@ -2,7 +2,10 @@ package network;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
+
 import javafx.application.Platform;
+import model.auction.Auction;
 
 public class AuctionClient {
     private Socket socket;
@@ -45,18 +48,24 @@ public class AuctionClient {
     }
 
     private void handleIncomingData(Object data) {
-        // Mẹo: Dùng Platform.runLater để cập nhật UI từ luồng mạng an toàn
         Platform.runLater(() -> {
-            System.out.println("Received from server: " + data);
-            // Sau này Hiếu sẽ cập nhật TableView ở đây
+            if (data instanceof List<?>) {
+                System.out.println(">>> CLIENT: Đã nhận danh sách từ Server. Số lượng: " + ((List<?>) data).size()); // Thêm dòng này
+                List<Auction> auctions = (List<Auction>) data;
+                model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
+            } else if (data instanceof Auction updatedAuction) {
+                System.out.println(">>> CLIENT: Đã nhận 1 phiên mới: " + updatedAuction.getAuctionId()); // Thêm dòng này
+                updateSingleAuction(updatedAuction); 
+            }
         });
     }
-
+    
     public void send(Object data) {
         try {
             if (out != null) {
                 out.writeObject(data);
                 out.flush();
+                out.reset(); // Thêm dòng này để đảm bảo gửi dữ liệu mới nhất
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -70,5 +79,16 @@ public class AuctionClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    private void updateSingleAuction(model.auction.Auction updated) {
+        var list = model.manager.AppState.getInstance().getAuctionList();
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
+                list.set(i, updated);
+                return;
+            }
+        }
+        list.add(updated);
     }
 }

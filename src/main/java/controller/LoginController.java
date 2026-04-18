@@ -9,6 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
+import model.manager.AppState;
 import model.manager.SessionManager;
 import model.user.Admin;
 import model.user.Bidder;
@@ -27,11 +28,11 @@ public class LoginController {
     	    new Seller("S01", "seller", "seller@vnu.edu.vn", "uet789")
     	);
     
-    @FXML 
+    @FXML
     void handleLogin(ActionEvent event) {
         String username = usernameField.getText();
         String password = passwordField.getText();
-        
+
         User foundUser = null;
         for (User u : mockUsers) {
             if (u.getUsername().equals(username) && u.getPassword().equals(password)) {
@@ -41,12 +42,25 @@ public class LoginController {
         }
 
         if (foundUser != null) {
-            SessionManager.getInstance().setCurrentUser(foundUser);
+            try {
+                // SỬA 1: Kết nối Socket với Server TRƯỚC khi vào Dashboard.
+                // LƯU Ý QUAN TRỌNG: Hãy đảm bảo port "1234" ở đây 
+                // TRÙNG KHỚP với port bạn đang bật bên file AuctionServer.java nhé!
+                AppState.getInstance().getClient().connect("localhost", 1234);
 
-            System.out.println("Logged in as: " + foundUser.getClass().getSimpleName());
-
-            SceneSwitcher.switchScene(event, "/view/dashboard.fxml");
-
+                // SỬA 2: Lưu User vào AppState để DashboardController lấy được
+                AppState.getInstance().setCurrentUser(foundUser);
+                
+                System.out.println("Logged in as: " + foundUser.getClass().getSimpleName());
+                
+                // Chuyển sang màn hình Dashboard
+                SceneSwitcher.switchScene(event, "/view/dashboard.fxml");
+                
+            } catch (Exception e) {
+                messageLabel.setText("Lỗi: Không thể kết nối tới Server! Bạn đã bật Server chưa?");
+                messageLabel.setTextFill(Color.RED);
+                e.printStackTrace();
+            }
         } else {
             messageLabel.setText("Invalid username or password!");
             messageLabel.setTextFill(Color.RED);

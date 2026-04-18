@@ -1,14 +1,15 @@
 package model.core;
 
-public abstract class Entity {
+import java.io.Serializable;
+
+public abstract class Entity implements Serializable {
+    private static final long serialVersionUID = 1L; // Cực kỳ quan trọng để chạy Client-Server [cite: 125]
     private String id;
-    
-    // Constructor
+
     public Entity(String id) {
         this.id = id;
     }
-    
-    // Getters & Setters
-    public String getId() 			{ return id;    }
-    public void setId(String id)    { this.id = id; }
+
+    public String getId() { return id; }
+    public void setId(String id) {this.id = id; }
 }
