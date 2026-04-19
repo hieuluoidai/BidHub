@@ -64,8 +64,16 @@ public class AuctionServer {
 
     public static void main(String[] args) {
     	System.out.println(">>> Đang khởi động Server...");
-    	
-    	// 1. Kích hoạt luồng đếm thời gian TRƯỚC KHI bật Server
+
+        // Load toàn bộ auction từ DB vào RAM khi khởi động
+        System.out.println(">>> Đang load dữ liệu từ database...");
+        List<Auction> savedAuctions = new database.AuctionDAO().findAll();
+        for (Auction a : savedAuctions) {
+            AuctionManager.getInstance().addAuction(a);
+        }
+        System.out.println(">>> Load xong " + savedAuctions.size() + " phiên từ DB.");
+
+        // 1. Kích hoạt luồng đếm thời gian TRƯỚC KHI bật Server
         startAuctionLifecycleMonitor();
         
         new AuctionServer(1234).start();
