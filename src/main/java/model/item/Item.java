@@ -33,5 +33,6 @@ public abstract class Item extends Entity implements Serializable {
     public double getStartingPrice() { return startingPrice; }
     public String getItemName()      { return itemName;      }
     public String getDescription()   { return description;   }
-
+    
+    public void setCurrentPrice(double price)  { this.startingPrice = price; }
 }

@@ -56,8 +56,24 @@ public class ClientHandler implements Runnable {
             
             if (existing != null) {
                 // Nếu đã có -> Đây là lệnh cập nhật (Bid giá). 
-                // Gọi hàm updateAuction để CHỈNH SỬA DANH SÁCH GỐC
+                // CHỈNH SỬA DANH SÁCH GỐC TRÊN RAM
                 AuctionManager.getInstance().updateAuction(incomingAuction);
+                
+                // THÊM MỚI: LƯU XUỐNG DATABASE NGAY LẬP TỨC
+                if (incomingAuction.getHighestBid() != null) {
+                    database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
+                    
+                    String auctionId = incomingAuction.getAuctionId();
+                    String bidderId = incomingAuction.getHighestBid().getBidder().getUserId();
+                    double amount = incomingAuction.getCurrentPrice();
+                    
+                    // Gọi hàm save() từ file của đồng nghiệp
+                    boolean isSaved = bidDao.save(auctionId, bidderId, amount);
+                    if (isSaved) {
+                        System.out.println(">>> Đã backup thành công giá " + amount + " xuống MySQL!");
+                    }
+                }
+                
             } else {
                 // Nếu chưa có -> Đây là lệnh Tạo Phiên Mới
                 AuctionManager.getInstance().addAuction(incomingAuction);

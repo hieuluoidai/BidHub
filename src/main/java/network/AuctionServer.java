@@ -63,14 +63,34 @@ public class AuctionServer {
     }
 
     public static void main(String[] args) {
-    	System.out.println(">>> Đang khởi động Server...");
+        System.out.println(">>> Đang khởi động Server...");
 
         // Load toàn bộ auction từ DB vào RAM khi khởi động
         System.out.println(">>> Đang load dữ liệu từ database...");
         List<Auction> savedAuctions = new database.AuctionDAO().findAll();
+        
+        // --- THÊM MỚI: BỘ PHỤC HỒI TRÍ NHỚ TỪ DATABASE ---
+        database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
+        
         for (Auction a : savedAuctions) {
+            // Lục tìm trong lịch sử xem phiên này đã có ai trả giá cao hơn chưa
+            String[] winnerData = bidDao.findWinner(a.getAuctionId());
+            
+            if (winnerData != null) {
+                // Nếu có, lấy mức giá cao nhất đó ra
+                double highestPrice = Double.parseDouble(winnerData[1]);
+                
+                // Ghi đè mức giá gốc (36) bằng mức giá mới nhất (37, 38...)
+                a.getItem().setCurrentPrice(highestPrice); 
+
+                System.out.println(">>> Đã phục hồi giá " + highestPrice + " cho phiên " + a.getAuctionId());
+            }
+            
+            // Sau khi đã kiểm tra và "lên đời" giá xong, mới đưa vào Manager quản lý
             AuctionManager.getInstance().addAuction(a);
         }
+        // -------------------------------------------------
+
         System.out.println(">>> Load xong " + savedAuctions.size() + " phiên từ DB.");
 
         // 1. Kích hoạt luồng đếm thời gian TRƯỚC KHI bật Server
