@@ -14,14 +14,14 @@
             <font><Font name="System Bold" size="24.0" /></font>
         </Label>
 
-        <HBox spacing="10.0">
-            <Label text="Loại hàng:" />
-            <Label fx:id="lblCategory" text="Item" textFill="#616161" />
+        <HBox spacing="3.0">
+            <Label text="Thể loại:" />
+            <Label fx:id="lblCategory" text="Item" textFill="#000000"/>
         </HBox>
 
-        <HBox spacing="10.0">
-            <Label text="Bảo hành/Thông tin thêm:" />
-            <Label fx:id="lblExtraInfo" text="Không có thông tin" textFill="#616161" />
+        <HBox spacing="0">
+            <Label text="" />
+            <Label fx:id="lblExtraInfo" text="Không có thông tin" textFill="#000000"/>
         </HBox>
 
         <Separator />
@@ -32,6 +32,20 @@
             </Label>
             <Label fx:id="lblCurrentPrice" text="0.0 VNĐ" textFill="RED">
                 <font><Font name="System Bold" size="20.0" /></font>
+            </Label>
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Người đang giữ giá:" />
+            <Label fx:id="lblHighestBidder" text="Chưa có ai (Giá khởi điểm)" textFill="#2980b9">
+                <font><Font name="System Bold" size="14.0" /></font>
+            </Label>
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Thời điểm trả giá:" />
+            <Label fx:id="lblBidTime" text="-" textFill="#7f8c8d">
+                <font><Font name="System Italic" size="13.0" /></font>
             </Label>
         </HBox>
 

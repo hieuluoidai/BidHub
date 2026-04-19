@@ -26,13 +26,15 @@ public class ItemDetailsController {
     @FXML private TextArea txtDescription;
     @FXML private Label lblEndTime;
     @FXML private Label lblExtraInfo;
+    @FXML private Label lblHighestBidder;
+    @FXML private Label lblBidTime;
 
     private Auction auction;
 
     public void setItemData(Auction auction) {
         this.auction = auction;
         lblItemName.setText(auction.getItemName());
-        lblCategory.setText("Category: " + auction.getItem().getClass().getSimpleName());
+        lblCategory.setText(auction.getItem().getClass().getSimpleName());
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
         txtDescription.setText(auction.getItem().getDescription());
 
@@ -40,7 +42,7 @@ public class ItemDetailsController {
         String formattedTime = auction.getEndTime().format(formatter);
 
         // 3. Hiển thị lên màn hình
-        lblEndTime.setText("Ends at: " + formattedTime);
+        lblEndTime.setText("Thời điểm kết thúc: " + formattedTime);
 
         model.item.Item item = auction.getItem();
         String extraInfoText = "Không có thông tin chi tiết";
@@ -53,6 +55,20 @@ public class ItemDetailsController {
             extraInfoText = "Hãng xe: " + veh.getBrand();
         }
         lblExtraInfo.setText(extraInfoText);
+
+        if (auction.getHighestBid() != null) {
+            // Hiển thị tên người trả giá
+            String bidderName = auction.getHighestBid().getBidder().getUsername();
+            lblHighestBidder.setText(bidderName);
+
+            // Hiển thị thời điểm (Giả sử class BidTransaction của cậu có hàm getBidTime())
+            java.time.LocalDateTime bidTime = auction.getHighestBid().getTimestamp();
+            lblBidTime.setText(bidTime.format(formatter));
+
+        } else {
+            lblHighestBidder.setText("Chưa có ai (Giá khởi điểm)");
+            lblBidTime.setText("-");
+        }
     }
 
     @FXML
@@ -81,6 +97,14 @@ public class ItemDetailsController {
 
             // Sau khi đóng popup, cập nhật lại giá hiển thị trên màn hình chi tiết
             lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
+
+            //Hiển thị tên ngươời bid gần nhất sau khi tắt
+            if (auction.getHighestBid() != null) {
+                lblHighestBidder.setText(auction.getHighestBid().getBidder().getUsername());
+
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                lblBidTime.setText(auction.getHighestBid().getTimestamp().format(formatter));
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

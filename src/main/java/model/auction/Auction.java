@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class Auction quản lý trung tâm một phiên đấu giá[cite: 8, 116].
- * Triển khai Serializable để truyền dữ liệu qua Socket[cite: 126].
+ * Class Auction quản lý trung tâm một phiên đấu giá.
+ * Triển khai Serializable để truyền dữ liệu qua Socket.
  */
 public class Auction extends Entity implements Serializable {
     private static final long serialVersionUID = 1L; // Đảm bảo đồng bộ giữa Client và Server
@@ -30,28 +30,28 @@ public class Auction extends Entity implements Serializable {
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.status = "OPEN"; // Trạng thái ban đầu [cite: 5, 55]
+        this.status = "OPEN"; // Trạng thái ban đầu
         this.bidHistory = new ArrayList<>();
     }
 
     /**
-     * Tham gia đấu giá: Kiểm tra tính hợp lệ và cập nhật người dẫn đầu[cite: 5, 46, 47].
-     * Sử dụng synchronized để xử lý đấu giá đồng thời (Concurrent Bidding)[cite: 7, 83, 147].
+     * Tham gia đấu giá: Kiểm tra tính hợp lệ và cập nhật người dẫn đầu.
+     * Sử dụng synchronized để xử lý đấu giá đồng thời (Concurrent Bidding).
      */
     public synchronized void placeBid(User bidder, double amount) throws IllegalStateException, IllegalArgumentException {
         
-        // 1. Kiểm tra trạng thái phiên: Chỉ cho phép đặt giá khi đang RUNNING[cite: 5, 55, 59].
+        // 1. Kiểm tra trạng thái phiên: Chỉ cho phép đặt giá khi đang RUNNING.
         if (!"RUNNING".equals(this.status)) {
             throw new IllegalStateException("Phiên đấu giá không ở trạng thái RUNNING (Hiện tại: " + this.status + ") [cite: 5, 59]");
         }
 
-        // 2. Kiểm tra tính hợp lệ: Giá đặt phải cao hơn giá hiện tại[cite: 5, 48, 49].
+        // 2. Kiểm tra tính hợp lệ: Giá đặt phải cao hơn giá hiện tại.
         double currentPrice = getCurrentPrice(); 
         if (amount <= currentPrice) {
             throw new IllegalArgumentException("Giá đặt ($" + amount + ") phải cao hơn giá hiện tại ($" + currentPrice + ")! [cite: 5, 58]");
         }
 
-        // 3. Cập nhật giao dịch đặt giá mới[cite: 5, 50, 117].
+        // 3. Cập nhật giao dịch đặt giá mới.
         BidTransaction newBid = new BidTransaction(bidder, amount);
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
@@ -66,7 +66,7 @@ public class Auction extends Entity implements Serializable {
     public void setStatus(String status) { this.status = status; }
 
     public double getCurrentPrice() {
-        // Giá hiện tại cao nhất hoặc giá khởi điểm nếu chưa có ai đặt[cite: 4, 42, 44].
+        // Giá hiện tại cao nhất hoặc giá khởi điểm nếu chưa có ai đặt.
         return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
     }
 
