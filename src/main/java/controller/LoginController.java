@@ -1,8 +1,6 @@
 package controller;
 
-import java.io.IOException;
 import database.UserDAO;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -10,36 +8,46 @@ import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import model.manager.AppState;
 import model.user.User;
-import utils.SceneSwitcher;
 
+/**
+ * Xử lý logic đăng nhập và kết nối hệ thống.
+ */
 public class LoginController {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
 
     @FXML
-    void handleLogin(ActionEvent event) {
+    void handleLogin() {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        // Thay mockUsers bằng query thật từ DB
+        // Xác thực thông tin từ Database MySQL
         UserDAO userDAO = new UserDAO();
         User foundUser = userDAO.login(username, password);
 
         if (foundUser != null) {
             try {
+                // Thiết lập kết nối Socket tới Server
                 AppState.getInstance().getClient().connect("localhost", 1234);
+                
+                // Lưu thông tin người dùng vào trạng thái toàn cục
                 AppState.getInstance().setCurrentUser(foundUser);
-                System.out.println("Logged in as: " + foundUser.getClass().getSimpleName());
-                SceneSwitcher.switchScene(event, "/view/dashboard.fxml");
+                
+                // Chuyển sang màn hình Dashboard thông qua SceneManager
+                AppState.getInstance().getSceneManager().showDashboard();
+                
             } catch (Exception e) {
-                messageLabel.setText("Lỗi: Không thể kết nối tới Server!");
-                messageLabel.setTextFill(Color.RED);
+                showError("Lỗi: Không thể kết nối tới Server!");
                 e.printStackTrace();
             }
         } else {
-            messageLabel.setText("Invalid username or password!");
-            messageLabel.setTextFill(Color.RED);
+            showError("Tên đăng nhập hoặc mật khẩu không chính xác!");
         }
+    }
+
+    private void showError(String msg) {
+        messageLabel.setText(msg);
+        messageLabel.setTextFill(Color.RED);
     }
 }

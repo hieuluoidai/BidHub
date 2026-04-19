@@ -1,30 +1,34 @@
 package controller;
 
+import java.io.IOException;
+
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
-import model.manager.AuctionManager;
-import model.manager.SessionManager;
+import model.manager.AppState;
 import model.user.Admin;
 import model.user.Bidder;
 import model.user.Seller;
 import model.user.User;
-import utils.SceneSwitcher;
-import java.io.IOException;
-import model.manager.AppState;
 
+/**
+ * Điều khiển màn hình Dashboard chính, quản lý danh sách đấu giá và tương tác người dùng.
+ */
 public class DashboardController {
 
     @FXML private Label titleLabel;
@@ -39,173 +43,171 @@ public class DashboardController {
     @FXML private Button bidButton;
     @FXML private Button createSessionButton;
 
-
-    // Hàm khởi tạo: Thiết lập cấu hình bảng, nạp dữ liệu và kích hoạt các bộ lọc ban đầu
+    /**
+     * Khởi tạo cấu hình bảng, bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
+     */
     public void initialize() {
-        // 1. Thiết lập các cột bằng Lambda để đảm bảo tính ổn định và chính xác cao nhất
-        colId.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getAuctionId()));
-        colItemName.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemName()));
-        
-        // Cột giá: Dùng SimpleObjectProperty cho Double
-        colCurrentPrice.setCellValueFactory(cellData -> 
-            new SimpleObjectProperty<>(cellData.getValue().getCurrentPrice()));
-            
-        colStatus.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getStatus()));
-        
-        colCategory.setCellValueFactory(cellData -> {
-            if (cellData.getValue().getItem() != null) {
-                return new SimpleStringProperty(cellData.getValue().getItem().getItemType());
-            }
-            return new SimpleStringProperty("N/A");
-        });
+        // Cấu hình cách hiển thị dữ liệu cho từng cột trong TableView
+        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAuctionId()));
+        colItemName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemName()));
+        colCurrentPrice.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getCurrentPrice()));
+        colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus()));
+        colCategory.setCellValueFactory(data -> new SimpleStringProperty(
+            data.getValue().getItem() != null ? data.getValue().getItem().getItemType() : "N/A"
+        ));
 
-        // 2. Thiết lập ComboBox lọc
+        // Khởi tạo các giá trị cho bộ lọc danh mục
         comboFilter.setItems(FXCollections.observableArrayList("All", "Electronics", "Art", "Vehicle"));
         comboFilter.setValue("All");
 
-        // 3. Kết nối dữ liệu: Sử dụng danh sách tập trung từ AppState
+        // Lấy danh sách từ AppState để hiển thị lên Table
         ObservableList<Auction> masterData = AppState.getInstance().getAuctionList();
         FilteredList<Auction> filteredData = new FilteredList<>(masterData, p -> true);
         
-        // Kích hoạt bộ lắng nghe lọc
-        autoFilter(filteredData);
+        // Khi tìm kiếm or đổi loại hàng, bảng sẽ tự động update
+        textSearch.textProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
+        comboFilter.valueProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
         
-        // Gán dữ liệu vào bảng
         auctionTable.setItems(filteredData);
 
-        // 4. Các thiết lập phụ trợ
+        // Kích hoạt các thiết lập bổ trợ cho giao diện
         setupPermissions();
         setupTableEvents();
         setupBidButtonLogic();
-        
-        // 5. QUAN TRỌNG: Yêu cầu nạp dữ liệu ngay khi mở Dashboard
         loadAuctionData();
     }
 
-    private void applyFilter(FilteredList<Auction> filteredData) {
+    /**
+     * Xác định hiển thị món hàng nào
+     */
+    private void updatePredicate(FilteredList<Auction> filteredData) {
         filteredData.setPredicate(auction -> {
-            // Nếu không có dữ liệu hoặc item rỗng thì ẩn (tránh lỗi NullPointer)
             if (auction == null || auction.getItem() == null) return false;
-
-            String searchText = (textSearch.getText() == null) ? "" : textSearch.getText().toLowerCase().trim();
-            String filterType = (comboFilter.getValue() == null) ? "All" : comboFilter.getValue();
-
-            // Kiểm tra Category
-            boolean matchesCategory = filterType.equals("All") || 
-                                     auction.getItem().getItemType().equalsIgnoreCase(filterType);
             
-            // Kiểm tra Tên (Hỗ trợ tìm kiếm không dấu nếu cần, hiện tại là chứa chuỗi)
-            boolean matchesSearch = auction.getItem().getItemName().toLowerCase().contains(searchText);
-
-            return matchesCategory && matchesSearch;
+            String search = textSearch.getText().toLowerCase().trim();
+            String filter = comboFilter.getValue();
+            
+            // Khớp loại hàng và tên thì hiển thị
+            boolean matchesType = filter.equals("All") || auction.getItem().getItemType().equalsIgnoreCase(filter);
+            boolean matchesName = auction.getItem().getItemName().toLowerCase().contains(search);
+            
+            return matchesType && matchesName;
         });
     }
-    
-    private void autoFilter(FilteredList<Auction> filteredData) {
-        textSearch.textProperty().addListener((obs, oldVal, newVal) -> applyFilter(filteredData));
-        comboFilter.valueProperty().addListener((obs, oldVal, newVal) -> applyFilter(filteredData));
-    }
 
-    // Làm mới dữ liệu: Lấy danh sách phiên đấu giá mới nhất từ Manager đổ vào danh sách gốc
+    /**
+     * Gửi tín hiệu yêu cầu Server cập nhật lại toàn bộ danh sách phiên đấu giá mới nhất.
+     */
     @FXML
     private void loadAuctionData() {
         AppState.getInstance().getClient().send("REFRESH_DATA");
     }
 
-    // Phân quyền: Kiểm tra vai trò người dùng để ẩn hoặc hiện nút tạo phiên đấu giá
+    /**
+     * Kiểm tra vai trò của người dùng (Admin, Seller, Bidder) để ẩn/hiện các tính năng phù hợp.
+     */
     private void setupPermissions() {
-        User currentUser = AppState.getInstance().getCurrentUser(); // Dùng AppState
-        if (currentUser != null) {
-            titleLabel.setText("Welcome, " + currentUser.getUsername() + " (" + currentUser.getClass().getSimpleName() + ")");
-            boolean canCreate = (currentUser instanceof Admin || currentUser instanceof Seller);
+        User user = AppState.getInstance().getCurrentUser();
+        if (user != null) {
+            titleLabel.setText("Welcome, " + user.getUsername() + " (" + user.getClass().getSimpleName() + ")");
+            boolean canCreate = (user instanceof Admin || user instanceof Seller);
             createSessionButton.setVisible(canCreate);
             createSessionButton.setManaged(canCreate);
         }
     }
 
-    // Sự kiện bảng: Xử lý khi người dùng nháy đúp chuột vào một dòng để xem chi tiết
+    /**
+     * Nhấn đúp chuột vào 1 dòng để viewDetails
+     */
     private void setupTableEvents() {
-        auctionTable.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && auctionTable.getSelectionModel().getSelectedItem() != null) {
-                handleViewDetails(null);
+        auctionTable.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2 && auctionTable.getSelectionModel().getSelectedItem() != null) {
+                handleViewDetails();
             }
         });
     }
 
-    // Logic nút Bid: Khóa/mở và đổi màu nút dựa trên việc người dùng có chọn dòng hay không
+    /**
+     * Điều chỉnh trạng thái nút Bid dựa trên dòng được chọn và quyền hạn người dùng.
+     */
     private void setupBidButtonLogic() {
-    		User currentUser = AppState.getInstance().getCurrentUser();
-        boolean isBidder = (currentUser instanceof Bidder);
-
-        bidButton.setDisable(true);
-        bidButton.setStyle("-fx-background-color: #CCCCCC; -fx-text-fill: #666666; -fx-font-weight: bold;");
-
+        boolean isBidder = (AppState.getInstance().getCurrentUser() instanceof Bidder);
         auctionTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
-            if (newVal != null && isBidder) {
-                bidButton.setDisable(false);
-                bidButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
-            } else {
-                bidButton.setDisable(true);
-                bidButton.setStyle("-fx-background-color: #CCCCCC; -fx-text-fill: #666666; -fx-font-weight: bold;");
-            }
+            boolean active = (newVal != null && isBidder);
+            bidButton.setDisable(!active);
+            bidButton.setStyle(active ? "-fx-background-color: #4CAF50; -fx-text-fill: white;" : "-fx-background-color: #CCC;");
         });
     }
 
-    // Đăng xuất: Xóa thông tin phiên đăng nhập và chuyển hướng về màn hình Login
+    /**
+     * Xóa trạng thái đăng nhập và sử dụng SceneManager để quay lại Login.
+     */
     @FXML
-    void handleLogout(ActionEvent event) {
-        AppState.getInstance().setCurrentUser(null); // Xóa user hiện tại
-        AppState.getInstance().getSceneManager().showLogin(); // Dùng SceneManager của Hiếu
+    void handleLogout() {
+        AppState.getInstance().setCurrentUser(null);
+        AppState.getInstance().getSceneManager().showLogin();
     }
 
-    // Tạo phiên mới: Mở cửa sổ popup để nhập thông tin sản phẩm đấu giá mới
+    /**
+     * Mở cửa sổ Pop-up để người dùng nhập thông tin và tạo một phiên đấu giá mới.
+     */
     @FXML
-    void handleCreateNewSession(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/create_session.fxml"));
-            Parent root = loader.load();
-            Stage stage = new Stage();
-            stage.setTitle("Create New Auction Session");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-            loadAuctionData();
-        } catch (IOException e) { e.printStackTrace(); }
+    void handleCreateNewSession() {
+        openPopup("/view/create_session.fxml", "Create New Auction Session");
+        loadAuctionData(); // Làm mới bảng sau khi đóng Pop-up
     }
 
-    // Đặt giá: Mở popup cho phép người dùng nhập giá muốn đấu thầu cho sản phẩm đã chọn
+    /**
+     * Mở hộp thoại bid phiên đấu giá đang được chọn trong bảng.
+     */
     @FXML
-    void handleBid(ActionEvent event) {
+    void handleBid() {
         Auction selected = auctionTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
+        
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/bid_dialog.fxml"));
             Parent root = loader.load();
             ((BidController)loader.getController()).setAuctionData(selected);
-            Stage stage = new Stage();
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-            auctionTable.refresh();
+            showStage(root, "Place Your Bid");
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    // Chi tiết: Hiển thị thông tin đầy đủ về món hàng và thời gian đấu giá còn lại
+    /**
+     * Hiển thị màn hình chi tiết sản phẩm.
+     */
     @FXML
-    void handleViewDetails(ActionEvent event) {
+    void handleViewDetails() {
         Auction selected = auctionTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
+        
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_details.fxml"));
             Parent root = loader.load();
             ((ItemDetailsController)loader.getController()).setItemData(selected);
-            Stage stage = new Stage();
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-            auctionTable.refresh();
+            showStage(root, "Item Details");
         } catch (IOException e) { e.printStackTrace(); }
     }
-    
-    
+
+    /**
+     * Tìm và mở file giao diện (FXML) dưới dạng pop-up
+     */
+    private void openPopup(String fxml, String title) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource(fxml));
+            showStage(root, title);
+        } catch (IOException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * Tạo cửa sổ mới và bắt người dùng phải xử lý xong mới được quay lại bảng chính.
+     */
+    private void showStage(Parent root, String title) {
+        Stage stage = new Stage();
+        stage.setTitle(title);
+        stage.setScene(new Scene(root));
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.showAndWait();
+        auctionTable.refresh(); // Cập nhật lại giao diện bảng sau khi đóng cửa sổ phụ
+    }
 }

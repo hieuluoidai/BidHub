@@ -3,166 +3,133 @@ package network;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import model.auction.Auction;
 import model.manager.AuctionManager;
 
+/**
+ * Server chính điều phối kết nối Socket và quản lý luồng dữ liệu đấu giá.
+ */
 public class AuctionServer {
     private final int port;
-    // Danh sách các "người phục vụ" cho từng Client
-    private final static List<ClientHandler> clients = new ArrayList<>();
+    
+    // Danh sách quản lý các kết nối Client đang hoạt động
+    private final List<ClientHandler> clients = new ArrayList<>();
     private final List<ClientHandler> observers = new ArrayList<>();
-    
-    public synchronized void addObserver(ClientHandler observer) {
-        observers.add(observer);
-    }
-
-    public synchronized void removeObserver(ClientHandler observer) {
-        observers.remove(observer);
-    }
-    
-    public synchronized void notifyObservers(Object data) {
-        for (ClientHandler observer : observers) {
-            observer.send(data); // Gửi dữ liệu qua Socket
-        }
-    }
 
     public AuctionServer(int port) {
         this.port = port;
     }
 
+    /**
+     * Khởi động Server và chấp nhận các kết nối mới từ Client.
+     */
     public void start() {
+        // Phương thức bộ giám sát thời gian đấu giá
+        startAuctionLifecycleMonitor();
+
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Server đấu giá đang chạy trên port " + port + "...");
+            System.out.println(">>> Server đấu giá đang chạy trên port " + port + "...");
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Có người mới kết nối: " + clientSocket.getInetAddress());
+                System.out.println(">>> Kết nối mới từ: " + clientSocket.getInetAddress());
 
-                // Mỗi Client kết nối vào sẽ có một Thread riêng để phục vụ
+                // Mỗi Client được phục vụ bởi một Thread riêng biệt
                 ClientHandler handler = new ClientHandler(clientSocket, this);
-                clients.add(handler);
+                synchronized (clients) {
+                    clients.add(handler);
+                }
                 new Thread(handler).start();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Lỗi Server: " + e.getMessage());
         }
     }
 
-    // Gửi dữ liệu tới tất cả mọi người (Dùng để cập nhật Dashboard đồng loạt)
-    public synchronized static void broadcast(Object data) {
-        for (ClientHandler client : clients) {
-            client.send(data);
-        }
-    }
-
-    public static void main(String[] args) {
-        System.out.println(">>> Đang khởi động Server...");
-
-        // Load toàn bộ auction từ DB vào RAM khi khởi động
-        System.out.println(">>> Đang load dữ liệu từ database...");
-        List<Auction> savedAuctions = new database.AuctionDAO().findAll();
-        
-        // --- THÊM MỚI: BỘ PHỤC HỒI TRÍ NHỚ TỪ DATABASE ---
-        database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
-        
-        for (Auction a : savedAuctions) {
-            // Lục tìm trong lịch sử xem phiên này đã có ai trả giá cao hơn chưa
-            String[] winnerData = bidDao.findWinner(a.getAuctionId());
-            
-            if (winnerData != null) {
-                // Nếu có, lấy mức giá cao nhất đó ra
-                double highestPrice = Double.parseDouble(winnerData[1]);
-                
-                // Ghi đè mức giá gốc (36) bằng mức giá mới nhất (37, 38...)
-                a.getItem().setCurrentPrice(highestPrice); 
-
-                System.out.println(">>> Đã phục hồi giá " + highestPrice + " cho phiên " + a.getAuctionId());
+    /**
+     * Phát sóng dữ liệu tới tất cả Client đang kết nối (Real-time Update).
+     */
+    public synchronized void broadcast(Object data) {
+        synchronized (clients) {
+            // Remove các client đã mất kết nối trước khi gửi
+            clients.removeIf(client -> !client.isAlive());
+            for (ClientHandler client : clients) {
+                client.send(data);
             }
-            
-            // Sau khi đã kiểm tra và "lên đời" giá xong, mới đưa vào Manager quản lý
-            AuctionManager.getInstance().addAuction(a);
         }
-        // -------------------------------------------------
-
-        System.out.println(">>> Load xong " + savedAuctions.size() + " phiên từ DB.");
-
-        // 1. Kích hoạt luồng đếm thời gian TRƯỚC KHI bật Server
-        startAuctionLifecycleMonitor();
-        
-        new AuctionServer(1234).start();
     }
-    
-    private void startAuctionMonitor() {
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(() -> {
-            LocalDateTime now = LocalDateTime.now();
-            for (Auction auction : AuctionManager.getInstance().getAllAuctions()) {
-                // Tự động mở phiên nếu đến giờ
-                if (auction.getStatus().equals("OPEN") && now.isAfter(auction.getStartTime())) {
-                    auction.setStatus("RUNNING");
-                    broadcast(auction); // Thông báo trạng thái mới cho toàn bộ Client [cite: 95]
-                }
-                // Tự động đóng phiên khi hết thời gian [cite: 53]
-                if (auction.getStatus().equals("RUNNING") && now.isAfter(auction.getEndTime())) {
-                    auction.setStatus("FINISHED");
-                    // Xác định người thắng cuộc (HighestBid) [cite: 54]
-                    System.out.println("Phiên " + auction.getAuctionId() + " đã kết thúc!");
-                    broadcast(auction); 
-                }
-            }
-        }, 0, 1, TimeUnit.SECONDS); // Kiểm tra mỗi giây một lần
+
+    // Quản lý Observers
+    public synchronized void addObserver(ClientHandler observer) { observers.add(observer); }
+    public synchronized void removeObserver(ClientHandler observer) { observers.remove(observer); }
+    public synchronized void notifyObservers(Object data) {
+        for (ClientHandler observer : observers) {
+            observer.send(data);
+        }
     }
-    
-    private static void startAuctionLifecycleMonitor() {
+
+    /**
+     * Luồng chạy ngầm kiểm tra và update trạng thái các phiên đấu giá mỗi giây.
+     */
+    private void startAuctionLifecycleMonitor() {
         new Thread(() -> {
             while (true) {
                 try {
                     boolean hasChanges = false;
                     java.time.LocalDateTime now = java.time.LocalDateTime.now();
                     
-                    // Lấy danh sách toàn bộ phiên đấu giá từ Manager
-                    for (model.auction.Auction auction : model.manager.AuctionManager.getInstance().getAllAuctions()) {
+                    for (Auction auction : AuctionManager.getInstance().getAllAuctions()) {
+                        String oldStatus = auction.getStatus();
                         
-                        // 1. OPEN -> RUNNING (Đến giờ bắt đầu)
-                        if ("OPEN".equals(auction.getStatus()) && !now.isBefore(auction.getStartTime())) {
+                        // 1. Chuyển sang RUNNING khi đến giờ bắt đầu
+                        if ("OPEN".equals(oldStatus) && !now.isBefore(auction.getStartTime())) {
                             auction.setStatus("RUNNING");
                             hasChanges = true;
-                            System.out.println(">>> Server: Phiên " + auction.getAuctionId() + " đã chuyển sang RUNNING.");
                         }
-                        // 2. RUNNING -> FINISHED (Hết thời gian đấu giá)
-                        else if ("RUNNING".equals(auction.getStatus()) && !now.isBefore(auction.getEndTime())) {
+                        // 2. Chuyển sang FINISHED khi hết thời gian
+                        else if ("RUNNING".equals(oldStatus) && !now.isBefore(auction.getEndTime())) {
                             auction.setStatus("FINISHED");
                             hasChanges = true;
-                            System.out.println(">>> Server: Phiên " + auction.getAuctionId() + " đã chuyển sang FINISHED.");
-                            
-                            // Tại đây Hiếu có thể gọi thêm logic "Xác định người thắng cuộc"
-                            // Ví dụ: auction.determineWinner();
+                        }
+
+                        if (hasChanges) {
+                            System.out.println(">>> Hệ thống: Phiên " + auction.getAuctionId() + " chuyển sang " + auction.getStatus());
                         }
                     }
 
-                    // 3. Nếu có trạng thái thay đổi, phát sóng (broadcast) lại danh sách mới cho TẤT CẢ Client
                     if (hasChanges) {
-                        broadcast(model.manager.AuctionManager.getInstance().getAllAuctions());
-                        // Lưu ý: Đảm bảo bạn gọi đúng tên hàm broadcast() đang có trong Server của bạn
+                        broadcast(AuctionManager.getInstance().getAllAuctions());
                     }
-
-                    // Nghỉ ngơi 1 giây rồi quét tiếp (Tránh làm quá tải CPU)
-                    Thread.sleep(1000);
-                    
-                } catch (InterruptedException e) {
-                    System.err.println("Luồng kiểm tra thời gian bị gián đoạn!");
-                    break;
+                    Thread.sleep(1000); // Kiểm tra định kỳ 1 giây
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.err.println("Lỗi bộ giám sát: " + e.getMessage());
                 }
             }
         }).start();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(">>> Đang khởi động hệ thống...");
+
+        // Phục hồi dữ liệu từ Database vào RAM
+        List<Auction> savedAuctions = new database.AuctionDAO().findAll();
+        database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
+        
+        for (Auction a : savedAuctions) {
+            // Đồng bộ mức giá cao nhất hiện tại từ lịch sử giao dịch
+            String[] winnerData = bidDao.findWinner(a.getAuctionId());
+            if (winnerData != null) {
+                double highestPrice = Double.parseDouble(winnerData[1]);
+                a.getItem().setCurrentPrice(highestPrice);
+            }
+            AuctionManager.getInstance().addAuction(a);
+        }
+
+        System.out.println(">>> Đã nạp " + savedAuctions.size() + " phiên đấu giá.");
+        
+        // Khởi tạo và chạy Server
+        new AuctionServer(1234).start();
     }
 }

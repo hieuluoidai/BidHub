@@ -1,16 +1,17 @@
 package controller;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import model.manager.SessionManager;
 import model.auction.Auction;
+import model.manager.AppState;
 import model.user.Bidder;
 import model.user.User;
 
+/**
+ * Điều khiển cửa sổ Bid.
+ */
 public class BidController {
 
     @FXML private Label labelItemName;
@@ -20,59 +21,81 @@ public class BidController {
 
     private Auction currentAuction;
 
+    /**
+     * Nhận dữ liệu phiên đấu giá từ màn hình Dashboard truyền sang để hiển thị.
+     */
     public void setAuctionData(Auction auction) {
         this.currentAuction = auction;
-        labelItemName.setText("Product: " + auction.getItemName());
-        labelCurrentPrice.setText("Current Price: $" + auction.getCurrentPrice());
+        labelItemName.setText("Sản phẩm: " + auction.getItemName());
+        labelCurrentPrice.setText("Giá hiện tại: $" + auction.getCurrentPrice());
     }
 
+    /**
+     * Xử lý khi người dùng nhấn nút "Xác nhận" đặt giá.
+     */
     @FXML
-    void handleConfirm(ActionEvent event) {
-        labelError.setText(""); 
+    void handleConfirm() {
+        labelError.setText(""); // Xóa thông báo lỗi cũ
         
         try {
             String amountStr = textBidAmount.getText().trim();
+            
+            // 1. Kiểm tra xem có để trống ô nhập không
             if (amountStr.isEmpty()) {
-                labelError.setText("Please enter an amount!");
-                labelError.setTextFill(javafx.scene.paint.Color.RED);
+                showError("Vui lòng nhập số tiền!");
                 return;
             }
+            
             double amount = Double.parseDouble(amountStr);
+            User currentUser = AppState.getInstance().getCurrentUser();
 
-            User currentUser = model.manager.AppState.getInstance().getCurrentUser();
-
+            // 2. Chỉ cho phép người dùng có vai trò là Bidder đặt giá
             if (currentUser instanceof Bidder) {
                 Bidder currentBidder = (Bidder) currentUser;
 
-                // 1. Cập nhật giá nội bộ trên RAM của máy này
+                // 3. Cập nhật mức giá mới vào đối tượng Auction.
                 currentAuction.placeBid(currentBidder, amount);
 
-                // 2. SỬA Ở ĐÂY: Bắn gói dữ liệu Auction mang mức giá mới này thẳng lên Server
-                model.manager.AppState.getInstance().getClient().send(currentAuction);
+                // 4. Gửi cả gói Auction đã có giá mới này lên Server
+                // Server sẽ nhận được, lưu DB và notify cho tất cả người dùng khác.
+                AppState.getInstance().getClient().send(currentAuction);
 
-                closeStage(event);
-                System.out.println("Bid placed successfully by: " + currentBidder.getUsername());
+                closeStage(); // Đóng cửa sổ sau khi bid thành công
+                System.out.println(">>> Đã đặt giá thành công bởi: " + currentBidder.getUsername());
             } else {
-                labelError.setText("Only Bidders can place bids!");
-                labelError.setTextFill(javafx.scene.paint.Color.RED);
+                showError("Chỉ người mua (Bidder) mới có quyền đặt giá!");
             }
 
         } catch (NumberFormatException e) {
-            labelError.setText("Invalid price format!");
-            labelError.setTextFill(javafx.scene.paint.Color.RED);
+            showError("Số tiền không hợp lệ (phải là số)!");
         } catch (IllegalArgumentException | IllegalStateException e) {
-            labelError.setText(e.getMessage());
-            labelError.setTextFill(javafx.scene.paint.Color.RED);
+            // Hiển thị lỗi logic
+            showError(e.getMessage());
         }
     }
 
+    /**
+     * Xử lý khi nhấn nút "Hủy" -> Đóng cửa sổ.
+     */
     @FXML
-    void handleCancel(ActionEvent event) {
-        closeStage(event);
+    void handleCancel() {
+        closeStage();
     }
 
-    private void closeStage(ActionEvent event) {
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    /**
+     * Tiện ích: Hiển thị thông báo lỗi màu đỏ lên giao diện.
+     */
+    private void showError(String msg) {
+        labelError.setText(msg);
+        labelError.setTextFill(javafx.scene.paint.Color.RED);
+    }
+
+    /**
+     * Tiện ích: Tìm Stage hiện tại từ sự kiện nhấn nút và đóng nó lại.
+     */
+    private void closeStage() {
+        // Tìm Stage thông qua ô nhập giá tiền
+        Stage stage = (Stage) textBidAmount.getScene().getWindow();
         stage.close();
     }
 }

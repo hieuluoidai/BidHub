@@ -10,13 +10,15 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
 import java.time.format.DateTimeFormatter;
-import javafx.event.ActionEvent;
 import java.io.IOException;
 import model.item.Art;
 import model.item.Electronics;
 import model.item.Vehicle;
-import model.item.Item;
 
+/**
+ * Điều khiển màn hình viewDetails.
+ * Hiển thị đầy đủ thông số kỹ thuật, mô tả và lịch sử đặt giá gần nhất.
+ */
 public class ItemDetailsController {
 
     @FXML private Label lblItemName;
@@ -31,6 +33,9 @@ public class ItemDetailsController {
 
     private Auction auction;
 
+    /**
+     * Đổ toàn bộ dữ liệu từ đối tượng Auction vào các Label trên giao diện.
+     */
     public void setItemData(Auction auction) {
         this.auction = auction;
         lblItemName.setText(auction.getItemName());
@@ -38,14 +43,14 @@ public class ItemDetailsController {
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
         txtDescription.setText(auction.getItem().getDescription());
 
+        // Định dạng thời gian hiển thị: Ngày/Tháng/Năm Giờ:Phút:Giây
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        String formattedTime = auction.getEndTime().format(formatter);
+        lblEndTime.setText("Thời điểm kết thúc: " + auction.getEndTime().format(formatter));
 
-        // 3. Hiển thị lên màn hình
-        lblEndTime.setText("Thời điểm kết thúc: " + formattedTime);
-
-        model.item.Item item = auction.getItem();
+        // Xử lí thông tin đặc thù
+        // Tùy theo loại hàng là Điện tử, Nghệ thuật hay Xe cộ mà hiện thông tin riêng
         String extraInfoText = "Không có thông tin chi tiết";
+        var item = auction.getItem();
 
         if (item instanceof Electronics elec) {
             extraInfoText = "Hãng sản xuất: " + elec.getBrand();
@@ -56,57 +61,58 @@ public class ItemDetailsController {
         }
         lblExtraInfo.setText(extraInfoText);
 
+        // Hiển thị người đang dânx đầu
         if (auction.getHighestBid() != null) {
-            // Hiển thị tên người trả giá
-            String bidderName = auction.getHighestBid().getBidder().getUsername();
-            lblHighestBidder.setText(bidderName);
-
-            // Hiển thị thời điểm (Giả sử class BidTransaction của cậu có hàm getBidTime())
-            java.time.LocalDateTime bidTime = auction.getHighestBid().getTimestamp();
-            lblBidTime.setText(bidTime.format(formatter));
-
+            lblHighestBidder.setText(auction.getHighestBid().getBidder().getUsername());
+            lblBidTime.setText(auction.getHighestBid().getTimestamp().format(formatter));
         } else {
             lblHighestBidder.setText("Chưa có ai (Giá khởi điểm)");
             lblBidTime.setText("-");
         }
     }
 
+    /**
+     * Nhấn nút Quay lại: Đóng cửa sổ viewDetails để về Dashboard.
+     */
     @FXML
     void handleBack() {
-        // Đóng cửa sổ chi tiết
-        lblItemName.getScene().getWindow().hide();
+        // Lấy cửa sổ hiện tại và đóng lại
+        Stage stage = (Stage) lblItemName.getScene().getWindow();
+        stage.close();
     }
 
-
-    // Trong ItemDetailsController.java
+    /**
+     * Mở trực tiếp hộp thoại Bid ngay tại màn hình chi tiết.
+     */
     @FXML
-    public void handleOpenBidDialog(javafx.event.ActionEvent event) {
+    public void handleOpenBidDialog() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/bid_dialog.fxml"));
             Parent root = loader.load();
 
-            // Truyền dữ liệu phiên đấu giá sang cửa sổ đặt giá
+            // Truyền dữ liệu của món hàng hiện tại sang cho cửa sổ Bid
             BidController controller = loader.getController();
             controller.setAuctionData(this.auction);
 
+            // Mở cửa sổ Bid theo kiểu Pop-up
             Stage stage = new Stage();
             stage.setTitle("Đặt giá cho " + auction.getItemName());
             stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL); // Chế độ popup
+            stage.initModality(Modality.APPLICATION_MODAL); 
             stage.showAndWait();
 
-            // Sau khi đóng popup, cập nhật lại giá hiển thị trên màn hình chi tiết
+            // Update lại giao diện sau khi bid
+            // Sau khi đóng Pop-up đặt giá, ta cần update số tiền mới ngay lập tức trên màn hình viewDetails
             lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
 
-            //Hiển thị tên ngươời bid gần nhất sau khi tắt
             if (auction.getHighestBid() != null) {
                 lblHighestBidder.setText(auction.getHighestBid().getBidder().getUsername());
-
-                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
                 lblBidTime.setText(auction.getHighestBid().getTimestamp().format(formatter));
             }
+            
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Lỗi mở hộp thoại đặt giá: " + e.getMessage());
         }
     }
 }

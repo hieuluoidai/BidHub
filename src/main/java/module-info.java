@@ -1,4 +1,5 @@
 module online.auction.system {
+	// Danh sách các "nguyên liệu" cần cho dự án
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;

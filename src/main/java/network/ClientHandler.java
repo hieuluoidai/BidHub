@@ -6,22 +6,31 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.List;
-
 import model.auction.Auction;
 import model.manager.AuctionManager;
 import model.user.User;
 
+/**
+ * Xử lý từng Client kết nối tới Server.
+ */
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private final AuctionServer server;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private User currentUser; // Quản lý người dùng đang kết nối tại luồng này
+    private User currentUser; 
+    private boolean active = true; // Biến kiểm soát trạng thái kết nối của Client hiện tại
 
     public ClientHandler(Socket socket, AuctionServer server) {
         this.socket = socket;
         this.server = server;
+    }
+
+    /**
+     * Kiểm tra xem Client có còn đang kết nối tới Server hay không
+     */
+    public boolean isAlive() {
+        return active && !socket.isClosed();
     }
 
     @Override
@@ -30,117 +39,115 @@ public class ClientHandler implements Runnable {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
-            while (true) {
-                // Đọc lệnh từ Client (Chấp nhận cả String và Object)
+            while (active) {
+                // Đọc yêu cầu từ Client và phân loại xử lý
                 Object request = in.readObject();
                 handleRequest(request);
             }
         } catch (EOFException | SocketException e) {
-            // Đây là lỗi bình thường khi Client chủ động đóng kết nối [cite: 60]
-            System.out.println(">>> Client đã ngắt kết nối.");
+            System.out.println(">>> Thông báo: Một Client đã thoát.");
         } catch (Exception e) {
-            // Xử lý các lỗi dữ liệu hoặc lỗi kết nối bất ngờ khác [cite: 60]
-            System.err.println(">>> Lỗi hệ thống: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println(">>> Lỗi ClientHandler: " + e.getMessage());
         } finally {
             close();
         }
     }
 
+    /**
+     * Phân loại request để xử lí
+     */
     private void handleRequest(Object request) {
-        // TRƯỜNG HỢP 1: Client gửi Object Auction (Tạo phiên mới HOẶC Cập nhật giá Bid)
+        // TH1: Nhận Object Auction (Tạo mới hoặc Update giá)
         if (request instanceof Auction incomingAuction) {
-            
-            // 1. Kiểm tra xem phiên đấu giá này đã có trong "sổ gốc" chưa
             Auction existing = AuctionManager.getInstance().getAuctionById(incomingAuction.getAuctionId());
             
             if (existing != null) {
-                // Nếu đã có -> Đây là lệnh cập nhật (Bid giá). 
-                // CHỈNH SỬA DANH SÁCH GỐC TRÊN RAM
+                // Xử lý cập nhật giá và lưu xuống Database
                 AuctionManager.getInstance().updateAuction(incomingAuction);
                 
-                // THÊM MỚI: LƯU XUỐNG DATABASE NGAY LẬP TỨC
                 if (incomingAuction.getHighestBid() != null) {
-                    database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
-                    
-                    String auctionId = incomingAuction.getAuctionId();
-                    String bidderId = incomingAuction.getHighestBid().getBidder().getUserId();
-                    double amount = incomingAuction.getCurrentPrice();
-                    
-                    // Gọi hàm save() từ file của đồng nghiệp
-                    boolean isSaved = bidDao.save(auctionId, bidderId, amount);
-                    if (isSaved) {
-                        System.out.println(">>> Đã backup thành công giá " + amount + " xuống MySQL!");
-                    }
+                    saveBidToDatabase(incomingAuction);
                 }
-                
             } else {
-                // Nếu chưa có -> Đây là lệnh Tạo Phiên Mới
+                // Tạo mới phiên đấu giá
                 AuctionManager.getInstance().addAuction(incomingAuction);
-                System.out.println(">>> Đã tạo phiên đấu giá mới: " + incomingAuction.getAuctionId());
+                System.out.println(">>> Đã tạo phiên mới: " + incomingAuction.getAuctionId());
             }
 
-            // 2. QUAN TRỌNG: Phát sóng TOÀN BỘ danh sách về cho tất cả Client
-            AuctionServer.broadcast(AuctionManager.getInstance().getAllAuctions()); 
+            // Update toàn bộ danh cách các phiên lên hệ thống
+            server.broadcast(AuctionManager.getInstance().getAllAuctions()); 
         } 
-        
-        // TRƯỜNG HỢP 2: Client gửi lệnh String (Login, Refresh)
+        // TRƯỜNG HỢP 2: Nhận lệnh dạng chuỗi văn bản (String)
         else if (request instanceof String msg) {
             handleStringRequest(msg);
         }
     }
 
+    /**
+     * Xử lý các lệnh điều khiển dạng String
+     */
     private void handleStringRequest(String msg) {
         try {
-            // 1. Lấy danh sách ban đầu [cite: 65]
             if (msg.equals("REFRESH_DATA")) {
-                List<Auction> currentList = AuctionManager.getInstance().getAllAuctions();
-                send(currentList);
+                send(AuctionManager.getInstance().getAllAuctions());
             } 
-            
-            // 2. Xử lý đặt giá: "BID:ID:PRICE" [cite: 47]
             else if (msg.startsWith("BID:")) {
                 String[] parts = msg.split(":");
                 String auctionId = parts[1];
                 double newPrice = Double.parseDouble(parts[2]);
 
-                // Xử lý đấu giá đồng thời tại Manager [cite: 83]
                 boolean success = AuctionManager.getInstance().processBid(auctionId, newPrice, this.currentUser);
-
                 if (success) {
                     Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
-                    server.broadcast(updated); // Realtime Update cho mọi người [cite: 143]
+                    server.broadcast(updated); 
                 } else {
-                    send("ERROR: Giá đặt không hợp lệ hoặc phiên đã đóng!"); // Xử lý lỗi [cite: 58]
+                    send("ERROR: Giá đặt không hợp lệ hoặc phiên đã đóng!");
                 }
             }
-            
-            // 3. Giả lập xử lý Login để gán User vào luồng
-            else if (msg.startsWith("LOGIN_SUCCESS:")) {
-                // Hiếu có thể gửi Object User qua mạng để gán vào đây
-                // this.currentUser = ...
-            }
         } catch (Exception e) {
-            send("ERROR: Lệnh không hợp lệ - " + e.getMessage());
+            send("ERROR: Lệnh sai định dạng - " + e.getMessage());
         }
     }
 
+    /**
+     * Lưu giao dịch xuống MySQL để đảm bảo không mất dữ liệu khi Server sập.
+     */
+    private void saveBidToDatabase(Auction auction) {
+        database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
+        String auctionId = auction.getAuctionId();
+        String bidderId = auction.getHighestBid().getBidder().getUserId();
+        double amount = auction.getCurrentPrice();
+        
+        if (bidDao.save(auctionId, bidderId, amount)) {
+            System.out.println(">>> Backup thành công giá $" + amount + " cho phiên " + auctionId);
+        }
+    }
+
+    /**
+     * Gửi Object dữ liệu qua Socket về phía Client.
+     */
     public void send(Object data) {
         try {
             if (out != null) {
                 out.writeObject(data);
                 out.flush();
-                out.reset(); // Quan trọng: Xóa cache Object để gửi dữ liệu mới nhất
+                out.reset(); // Xóa bộ nhớ đệm để gửi Object mới nhất
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            active = false;
         }
     }
 
+    /**
+     * Đóng các luồng dữ liệu và giải phóng tài nguyên.
+     */
     private void close() {
+        active = false;
         try {
             if (socket != null) socket.close();
-            // Xóa khỏi danh sách observers của server nếu Hiếu có làm Observer Pattern
-        } catch (IOException e) { e.printStackTrace(); }
+            server.removeObserver(this); // Rút tên khỏi danh sách theo dõi của Server
+        } catch (IOException e) { 
+            e.printStackTrace();
+        }
     }
 }

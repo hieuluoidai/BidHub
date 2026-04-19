@@ -3,10 +3,12 @@ package network;
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
-
 import javafx.application.Platform;
 import model.auction.Auction;
 
+/**
+ * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
+ */
 public class AuctionClient {
     private Socket socket;
     private ObjectOutputStream out;
@@ -14,7 +16,7 @@ public class AuctionClient {
     private boolean isRunning = false;
 
     /**
-     * Kết nối tới Server
+     * Thiết lập kết nối tới Server và kích hoạt luồng lắng nghe dữ liệu.
      */
     public void connect(String host, int port) throws IOException {
         if (socket != null && !socket.isClosed()) return;
@@ -24,54 +26,65 @@ public class AuctionClient {
         in = new ObjectInputStream(socket.getInputStream());
         isRunning = true;
 
-        // Tạo một luồng riêng để nghe dữ liệu từ Server, không làm treo UI
+        // Chạy luồng nghe riêng biệt để không gây treo giao diện (UI Freeze)
         Thread listenerThread = new Thread(this::listen);
-        listenerThread.setDaemon(true); // Tự tắt khi đóng App
+        listenerThread.setDaemon(true); // Tự động đóng luồng khi thoát ứng dụng
         listenerThread.start();
         
-        System.out.println(">>> Connected to Server at " + host + ":" + port);
+        System.out.println(">>> Đã kết nối tới Server tại " + host + ":" + port);
     }
 
+    /**
+     * Vòng lặp liên tục nhận dữ liệu từ Server.
+     */
     private void listen() {
         try {
             while (isRunning) {
                 Object data = in.readObject();
                 if (data != null) {
-                    // Xử lý dữ liệu nhận được ở đây
                     handleIncomingData(data);
                 }
             }
         } catch (Exception e) {
-            System.err.println(">>> Connection lost: " + e.getMessage());
+            System.err.println(">>> Mất kết nối tới Server: " + e.getMessage());
             close();
         }
     }
 
-    private void handleIncomingData(Object data) {
+    /**
+     * Phân loại và xử lý dữ liệu nhận được từ Server.
+     */
+    @SuppressWarnings("unchecked")
+	private void handleIncomingData(Object data) {
+        // Platform.runLater đảm bảo update dữ liệu an toàn trên luồng UI của JavaFX
         Platform.runLater(() -> {
             if (data instanceof List<?>) {
-                System.out.println(">>> CLIENT: Đã nhận danh sách từ Server. Số lượng: " + ((List<?>) data).size()); // Thêm dòng này
                 List<Auction> auctions = (List<Auction>) data;
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
             } else if (data instanceof Auction updatedAuction) {
-                System.out.println(">>> CLIENT: Đã nhận 1 phiên mới: " + updatedAuction.getAuctionId()); // Thêm dòng này
                 updateSingleAuction(updatedAuction); 
             }
         });
     }
     
+    /**
+     * Gửi yêu cầu/dữ liệu lên Server.
+     */
     public void send(Object data) {
         try {
             if (out != null) {
                 out.writeObject(data);
                 out.flush();
-                out.reset(); // Thêm dòng này để đảm bảo gửi dữ liệu mới nhất
+                out.reset(); // Xóa bộ nhớ đệm để gửi trạng thái mới nhất của Object
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println(">>> Lỗi khi gửi dữ liệu: " + e.getMessage());
         }
     }
 
+    /**
+     * Ngắt kết nối và giải phóng tài nguyên.
+     */
     public void close() {
         isRunning = false;
         try {
@@ -81,14 +94,17 @@ public class AuctionClient {
         }
     }
     
+    /**
+     * Cập nhật thông tin một phiên đấu giá cụ thể trong danh sách hiển thị.
+     */
     private void updateSingleAuction(model.auction.Auction updated) {
         var list = model.manager.AppState.getInstance().getAuctionList();
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
-                list.set(i, updated);
+                list.set(i, updated); // Thay thế nếu đã tồn tại
                 return;
             }
         }
-        list.add(updated);
+        list.add(updated); // Thêm mới nếu chưa có trong danh sách
     }
 }

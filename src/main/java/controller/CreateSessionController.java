@@ -1,20 +1,21 @@
 package controller;
 
 import java.time.LocalDateTime;
-
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.scene.Node;
 import model.auction.Auction;
 import model.item.Item;
 import model.item.ItemFactory;
-import model.manager.AuctionManager;
+import model.manager.AppState;
 
+/**
+ * Điều khiển màn hình tạo phiên đấu giá mới.
+ * Giúp seller nhập thông tin sản phẩm và kích hoạt phiên đấu giá.
+ */
 public class CreateSessionController {
 
     @FXML private TextField textItemName;
@@ -23,102 +24,122 @@ public class CreateSessionController {
     @FXML private TextField textExtraInfo;
     @FXML private Label labelError;
     @FXML private ComboBox<String> cbItemType;
+    @FXML private Label labelExtraInfo; 
 
-    @FXML
-    private Label labelExtraInfo; // Nhớ khai báo @FXML cho cái Label này nhé
-
+    /**
+     * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.
+     */
     @FXML
     public void initialize() {
-
+        // Nạp danh sách các loại hàng hóa
         cbItemType.getItems().addAll("Electronics", "Art", "Vehicle");
 
+        // Listener sự kiện chọn loại hàng.
         cbItemType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == null) return;
 
-            switch (newVal.toString()) {
+            switch (newVal) {
                 case "Electronics":
-                    labelExtraInfo.setText("Brand (Hãng sản xuất)");
-                    textExtraInfo.setPromptText("e.g. Apple, Samsung...");
+                		labelExtraInfo.setText("Hãng sản xuất (Brand)");
+                    textExtraInfo.setPromptText("Ví dụ: Apple, Samsung...");
                     break;
                 case "Art":
-                    labelExtraInfo.setText("Author (Tác giả)");
-                    textExtraInfo.setPromptText("e.g. Picasso, Van Gogh...");
+                    labelExtraInfo.setText("Tác giả (Author)");
+                    textExtraInfo.setPromptText("Ví dụ: Picasso, Van Gogh...");
                     break;
                 case "Vehicle":
-                    labelExtraInfo.setText("Manufacturer (Hãng xe)");
-                    textExtraInfo.setPromptText("e.g. Toyota, Honda...");
+                    labelExtraInfo.setText("Hãng xe (Manufacturer)");
+                    textExtraInfo.setPromptText("Ví dụ: Toyota, Honda...");
                     break;
                 default:
-                    labelExtraInfo.setText("Extra Information");
+                    labelExtraInfo.setText("Thông tin thêm");
             }
         });
     }
 
+    /**
+     * Xử lý khi Lưu: Thu thập dữ liệu, tạo phiên và gửi đi khắp hệ thống.
+     */
     @FXML
-    void handleSave(ActionEvent event) {
+    void handleSave() {
         try {
-            // ... (Giữ nguyên đoạn lấy dữ liệu và validate của cậu) ...
+            // 1. Thu thập dữ liệu từ các ô nhập thông tin
             String type = cbItemType.getValue();
             String name = textItemName.getText();
             String priceStr = textStartingPrice.getText();
             String desc = textDescription.getText();
             String extraInfo = textExtraInfo.getText();
 
-            // Check nếu chưa chọn loại sản phẩm
+            // 2. Kiểm tra tính hợp lệ (Validation) - Không được để trống thông tin quan trọng
             if (type == null) {
-                labelError.setTextFill(Color.RED);
-                labelError.setText("Please select an item type!");
+                showError("Vui lòng chọn loại sản phẩm!");
                 return;
             }
 
             if (name.isEmpty() || priceStr.isEmpty() || extraInfo.isEmpty()) {
-                labelError.setTextFill(Color.RED);
-                labelError.setText("Please fill in all the required information!");
+                showError("Vui lòng điền đầy đủ các thông tin bắt buộc!");
                 return;
             }
 
             double startingPrice = Double.parseDouble(priceStr);
             if (startingPrice <= 0) {
-                labelError.setTextFill(Color.RED);
-                labelError.setText("Starting price must be greater than 0!");
+                showError("Giá khởi điểm phải lớn hơn 0!");
                 return;
             }
 
-            String id = "ITEM_" + System.currentTimeMillis();
-            Item newItem = ItemFactory.createItem(type, id, name, desc, startingPrice, extraInfo);
+            // 3. Tạo đối tượng (Factory Pattern)
+            // Tạo ID duy nhất dựa trên thời gian hiện tại để tránh trùng lặp
+            String itemId = "ITEM_" + System.currentTimeMillis();
+            Item newItem = ItemFactory.createItem(type, itemId, name, desc, startingPrice, extraInfo);
 
+            // 4. Thiết lập phiên đấu giá sản phẩm này
             String auctionId = "AUC_" + System.currentTimeMillis();
-            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15);
-            LocalDateTime endTime = startTime.plusDays(7);
+            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15); // Bắt đầu sau 15 giây kể từ lúc tạo phiên
+            LocalDateTime endTime = startTime.plusDays(7); // Kéo dài trong 1 tuần
 
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
-            String sellerId = model.manager.AppState.getInstance().getCurrentUser().getUserId();
+            String sellerId = AppState.getInstance().getCurrentUser().getUserId();
+
+            // 5. Lưu trữ
+            // Lưu vào MySQL thông qua các lớp DAO.
             new database.ItemDAO().save(newItem, sellerId);
             new database.AuctionDAO().save(newAuction);
-            model.manager.AppState.getInstance().getClient().send(newAuction);
 
-            System.out.println(">>> Đã gửi yêu cầu tạo phiên đấu giá lên Server: " + auctionId);
+            // Gửi đối tượng mới tạo lên Server để Server báo cho tất cả các Client khác.
+            AppState.getInstance().getClient().send(newAuction);
 
-            closeWindow(event);
+            System.out.println(">>> Đã tạo và gửi phiên đấu giá thành công: " + auctionId);
+            closeWindow();
 
         } catch (NumberFormatException e) {
-            labelError.setTextFill(Color.RED);
-            // --- SỬA LẠI THÔNG BÁO LỖI CHO KHỚP ---
-            labelError.setText("Error: Price must be a valid number!");
-            // --------------------------------------
+            showError("Lỗi: Giá tiền phải là một con số hợp lệ!");
         } catch (IllegalArgumentException e) {
-            labelError.setTextFill(Color.RED);
-            labelError.setText("Error: Couldn't recognize item type!");
+            showError("Lỗi: Không nhận diện được loại sản phẩm!");
         }
     }
 
+    /**
+     * Xử lý khi nhấn nút "Hủy": Đóng cửa sổ mà không làm gì cả.
+     */
     @FXML
-    void handleCancel(ActionEvent event) {
-        closeWindow(event);
+    void handleCancel() {
+        closeWindow();
     }
 
-    private void closeWindow(ActionEvent event) {
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    /**
+     * Tiện ích: Hiện thông báo lỗi màu đỏ.
+     */
+    private void showError(String msg) {
+        labelError.setTextFill(Color.RED);
+        labelError.setText(msg);
+    }
+
+    /**
+     * Tiện ích: Tìm và đóng cửa sổ hiện tại.
+     */
+    private void closeWindow() {
+        // Lấy Stage thông qua ô nhập tên item.
+        Stage stage = (Stage) textItemName.getScene().getWindow();
         stage.close();
     }
 }
