@@ -92,6 +92,9 @@ public class CreateSessionController {
             LocalDateTime endTime = startTime.plusDays(7);
 
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
+            String sellerId = model.manager.AppState.getInstance().getCurrentUser().getUserId();
+            new database.ItemDAO().save(newItem, sellerId);
+            new database.AuctionDAO().save(newAuction);
             model.manager.AppState.getInstance().getClient().send(newAuction);
 
             System.out.println(">>> Đã gửi yêu cầu tạo phiên đấu giá lên Server: " + auctionId);
