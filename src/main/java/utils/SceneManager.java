@@ -37,9 +37,15 @@ public class SceneManager {
             if (scene == null) {
                 // Khởi tạo Scene lần đầu tiên
                 scene = new Scene(root);
+                
+                // Thêm Css
+                String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
+                scene.getStylesheets().add(cssUrl);
+                // ---------------------------------
+                
                 stage.setScene(scene);
             } else {
-                // Chỉ thay đổi nội dung bên trong, giữ nguyên cửa sổ
+                // Chỉ thay đổi nội dung bên trong, giữ nguyên cửa sổ và CSS đã nạp
                 scene.setRoot(root);
             }
             

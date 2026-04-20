@@ -38,6 +38,25 @@ public class UserDAO {
         }
         return null; // Không tìm thấy
     }
+    
+    /**
+     * Tìm kiếm một người dùng dựa trên ID
+     */
+    public User findById(String userId) {
+        String sql = "SELECT * FROM users WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                // Tái tạo lại đối tượng User từ dòng dữ liệu tìm được
+                return mapResultSetToUser(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm kiếm User theo ID: " + e.getMessage());
+        }
+        return null; // Trả về null nếu không tìm thấy ID này trong hệ thống
+    }
 
     /**
      * Xác thực đăng nhập: Kiểm tra cả tên đăng nhập và mật khẩu.

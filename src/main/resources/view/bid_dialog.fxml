@@ -5,24 +5,23 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="380.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
+<VBox prefHeight="380.0" prefWidth="400.0" spacing="20.0" styleClass="card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
    <padding>
-      <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+      <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
    </padding>
    <children>
 
       <VBox spacing="5.0">
          <children>
-            <Label text="Place Your Bid">
+            <Label styleClass="label-header" text="Place Your Bid">
                <font>
                   <Font name="System Bold" size="24.0" />
                </font>
             </Label>
-            <Label text="Enter an amount higher than the current price" textFill="#666666" />
+            <Label styleClass="decrement-button" text="Enter an amount higher than the current price" textFill="#666666" />
          </children>
          <VBox.margin>
             <Insets bottom="5.0" />
@@ -36,7 +35,7 @@
                   <Font name="System Bold" size="16.0" />
                </font>
             </Label>
-            <Label fx:id="labelCurrentPrice" text="Current Price: $0.00" textFill="#e65100">
+            <Label fx:id="labelCurrentPrice" styleClass="label-price" text="Current Price: $0.00" textFill="#e65100">
                <font>
                   <Font name="System Bold" size="15.0" />
                </font>
@@ -57,12 +56,14 @@
          </font>
       </Label>
 
-      <Region VBox.vgrow="ALWAYS" />
-
-      <HBox alignment="CENTER_RIGHT">
+      <HBox alignment="CENTER_RIGHT" spacing="15.0">
          <children>
-            <Button defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Confirm Bid" />
+            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" styleClass="button-secondary" text="Cancel" />
+            <Button defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" styleClass="button-primary" text="Confirm Bid" />
          </children>
+         <VBox.margin>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </VBox.margin>
       </HBox>
 
    </children>

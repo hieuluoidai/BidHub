@@ -63,6 +63,10 @@ public class Auction extends Entity implements Serializable {
         // Trả về highestBid tại hoặc startingPrice (nếu chưa có ai bid)
         return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
     }
+    
+    public void setHighestBid(BidTransaction highestBid) {
+        this.highestBid = highestBid;
+    }
 
     public String getAuctionId()     { return super.getId(); }
     public Item getItem()            { return item; }

@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -12,11 +13,10 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<?import javafx.scene.control.ComboBox?>
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
 
    <top>
-      <VBox spacing="10.0" BorderPane.alignment="CENTER">
+      <VBox spacing="20.0" styleClass="card" BorderPane.alignment="CENTER">
          <padding>
             <Insets bottom="10.0" left="15.0" right="15.0" top="15.0" />
          </padding>
@@ -24,32 +24,33 @@
 
             <HBox alignment="CENTER_LEFT" spacing="15.0">
                <children>
-                  <Label fx:id="titleLabel" text="Online Auction Bidding System">
+                  <Label fx:id="titleLabel" maxWidth="500.0" prefHeight="34.0" prefWidth="432.0" styleClass="label-header" text="Online Auction Bidding System">
                      <font>
                         <Font name="System Bold" size="24.0" />
                      </font>
                   </Label>
+                  <Region prefHeight="46.0" prefWidth="2.0" HBox.hgrow="ALWAYS" />
+
+                  <Label prefHeight="15.0" prefWidth="33.0" text="Filter:" />
+                  <ComboBox fx:id="comboFilter" prefHeight="46.0" prefWidth="149.0" promptText="All Categories" />
                   <Region HBox.hgrow="ALWAYS" />
 
-                  <Label text="Filter:" />
-                  <ComboBox fx:id="comboFilter" prefWidth="120.0" promptText="All Categories" />
-
-                  <TextField fx:id="textSearch" prefWidth="180.0" promptText="Search items..." />
-                  <Button mnemonicParsing="false" onAction="#handleLogout" style="-fx-font-weight: bold;" text="Log out" textFill="RED" />
+                  <TextField fx:id="textSearch" prefHeight="38.0" prefWidth="144.0" promptText="Search items..." />
                </children>
             </HBox>
 
             <HBox alignment="CENTER_LEFT" spacing="15.0">
                <children>
-                  <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" prefHeight="30.0" prefWidth="100.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" text="Place Bid" />
-                  <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="30.0" prefWidth="150.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;" text="+ Create Session" />
+                  <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" prefHeight="30.0" prefWidth="100.0" styleClass="button-primary" text="Place Bid" />
+                  <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="30.0" prefWidth="150.0" styleClass="button-primary" text="+ Create Session" />
+                  <Region prefHeight="0.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#handleLogout" styleClass="button-danger" text="Log out" textFill="RED" />
                </children>
             </HBox>
 
          </children>
       </VBox>
    </top>
-
    <center>
       <TableView fx:id="auctionTable" BorderPane.alignment="CENTER">
          <columns>
@@ -67,5 +68,8 @@
          </BorderPane.margin>
       </TableView>
    </center>
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
 
 </BorderPane>

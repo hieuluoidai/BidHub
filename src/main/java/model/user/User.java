@@ -6,6 +6,7 @@ import model.core.Entity;
  * Abstract class đại diện cho người dùng chung trong hệ thống.
  */
 public abstract class User extends Entity {
+	private static final long serialVersionUID = 1L;
     private String username;
     private String email;
     private String password;

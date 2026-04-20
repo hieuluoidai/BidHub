@@ -1,0 +1,223 @@
+/* 1. NỀN TẢNG CHUNG */
+.root {
+    -fx-font-family: "Segoe UI", "Open Sans", "Helvetica Neue", sans-serif;
+    -fx-background-color: #F0F4F8; /* Nền xám xanh cực sang, làm nổi bật form màu trắng */
+}
+
+/* 2. HIỆU ỨNG THẺ NỔI (CARD) - Dành cho khung chứa Form hoặc Bảng */
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 15, 0, 0, 5); /* Bóng đổ 3D */
+    -fx-padding: 20px;
+}
+
+/* 3. TIÊU ĐỀ */
+.label-header {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0D47A1; /* Xanh hoàng gia (Royal Blue) */
+    -fx-effect: dropshadow(two-pass-box, rgba(0,0,0,0.1), 2, 0, 0, 1);
+}
+
+/* 4. BUTTONS */
+
+/* 4.1 button-primary (Đăng nhập, Lưu, Đặt giá) */
+.button-primary {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 24px;
+    -fx-cursor: hand;
+}
+.button-primary:hover {
+    -fx-background-color: #1565C0;
+    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.4), 8, 0, 0, 3); /* Bóng tỏa sáng màu xanh */
+    -fx-translate-y: -2px; /* Nảy nhẹ lên */
+}
+.button-primary:pressed {
+    -fx-background-color: #0D47A1;
+    -fx-translate-y: 0px;
+}
+
+/* 4.2 button-secondary (Hủy, Quay lại) */
+.button-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: #455A64;
+    -fx-border-color: #CFD8DC;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 22px;
+    -fx-cursor: hand;
+}
+.button-secondary:hover {
+    -fx-background-color: #ECEFF1;
+    -fx-text-fill: #263238;
+}
+.button-danger {
+    -fx-background-color: transparent;
+    -fx-text-fill: #EF4444; /* Màu đỏ san hô */
+    -fx-border-color: #FECACA; /* Viền đỏ nhạt */
+    -fx-border-radius: 8px;
+    -fx-border-width: 1.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 22px;
+    -fx-cursor: hand;
+}
+
+/* Hiệu ứng bừng sáng khi đưa chuột vào */
+.button-danger:hover {
+    -fx-background-color: #FEF2F2; /* Nền chuyển sang màu hồng nhạt */
+    -fx-text-fill: #DC2626; /* Chữ đậm lên */
+    -fx-border-color: #F87171; /* Viền rõ nét hơn */
+    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.2), 5, 0, 0, 0); /* Tỏa hào quang đỏ */
+}
+
+.button-danger:pressed {
+    -fx-background-color: #FEE2E2;
+}
+
+/* 5. TEXTFIELD & COMBOBOX */
+.text-field, .password-field, .combo-box {
+    -fx-background-color: #F8FAFC; /* Màu nền xám khói nhẹ */
+    -fx-background-radius: 6px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 10px 12px; /* Rộng rãi hơn */
+    -fx-text-fill: #1E293B;
+}
+.text-field:focused, .password-field:focused, .combo-box:focused {
+    -fx-background-color: white;
+    -fx-border-color: #3B82F6; /* Viền sáng lên màu xanh nước biển */
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 6, 0, 0, 0);
+}
+
+/* 6. TABLE VIEW */
+
+/* Bo góc tổng thể bảng và nền trắng */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 5px;
+}
+
+/* Header trong suốt, kẻ đáy 2px */
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 12px 0;
+}
+
+/* Xóa cái ô vuông thừa ở góc trên cùng bên phải bảng */
+.table-view .column-header > .container > .place-holder {
+    -fx-background-color: transparent;
+}
+
+/* Header */
+.table-view .column-header .label {
+    -fx-text-fill: #64748B;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-alignment: center-left;
+}
+
+/* Chiều cao và đường phân cách */
+.table-row-cell {
+    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-cell-size: 45px; 
+}
+
+/* Hiệu ứng sọc ngựa vằn giúp dễ theo dõi hàng ngang */
+.table-row-cell:odd {
+    -fx-background-color: #FAFAFA;
+}
+
+/* Hover khói nhạt */
+.table-row-cell:hover {
+    -fx-background-color: #F8FAFC; 
+}
+
+/* Màu xanh khi Click chọn */
+.table-view:focused .table-row-cell:filled:selected,
+.table-row-cell:filled:selected {
+    -fx-background-color: #EFF6FF; 
+    -fx-table-cell-border-color: transparent;
+}
+
+/* Chữ hóa xanh đậm */
+.table-row-cell:filled:selected .table-cell {
+    -fx-text-fill: #1D4ED8; 
+    -fx-font-weight: bold;
+}
+
+/* XÓA VIỀN DỌC TỪNG Ô */
+.table-cell {
+    -fx-border-width: 0; 
+    -fx-padding: 0 0 0 10px;
+}
+
+/* 7. SCROLLBAR */
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+.scroll-bar:vertical .thumb, .scroll-bar:horizontal .thumb {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 4px;
+}
+.scroll-bar:vertical .thumb:hover, .scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: #94A3B8;
+}
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+    -fx-opacity: 0; /* Ẩn đi 2 cái nút mũi tên ở hai đầu thanh cuộn */
+}
+
+/* 8. LABEL HIỂN THỊ GIÁ TIỀN*/
+.label-price {
+    -fx-text-fill: #2E7D32; /* Màu xanh lá cây đậm (Forest Green) */
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-effect: dropshadow(two-pass-box, rgba(46, 125, 50, 0.1), 2, 0, 0, 1);
+}
+
+/* 9. Ô NHẬP VĂN BẢN DÀI (TEXTAREA) */
+.text-area {
+    -fx-background-color: transparent;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 2px;
+}
+
+/* Xóa nền và hiệu ứng lún sâu của phần ruột bên trong */
+.text-area .viewport,
+.text-area .content {
+    -fx-background-color: #F8FAFC; /* Màu xám khói đồng bộ với TextField */
+    -fx-background-radius: 5px;
+}
+
+/* Hiệu ứng khi click vào ô mô tả */
+.text-area:focused {
+    -fx-border-color: #3B82F6;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 6, 0, 0, 0);
+}
+
+/* 10. HUY HIỆU THỜI GIAN (URGENT BADGE) */
+.badge-urgent {
+    -fx-background-color: #FEF2F2; /* Nền đỏ pastel siêu nhạt */
+    -fx-text-fill: #DC2626; /* Chữ màu đỏ rực rỡ */
+    -fx-font-weight: 900; /* In đậm tối đa */
+    -fx-font-size: 14px;
+    -fx-padding: 8px 18px; /* Bơm phồng cái khung lên */
+    -fx-background-radius: 20px; /* Bo tròn xoe 2 đầu như viên thuốc */
+    -fx-border-color: #FECACA; /* Viền đỏ mờ */
+    -fx-border-radius: 20px;
+}

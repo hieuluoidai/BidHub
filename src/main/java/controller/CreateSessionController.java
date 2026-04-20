@@ -24,7 +24,11 @@ public class CreateSessionController {
     @FXML private TextField textExtraInfo;
     @FXML private Label labelError;
     @FXML private ComboBox<String> cbItemType;
-    @FXML private Label labelExtraInfo; 
+    @FXML private Label labelExtraInfo;
+    @FXML private Label labelDescription;
+    @FXML private Label labelStartingPrice;
+    @FXML private Label labelItemType;
+    @FXML private Label labelItemName;
 
     /**
      * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.

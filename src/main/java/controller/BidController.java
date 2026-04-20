@@ -1,6 +1,7 @@
 package controller;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -18,6 +19,7 @@ public class BidController {
     @FXML private Label labelCurrentPrice;
     @FXML private Label labelError;
     @FXML private TextField textBidAmount;
+    @FXML private Button cancelButton;
 
     private Auction currentAuction;
 
@@ -79,7 +81,11 @@ public class BidController {
      */
     @FXML
     void handleCancel() {
-        closeStage();
+        // Lấy Stage (cửa sổ hiện tại) trực tiếp từ biến cancelButton
+        Stage currentStage = (Stage) cancelButton.getScene().getWindow();
+        
+        // Đóng cửa sổ
+        currentStage.close();
     }
 
     /**

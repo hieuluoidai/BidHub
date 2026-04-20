@@ -132,18 +132,43 @@ public class AuctionDAO {
         LocalDateTime startTime = rs.getTimestamp("start_time").toLocalDateTime();
         LocalDateTime endTime   = rs.getTimestamp("end_time").toLocalDateTime();
 
-        // 2. Mấu chốt: Dùng itemDAO để tìm món hàng có ID tương ứng trong bảng items
+        // 2. Dùng itemDAO để tìm món hàng có ID tương ứng trong bảng items
         var item = itemDAO.findById(itemId);
         
-        // Nếu database bị lỗi (có phiên đấu giá nhưng mất hàng), báo lỗi và bỏ qua
         if (item == null) {
             System.err.println("Cảnh báo dữ liệu: Không tìm thấy món hàng " + itemId + " cho phiên " + auctionId);
             return null; 
         }
 
-        // 3. Ghép nối Sản phẩm và Thời gian lại thành một Phiên đấu giá hoàn chỉnh
+        // 3. Ghép nối Sản phẩm và Thời gian lại thành một Phiên đấu giá
         Auction auction = new Auction(auctionId, item, startTime, endTime);
         auction.setStatus(status);
+
+        // =========================================================================
+        // PHẦN CODE BỔ SUNG ĐỂ VÁ LỖI MẤT DỮ LIỆU NGƯỜI ĐẤU GIÁ
+        // =========================================================================
+        database.BidTransactionDAO bidDAO = new database.BidTransactionDAO();
+        // Gọi hàm findWinner bạn đã viết sẵn để lấy [bidder_id, bid_amount]
+        String[] winnerData = bidDAO.findWinner(auctionId); 
+
+        if (winnerData != null) {
+            String bidderId = winnerData[0];
+            double amount = Double.parseDouble(winnerData[1]);
+
+            // Tìm đối tượng User từ Database dựa vào bidderId
+            database.UserDAO userDAO = new database.UserDAO();
+            model.user.User highestBidder = userDAO.findById(bidderId); // Giả sử UserDAO của bạn có hàm này
+
+            if (highestBidder != null) {
+                // Tái tạo lại đối tượng BidTransaction từ dữ liệu nạp lên
+                model.auction.BidTransaction restoredBid = new model.auction.BidTransaction(highestBidder, amount);
+                
+                // Bơm lại dữ liệu này vào phiên đấu giá
+                auction.setHighestBid(restoredBid);
+            }
+        }
+        // =========================================================================
+
         return auction;
     }
 }

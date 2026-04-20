@@ -24,7 +24,6 @@ public class ItemDetailsController {
     @FXML private Label lblItemName;
     @FXML private Label lblCategory;
     @FXML private Label lblCurrentPrice;
-    @FXML private Label lblTimeLeft;
     @FXML private TextArea txtDescription;
     @FXML private Label lblEndTime;
     @FXML private Label lblExtraInfo;
@@ -45,7 +44,7 @@ public class ItemDetailsController {
 
         // Định dạng thời gian hiển thị: Ngày/Tháng/Năm Giờ:Phút:Giây
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        lblEndTime.setText("Thời điểm kết thúc: " + auction.getEndTime().format(formatter));
+        lblEndTime.setText(auction.getEndTime().format(formatter));
 
         // Xử lí thông tin đặc thù
         // Tùy theo loại hàng là Điện tử, Nghệ thuật hay Xe cộ mà hiện thông tin riêng
@@ -75,7 +74,7 @@ public class ItemDetailsController {
      * Nhấn nút Quay lại: Đóng cửa sổ viewDetails để về Dashboard.
      */
     @FXML
-    void handleBack() {
+    void handleCancel() {
         // Lấy cửa sổ hiện tại và đóng lại
         Stage stage = (Stage) lblItemName.getScene().getWindow();
         stage.close();
