@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="480.0" prefWidth="460.0"
+      styleClass="card"
+      stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.UserDetailsController"
+      spacing="16.0">
+
+   <padding><Insets bottom="25.0" left="25.0" right="25.0" top="25.0"/></padding>
+
+   <!-- Avatar + Tên -->
+   <HBox alignment="CENTER_LEFT" spacing="15.0">
+      <Label fx:id="lblAvatar" text="?"
+             style="-fx-background-color: #3B82F6;
+                    -fx-text-fill: white;
+                    -fx-font-size: 28px;
+                    -fx-font-weight: bold;
+                    -fx-min-width: 64px; -fx-min-height: 64px;
+                    -fx-max-width: 64px; -fx-max-height: 64px;
+                    -fx-background-radius: 50%;
+                    -fx-alignment: center;"/>
+
+      <VBox spacing="3.0">
+         <Label fx:id="lblUsername" text="username"
+                style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+         <Label fx:id="lblRoleBadge" text="ROLE"
+                style="-fx-background-color: #EFF6FF; -fx-text-fill: #1D4ED8;
+                       -fx-padding: 3 10 3 10; -fx-background-radius: 4;
+                       -fx-font-weight: bold; -fx-font-size: 11px;"/>
+      </VBox>
+   </HBox>
+
+   <Separator/>
+
+   <!-- Thông tin cơ bản -->
+   <VBox spacing="12.0">
+      <Label text="Thông tin tài khoản"
+             style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
+
+      <GridPane hgap="10" vgap="10">
+         <columnConstraints>
+            <ColumnConstraints minWidth="110" prefWidth="110"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+         </columnConstraints>
+
+         <Label text="User ID:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+         <Label fx:id="lblUserId" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+         <Label text="Email:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+         <Label fx:id="lblEmail" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+         <Label text="Vai trò:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+         <Label fx:id="lblRole" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+      </GridPane>
+   </VBox>
+
+   <Separator/>
+
+   <!-- Thống kê hoạt động -->
+   <VBox spacing="12.0">
+      <Label text="Hoạt động trên hệ thống"
+             style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
+
+      <HBox spacing="10.0">
+         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
+               style="-fx-background-color: #EFF6FF; -fx-padding: 14; -fx-background-radius: 8;">
+            <Label fx:id="lblStat1Value" text="0"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1D4ED8;"/>
+            <Label fx:id="lblStat1Label" text="Phiên đã tạo"
+                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         </VBox>
+
+         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
+               style="-fx-background-color: #F0FDF4; -fx-padding: 14; -fx-background-radius: 8;">
+            <Label fx:id="lblStat2Value" text="0"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #15803D;"/>
+            <Label fx:id="lblStat2Label" text="Lượt bid"
+                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         </VBox>
+
+         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
+               style="-fx-background-color: #FDF4FF; -fx-padding: 14; -fx-background-radius: 8;">
+            <Label fx:id="lblStat3Value" text="0"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #7E22CE;"/>
+            <Label fx:id="lblStat3Label" text="Phiên thắng"
+                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         </VBox>
+      </HBox>
+   </VBox>
+
+   <Region VBox.vgrow="ALWAYS"/>
+
+   <!-- Nút đóng -->
+   <HBox alignment="CENTER_RIGHT">
+      <Button text="Đóng" onAction="#handleClose"
+              styleClass="button-primary"
+              prefHeight="36.0" prefWidth="100.0"/>
+   </HBox>
+
+</VBox>
