@@ -54,15 +54,26 @@ public class AuctionClient {
     /**
      * Phân loại và xử lý dữ liệu nhận được từ Server.
      */
-    @SuppressWarnings("unchecked")
-	private void handleIncomingData(Object data) {
-        // Platform.runLater đảm bảo update dữ liệu an toàn trên luồng UI của JavaFX
+    private void handleIncomingData(Object data) {
         Platform.runLater(() -> {
             if (data instanceof List<?>) {
-                List<Auction> auctions = (List<Auction>) data;
+                @SuppressWarnings("unchecked")
+				List<Auction> auctions = (List<Auction>) data;
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
             } else if (data instanceof Auction updatedAuction) {
-                updateSingleAuction(updatedAuction); 
+                updateSingleAuction(updatedAuction);
+            } else if (data instanceof String msg) {
+                if (msg.startsWith("BID_ERROR:")) {
+                    String errorText = msg.substring("BID_ERROR:".length());
+                    // Hiện alert thông báo lỗi bid cho user
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.WARNING
+                    );
+                    alert.setTitle("Đặt giá thất bại");
+                    alert.setHeaderText(null);
+                    alert.setContentText(errorText);
+                    alert.showAndWait();
+                }
             }
         });
     }

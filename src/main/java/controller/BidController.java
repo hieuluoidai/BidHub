@@ -37,42 +37,35 @@ public class BidController {
      */
     @FXML
     void handleConfirm() {
-        labelError.setText(""); // Xóa thông báo lỗi cũ
-        
+        labelError.setText("");
+
         try {
             String amountStr = textBidAmount.getText().trim();
-            
-            // 1. Kiểm tra xem có để trống ô nhập không
             if (amountStr.isEmpty()) {
                 showError("Vui lòng nhập số tiền!");
                 return;
             }
-            
+
             double amount = Double.parseDouble(amountStr);
             User currentUser = AppState.getInstance().getCurrentUser();
 
-            // 2. Chỉ cho phép người dùng có vai trò là Bidder đặt giá
-            if (currentUser instanceof Bidder) {
-                Bidder currentBidder = (Bidder) currentUser;
-
-                // 3. Cập nhật mức giá mới vào đối tượng Auction.
-                currentAuction.placeBid(currentBidder, amount);
-
-                // 4. Gửi cả gói Auction đã có giá mới này lên Server
-                // Server sẽ nhận được, lưu DB và notify cho tất cả người dùng khác.
-                AppState.getInstance().getClient().send(currentAuction);
-
-                closeStage(); // Đóng cửa sổ sau khi bid thành công
-                System.out.println(">>> Đã đặt giá thành công bởi: " + currentBidder.getUsername());
-            } else {
+            if (!(currentUser instanceof Bidder)) {
                 showError("Chỉ người mua (Bidder) mới có quyền đặt giá!");
+                return;
             }
+
+            // Chỉ gửi lệnh dạng String lên Server, KHÔNG tự validate ở đây
+            // Format: "BID:<auctionId>:<amount>:<bidderId>"
+            String command = "BID:" 
+                + currentAuction.getAuctionId() + ":"
+                + amount + ":"
+                + currentUser.getUserId();
+
+            AppState.getInstance().getClient().send(command);
+            closeStage();
 
         } catch (NumberFormatException e) {
             showError("Số tiền không hợp lệ (phải là số)!");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // Hiển thị lỗi logic
-            showError(e.getMessage());
         }
     }
 

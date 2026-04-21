@@ -26,36 +26,42 @@ public class ItemDAO {
      * Lưu một item mới vào DB cùng với thông tin seller.
      */
     public boolean save(Item item, String sellerId) {
-        // Cấu trúc bảng items gom chung tất cả các loại hàng. 
-        // Cột nào không dùng (vd: đồ điện tử thì không có artist) sẽ để giá trị NULL.
-        String sql = "INSERT INTO items (item_id, item_name, description, starting_price, item_type, seller_id, brand, artist) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        
+        String sql = """
+            INSERT INTO items 
+                (item_id, item_name, description, starting_price, item_type, seller_id,
+                 brand, warranty_months, artist, material, model, manufacture_year)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            // Lưu các thông tin cơ bản (loại hàng nào cũng có)
             stmt.setString(1, item.getItemId());
             stmt.setString(2, item.getItemName());
             stmt.setString(3, item.getDescription());
             stmt.setDouble(4, item.getStartingPrice());
-            stmt.setString(5, item.getItemType());
+            stmt.setString(5, item.getItemType().toUpperCase());
             stmt.setString(6, sellerId);
 
-            // Xử lý đa hình (Polymorphism) để lưu thông tin đặc thù
+            // Mặc định tất cả cột đặc thù là NULL
+            stmt.setNull(7,  Types.VARCHAR); // brand
+            stmt.setNull(8,  Types.INTEGER); // warranty_months
+            stmt.setNull(9,  Types.VARCHAR); // artist
+            stmt.setNull(10, Types.VARCHAR); // material
+            stmt.setNull(11, Types.VARCHAR); // model
+            stmt.setNull(12, Types.INTEGER); // manufacture_year
+
+            // Override đúng cột theo từng loại
             if (item instanceof Electronics e) {
-                stmt.setString(7, e.getBrand());      // Có hãng sản xuất
-                stmt.setNull(8, Types.VARCHAR);       // Không có tác giả
+                stmt.setString(7, e.getBrand());
+                // Nếu Electronics có warranty thì set thêm: stmt.setInt(8, e.getWarrantyMonths());
             } else if (item instanceof Art a) {
-                stmt.setNull(7, Types.VARCHAR);       // Không có hãng sản xuất
-                stmt.setString(8, a.getAuthor());     // Có tác giả
+                stmt.setString(9, a.getAuthor());
+                // Nếu Art có material: stmt.setString(10, a.getMaterial());
             } else if (item instanceof Vehicle v) {
-                stmt.setString(7, v.getBrand());      // Có hãng xe
-                stmt.setNull(8, Types.VARCHAR);       // Không có tác giả
-            } else {
-                // Đề phòng trường hợp loại hàng rác
-                stmt.setNull(7, Types.VARCHAR);
-                stmt.setNull(8, Types.VARCHAR);
+                stmt.setString(7, v.getBrand());
+                // Nếu Vehicle có model/year: stmt.setString(11, v.getModel()); stmt.setInt(12, v.getManufactureYear());
             }
 
-            stmt.executeUpdate(); // Chạy lệnh INSERT
+            stmt.executeUpdate();
             return true;
         } catch (SQLException e) {
             System.err.println("Lỗi khi lưu sản phẩm: " + e.getMessage());

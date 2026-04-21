@@ -18,7 +18,6 @@ public class ClientHandler implements Runnable {
     private final AuctionServer server;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private User currentUser; 
     private boolean active = true; // Biến kiểm soát trạng thái kết nối của Client hiện tại
 
     public ClientHandler(Socket socket, AuctionServer server) {
@@ -90,18 +89,36 @@ public class ClientHandler implements Runnable {
         try {
             if (msg.equals("REFRESH_DATA")) {
                 send(AuctionManager.getInstance().getAllAuctions());
-            } 
+            }
             else if (msg.startsWith("BID:")) {
+                // Format mới: "BID:<auctionId>:<amount>:<bidderId>"
                 String[] parts = msg.split(":");
                 String auctionId = parts[1];
-                double newPrice = Double.parseDouble(parts[2]);
+                double newPrice  = Double.parseDouble(parts[2]);
+                String bidderId  = parts[3];
 
-                boolean success = AuctionManager.getInstance().processBid(auctionId, newPrice, this.currentUser);
+                // Tìm đối tượng User thực từ DB (tránh dùng user từ client gửi lên)
+                User bidder = new database.UserDAO().findById(bidderId);
+                if (bidder == null) {
+                    send("ERROR: Không tìm thấy người dùng!");
+                    return;
+                }
+
+                // processBid là synchronized → an toàn đa luồng
+                boolean success = AuctionManager.getInstance()
+                                                .processBid(auctionId, newPrice, bidder);
+
                 if (success) {
-                    Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
-                    server.broadcast(updated); 
+                    // Lưu DB
+                    Auction updated = AuctionManager.getInstance()
+                                                    .getAuctionById(auctionId);
+                    saveBidToDatabase(updated);
+
+                    // Broadcast kết quả mới cho tất cả client
+                    server.broadcast(AuctionManager.getInstance().getAllAuctions());
                 } else {
-                    send("ERROR: Giá đặt không hợp lệ hoặc phiên đã đóng!");
+                    // Gửi lỗi về riêng client này
+                    send("BID_ERROR:Giá đặt không hợp lệ hoặc phiên đã đóng!");
                 }
             }
         } catch (Exception e) {
