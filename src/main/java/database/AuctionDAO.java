@@ -171,4 +171,21 @@ public class AuctionDAO {
 
         return auction;
     }
+    
+    public int countBySellerId(String sellerId) {
+        // Đếm số phiên của một seller (join qua bảng items vì auctions không lưu trực tiếp sellerId)
+        String sql = """
+            SELECT COUNT(*) FROM auctions a
+            INNER JOIN items i ON a.item_id = i.item_id
+            WHERE i.seller_id = ?
+            """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, sellerId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            System.err.println("Lỗi đếm phiên theo seller: " + e.getMessage());
+        }
+        return 0;
+    }
 }

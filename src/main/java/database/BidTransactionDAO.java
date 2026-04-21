@@ -120,4 +120,37 @@ public class BidTransactionDAO {
         }
         return 0;
     }
+    
+    public int countBidsByBidderId(String bidderId) {
+        String sql = "SELECT COUNT(*) FROM bid_transactions WHERE bidder_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, bidderId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            System.err.println("Lỗi đếm bid: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public int countWinsByBidderId(String bidderId) {
+        // Đếm số phiên FINISHED mà bidder này là người bid cao nhất
+        String sql = """
+            SELECT COUNT(*) FROM auctions a
+            INNER JOIN (
+                SELECT auction_id, bidder_id, bid_amount,
+                       ROW_NUMBER() OVER (PARTITION BY auction_id ORDER BY bid_amount DESC) AS rn
+                FROM bid_transactions
+            ) bt ON a.auction_id = bt.auction_id
+            WHERE bt.rn = 1 AND bt.bidder_id = ? AND a.status = 'FINISHED'
+            """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, bidderId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            System.err.println("Lỗi đếm phiên thắng: " + e.getMessage());
+        }
+        return 0;
+    }
 }

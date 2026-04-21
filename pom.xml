@@ -10,8 +10,8 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>24</maven.compiler.source>
+        <maven.compiler.target>24</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -21,14 +21,13 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17.0.2</version>
+            <version>26</version>
         </dependency>
 
-        <!-- FIX 1: Sửa lại tên artifact bị lỗi (__javafx__ → javafx) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>17.0.2</version>
+            <version>26</version>
         </dependency>
 
         <!-- ==================== DATABASE ==================== -->
@@ -39,7 +38,6 @@
         </dependency>
 
         <!-- ==================== UNIT TEST ==================== -->
-        <!-- FIX 2: Thêm JUnit 5 để chạy được mvn test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -52,21 +50,30 @@
     <build>
         <plugins>
 
-            <!-- FIX 3: Thêm Surefire 3.x — bắt buộc để JUnit 5 chạy được với mvn test -->
-            <!-- Surefire 2.x (mặc định) không nhận diện được JUnit 5                  -->
+            <!-- Compiler Plugin: dùng Java 24 tương thích JavaFX 26 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>24</source>
+                    <target>24</target>
+                </configuration>
+            </plugin>
+
+            <!-- Surefire 3.x: bắt buộc để JUnit 5 chạy được với mvn test -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
             </plugin>
 
-            <!-- FIX 4: Thêm JavaFX Maven Plugin để chạy app bằng mvn javafx:run -->
+            <!-- JavaFX Maven Plugin: chạy app bằng mvn javafx:run -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <!-- Trỏ đúng vào class Main của project -->
                     <mainClass>application.Main</mainClass>
                 </configuration>
             </plugin>

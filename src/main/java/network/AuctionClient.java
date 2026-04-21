@@ -63,17 +63,10 @@ public class AuctionClient {
             } else if (data instanceof Auction updatedAuction) {
                 updateSingleAuction(updatedAuction);
             } else if (data instanceof String msg) {
-                if (msg.startsWith("BID_ERROR:")) {
-                    String errorText = msg.substring("BID_ERROR:".length());
-                    // Hiện alert thông báo lỗi bid cho user
-                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                        javafx.scene.control.Alert.AlertType.WARNING
-                    );
-                    alert.setTitle("Đặt giá thất bại");
-                    alert.setHeaderText(null);
-                    alert.setContentText(errorText);
-                    alert.showAndWait();
-                }
+            	if (msg.startsWith("BID_ERROR:")) {
+            	    String errorText = msg.substring("BID_ERROR:".length());
+            	    utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Đặt giá thất bại", errorText);
+            	}
             }
         });
     }

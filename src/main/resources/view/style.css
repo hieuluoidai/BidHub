@@ -221,3 +221,69 @@
     -fx-border-color: #FECACA; /* Viền đỏ mờ */
     -fx-border-radius: 20px;
 }
+
+/* 11. TAB PANE */
+.tab-pane {
+    -fx-tab-min-width: 110px;
+    -fx-tab-min-height: 32px;
+    -fx-background-color: transparent;
+}
+
+/* Ẩn border header mặc định */
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+/* Padding cho vùng header chứa các tab */
+.tab-pane > .tab-header-area {
+    -fx-padding: 8 0 8 10;
+}
+
+/* ========== TAB BÌNH THƯỜNG (chưa chọn) ========== */
+.tab-pane .tab {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 6px 6px 0 0;
+    -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* ========== TAB KHI HOVER ========== */
+.tab-pane .tab:hover {
+    -fx-background-color: #E0E7FF;
+}
+
+.tab-pane .tab:hover .tab-label {
+    -fx-text-fill: #3B82F6;
+}
+
+/* ========== TAB ĐANG ĐƯỢC CHỌN ========== */
+.tab-pane .tab:selected {
+    -fx-background-color: #3B82F6;
+    -fx-background-radius: 8px 8px 0 0;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 8, 0, 0, 2);
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: white;
+}
+
+/* Bỏ cái đường viền xấu xí mặc định khi tab được chọn */
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-border-width: 0;
+}
+
+/* Nội dung bên trong tab */
+.tab-pane > .tab-content-area {
+    -fx-background-color: white;
+    -fx-background-radius: 0 8px 8px 8px;
+    -fx-padding: 12;
+}

@@ -1,10 +1,17 @@
 package database;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 import model.user.Admin;
 import model.user.Bidder;
 import model.user.Seller;
 import model.user.User;
-import java.sql.*;
 
 /**
  * Lớp quản lý dữ liệu người dùng trong Database.
@@ -126,5 +133,19 @@ public class UserDAO {
         if (user instanceof Admin)  return "ADMIN";
         if (user instanceof Seller) return "SELLER";
         return "BIDDER";
+    }
+    
+    public List<User> findAll() {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM users";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                users.add(mapResultSetToUser(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy danh sách users: " + e.getMessage());
+        }
+        return users;
     }
 }

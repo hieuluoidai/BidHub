@@ -23,6 +23,10 @@ public class SceneManager {
     public void showDashboard() {
         switchScene("/view/dashboard.fxml", "Bảng điều khiển Đấu giá");
     }
+    
+    public void showAdminDashboard() {
+        switchScene("/view/admin_dashboard.fxml", "Admin Dashboard");
+    }
 
     /**
      * Thực hiện thay đổi nội dung màn hình. 
