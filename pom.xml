@@ -6,8 +6,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>vn.edu.vnu.uet.group6</groupId>
-    <artifactId>online-auction-system</artifactId>
+    <artifactId>bidhub</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <name>BidHub</name>
+    <description>BidHub - Online Auction System</description>
 
     <properties>
         <maven.compiler.source>24</maven.compiler.source>
@@ -49,8 +51,6 @@
 
     <build>
         <plugins>
-
-            <!-- Compiler Plugin: dùng Java 24 tương thích JavaFX 26 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

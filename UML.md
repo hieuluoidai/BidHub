@@ -1,12 +1,14 @@
 ```mermaid
 classDiagram
-%% --- CORE LAYER ---
-class Entity {
-<<Abstract>>
--id: String
-+getId() String
-+setId(id: String) void
-}
+    %% ==========================================
+    %% CORE LAYER
+    %% ==========================================
+    class Entity {
+        <<Abstract>>
+        -id: String
+        +getId() String
+        +setId(id: String) void
+    }
 
     class Subject {
         <<Interface>>
@@ -17,10 +19,12 @@ class Entity {
 
     class Observer {
         <<Interface>>
-        +update(String message) void
+        +update(message: String) void
     }
 
-    %% --- USER LAYER ---
+    %% ==========================================
+    %% USER LAYER
+    %% ==========================================
     class User {
         <<Abstract>>
         -username: String
@@ -34,7 +38,9 @@ class Entity {
     class Bidder { +displayRole() void }
     class Seller { +displayRole() void }
 
-    %% --- ITEM LAYER ---
+    %% ==========================================
+    %% ITEM LAYER
+    %% ==========================================
     class Item {
         <<Abstract>>
         -itemName: String
@@ -52,7 +58,9 @@ class Entity {
         +createItem(type, id, name, desc, price, info)$ Item
     }
 
-    %% --- AUCTION LOGIC ---
+    %% ==========================================
+    %% AUCTION LOGIC LAYER
+    %% ==========================================
     class Auction {
         -item: Item
         -bidHistory: List~BidTransaction~
@@ -75,7 +83,69 @@ class Entity {
         +getBidAmount() double
     }
 
-    %% --- MANAGEMENT & APP LAYER ---
+    %% ==========================================
+    %% DATABASE LAYER (DAO PATTERN) - [BỔ SUNG MỚI]
+    %% ==========================================
+    class DatabaseConnection {
+        <<Singleton>>
+        -instance: DatabaseConnection$
+        -connection: Connection
+        +getInstance()$ DatabaseConnection
+        +getConnection() Connection
+    }
+
+    class UserDAO {
+        +findByUsername(username: String) User
+        +login(username, password) User
+        +save(user: User) boolean
+    }
+
+    class AuctionDAO {
+        +save(auction: Auction) boolean
+        +findAll() List~Auction~
+        +updateStatus(id, status) boolean
+    }
+
+    class ItemDAO {
+        +save(item: Item, sellerId: String) boolean
+        +findById(id: String) Item
+    }
+
+    class BidTransactionDAO {
+        +save(auctionId, bidderId, amount) boolean
+        +findWinner(auctionId: String) String[]
+    }
+
+    %% ==========================================
+    %% NETWORK LAYER (SOCKET) - [BỔ SUNG MỚI]
+    %% ==========================================
+    class AuctionServer {
+        -port: int
+        -clients: List~ClientHandler~
+        +start() void
+        +broadcast(data: Object) void
+    }
+
+    class ClientHandler {
+        <<Runnable>>
+        -socket: Socket
+        -server: AuctionServer
+        +run() void
+        +send(data: Object) void
+        -handleRequest(request: Object) void
+    }
+
+    class AuctionClient {
+        -socket: Socket
+        -isRunning: boolean
+        +connect(host: String, port: int) void
+        +send(data: Object) void
+        -listen() void
+    }
+
+    %% ==========================================
+    %% MANAGEMENT & APP LAYER
+    %% ==========================================
     class Main {
         +start(primaryStage: Stage) void
         +main(args: String[])$ void
@@ -85,6 +155,7 @@ class Entity {
         -primaryStage: Stage
         +SceneManager(primaryStage: Stage)
         +showLogin() void
+        +showDashboard() void
     }
 
     class AppState {
@@ -92,10 +163,9 @@ class Entity {
         -instance: AppState$
         -currentUser: User
         -sceneManager: SceneManager
+        -client: AuctionClient
         -auctionList: ObservableList~Auction~
         +getInstance()$ AppState
-        +setCurrentUser(user: User) void
-        +getCurrentUser() User
     }
 
     class AuctionManager {
@@ -104,10 +174,12 @@ class Entity {
         -auctions: List~Auction~
         +getInstance()$ AuctionManager
         +addAuction(Auction) void
-        +getAuctionById(id: String) Auction
+        +processBid(auctionId, newPrice, bidder) boolean
     }
 
-    %% --- RELATIONSHIPS ---
+    %% ==========================================
+    %% RELATIONSHIPS (LIÊN KẾT)
+    %% ==========================================
     
     %% Kế thừa (Inheritance)
     Entity <|-- User
@@ -124,7 +196,7 @@ class Entity {
     
     Subject <|.. Auction
     
-    %% Thành phần và Hiệp tác (Composition & Association)
+    %% Thành phần & Hiệp tác (Composition & Association)
     Auction "1" *-- "1" Item : contains
     Auction "1" *-- "0..*" BidTransaction : tracks
     BidTransaction "0..*" --> "1" User : placed by
@@ -132,11 +204,25 @@ class Entity {
     ItemFactory ..> Item : creates
     
     AuctionManager "1" o-- "0..*" Auction : manages all
-    AppState --> User : session user
+    AppState --> User : holds session
     AppState --> SceneManager : controls UI
+    AppState "1" *-- "1" AuctionClient : uses
     
     Main ..> SceneManager : initializes
     Main ..> AppState : configures
     
-    %% Dependency
-    Auction ..> Observer : notifies changes
+    %% Network Relationships (Server Side)
+    AuctionServer "1" *-- "0..*" ClientHandler : maintains
+    ClientHandler ..> AuctionManager : calls logic
+    
+    %% Network Relationships (Client Side)
+    AuctionClient ..> AppState : updates UI list
+    
+    %% Database Relationships
+    UserDAO ..> DatabaseConnection : uses
+    AuctionDAO ..> DatabaseConnection : uses
+    ItemDAO ..> DatabaseConnection : uses
+    BidTransactionDAO ..> DatabaseConnection : uses
+    
+    AuctionManager ..> AuctionDAO : syncs with
+    ClientHandler ..> BidTransactionDAO : backups
