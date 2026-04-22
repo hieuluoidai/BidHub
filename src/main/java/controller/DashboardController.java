@@ -63,11 +63,16 @@ public class DashboardController {
         // Lấy danh sách từ AppState để hiển thị lên Table
         ObservableList<Auction> masterData = AppState.getInstance().getAuctionList();
         FilteredList<Auction> filteredData = new FilteredList<>(masterData, p -> true);
-        
+
+        // Thêm ListChangeListener để FORCE REFRESH TableView mỗi khi
+        masterData.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
+            auctionTable.refresh();
+        });
+
         // Khi tìm kiếm or đổi loại hàng, bảng sẽ tự động update
         textSearch.textProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
         comboFilter.valueProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
-        
+
         auctionTable.setItems(filteredData);
 
         // Kích hoạt các thiết lập bổ trợ cho giao diện
@@ -83,14 +88,14 @@ public class DashboardController {
     private void updatePredicate(FilteredList<Auction> filteredData) {
         filteredData.setPredicate(auction -> {
             if (auction == null || auction.getItem() == null) return false;
-            
+
             String search = textSearch.getText().toLowerCase().trim();
             String filter = comboFilter.getValue();
-            
+
             // Khớp loại hàng và tên thì hiển thị
             boolean matchesType = filter.equals("All") || auction.getItem().getItemType().equalsIgnoreCase(filter);
             boolean matchesName = auction.getItem().getItemName().toLowerCase().contains(search);
-            
+
             return matchesType && matchesName;
         });
     }
@@ -154,7 +159,7 @@ public class DashboardController {
     @FXML
     void handleCreateNewSession() {
         openPopup("/view/create_session.fxml", "Create New Auction Session");
-        loadAuctionData(); // Làm mới bảng sau khi đóng Pop-up
+        loadAuctionData();
     }
 
     /**
@@ -164,7 +169,7 @@ public class DashboardController {
     void handleBid() {
         Auction selected = auctionTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
-        
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/bid_dialog.fxml"));
             Parent root = loader.load();
@@ -180,7 +185,7 @@ public class DashboardController {
     void handleViewDetails() {
         Auction selected = auctionTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
-        
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_details.fxml"));
             Parent root = loader.load();
@@ -208,6 +213,6 @@ public class DashboardController {
         stage.setScene(new Scene(root));
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
-        auctionTable.refresh(); // Cập nhật lại giao diện bảng sau khi đóng cửa sổ phụ
+        auctionTable.refresh();
     }
 }

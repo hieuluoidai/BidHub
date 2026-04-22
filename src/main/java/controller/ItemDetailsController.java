@@ -54,7 +54,7 @@ public class ItemDetailsController {
         if (item instanceof Electronics elec) {
             extraInfoText = "Hãng sản xuất: " + elec.getBrand();
         } else if (item instanceof Art art) {
-            extraInfoText = "Tác giả: " + art.getAuthor();
+            extraInfoText = "Tác giả: " + art.getArtist();
         } else if (item instanceof Vehicle veh) {
             extraInfoText = "Hãng xe: " + veh.getBrand();
         }
@@ -75,7 +75,6 @@ public class ItemDetailsController {
      */
     @FXML
     void handleCancel() {
-        // Lấy cửa sổ hiện tại và đóng lại
         Stage stage = (Stage) lblItemName.getScene().getWindow();
         stage.close();
     }
@@ -97,16 +96,15 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             stage.setTitle("Đặt giá cho " + auction.getItemName());
             stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL); 
+            stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
 
             // Update lại giao diện sau khi bid
-            // Sau khi đóng Pop-up đặt giá, update số tiền mới ngay lập tức trên màn hình viewDetails
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
             lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
 
             if (auction.getHighestBid() != null) {
                 lblHighestBidder.setText(auction.getHighestBid().getBidder().getUsername());
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
                 lblBidTime.setText(auction.getHighestBid().getTimestamp().format(formatter));
             }
             

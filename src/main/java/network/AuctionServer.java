@@ -13,7 +13,7 @@ import model.manager.AuctionManager;
  */
 public class AuctionServer {
     private final int port;
-    
+
     // Danh sách quản lý các kết nối Client đang hoạt động
     private final List<ClientHandler> clients = new ArrayList<>();
     private final List<ClientHandler> observers = new ArrayList<>();
@@ -39,12 +39,10 @@ public class AuctionServer {
         }
     }
 
-    // XÓA TOÀN BỘ METHOD startAuctionLifecycleMonitor() ở đây
-
     /**
      * Phát sóng dữ liệu tới tất cả Client đang kết nối (Real-time Update).
      */
-    public synchronized void broadcast(Object data) {
+    public void broadcast(Object data) {
         synchronized (clients) {
             // Remove các client đã mất kết nối trước khi gửi
             clients.removeIf(client -> !client.isAlive());
@@ -71,7 +69,7 @@ public class AuctionServer {
         for (Auction a : savedAuctions) {
             String[] winnerData = bidDao.findWinner(a.getAuctionId());
             if (winnerData != null) {
-                a.getItem().setCurrentPrice(Double.parseDouble(winnerData[1]));
+                a.getItem().setStartingPrice(Double.parseDouble(winnerData[1]));
             }
             AuctionManager.getInstance().addAuction(a);
         }

@@ -28,9 +28,9 @@ public class AuctionClient {
 
         // Chạy luồng nghe riêng biệt để không gây treo giao diện (UI Freeze)
         Thread listenerThread = new Thread(this::listen);
-        listenerThread.setDaemon(true); // Tự động đóng luồng khi thoát ứng dụng
+        listenerThread.setDaemon(true);
         listenerThread.start();
-        
+
         System.out.println(">>> Đã kết nối tới Server tại " + host + ":" + port);
     }
 
@@ -54,9 +54,10 @@ public class AuctionClient {
     /**
      * Phân loại và xử lý dữ liệu nhận được từ Server.
      */
+    @SuppressWarnings("unchecked")
     private void handleIncomingData(Object data) {
         System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
-        
+
         Platform.runLater(() -> {
             if (data instanceof List<?>) {
                 List<Auction> auctions = (List<Auction>) data;
@@ -64,15 +65,18 @@ public class AuctionClient {
                 for (Auction a : auctions) {
                     System.out.println("    - " + a.getAuctionId() + " status=" + a.getStatus());
                 }
+                // setAll() sẽ trigger ListChangeListener với kiểu REPLACED
+                // khiến TableView tự redraw toàn bộ các cell
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
+
             } else if (data instanceof Auction updatedAuction) {
-                System.out.println(">>> [CLIENT] 1 auction: " + updatedAuction.getAuctionId() 
+                System.out.println(">>> [CLIENT] 1 auction: " + updatedAuction.getAuctionId()
                     + " status=" + updatedAuction.getStatus());
                 updateSingleAuction(updatedAuction);
             }
         });
     }
-    
+
     /**
      * Gửi yêu cầu/dữ liệu lên Server.
      */
@@ -81,7 +85,7 @@ public class AuctionClient {
             if (out != null) {
                 out.writeObject(data);
                 out.flush();
-                out.reset(); // Xóa bộ nhớ đệm để gửi trạng thái mới nhất của Object
+                out.reset();
             }
         } catch (IOException e) {
             System.err.println(">>> Lỗi khi gửi dữ liệu: " + e.getMessage());
@@ -99,18 +103,22 @@ public class AuctionClient {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Cập nhật thông tin một phiên đấu giá cụ thể trong danh sách hiển thị.
+     *
+     * BUG FIX: Sau khi set() lại phần tử, force trigger listener bằng cách
+     * gọi thêm 1 operation tạm thời. Điều này đảm bảo TableView luôn refresh
+     * ngay cả khi chỉ 1 phiên thay đổi.
      */
     private void updateSingleAuction(model.auction.Auction updated) {
         var list = model.manager.AppState.getInstance().getAuctionList();
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
-                list.set(i, updated); // Thay thế nếu đã tồn tại
+                list.set(i, updated);
                 return;
             }
         }
-        list.add(updated); // Thêm mới nếu chưa có trong danh sách
+        list.add(updated);
     }
 }

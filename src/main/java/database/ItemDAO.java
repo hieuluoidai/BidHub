@@ -53,7 +53,7 @@ public class ItemDAO {
             if (item instanceof Electronics e) {
                 stmt.setString(7, e.getBrand());
             } else if (item instanceof Art a) {
-                stmt.setString(9, a.getAuthor());
+                stmt.setString(9, a.getArtist());
             } else if (item instanceof Vehicle v) {
                 stmt.setString(7, v.getBrand());
             }
@@ -105,7 +105,7 @@ public class ItemDAO {
     }
 
     /**
-     * Xóa một sản phẩm khỏi DB. 
+     * Xóa một sản phẩm khỏi DB.
      */
     public boolean delete(String itemId) {
         String sql = "DELETE FROM items WHERE item_id = ?";
@@ -131,12 +131,12 @@ public class ItemDAO {
         double startingPrice = rs.getDouble("starting_price");
         
         // Dùng item_type để quyết định sẽ gọi Constructor nào
-        String itemType      = rs.getString("item_type").toUpperCase(); 
+        String itemType      = rs.getString("item_type").toUpperCase();
 
         return switch (itemType) {
             // Nếu là đồ điện tử, lấy thêm cột 'brand'
             case "ELECTRONICS" -> new Electronics(itemId, itemName, description, startingPrice, rs.getString("brand"));
-            // Nếu là nghệ thuật, lấy cột 'artist'
+            // Nếu là đồ điện tử, lấy thêm cột 'artist'
             case "ART"         -> new Art(itemId, itemName, description, startingPrice, rs.getString("artist"));
             // Nếu là xe cộ, lấy cột 'brand'
             case "VEHICLE"     -> new Vehicle(itemId, itemName, description, startingPrice, rs.getString("brand"));

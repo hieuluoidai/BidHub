@@ -56,7 +56,10 @@ public class AdminController {
         ObservableList<Auction> auctions = AppState.getInstance().getAuctionList();
         auctionTable.setItems(auctions);
 
-        auctions.addListener((javafx.collections.ListChangeListener<Auction>) c -> updateAuctionStats());
+        auctions.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
+            updateAuctionStats();
+            auctionTable.refresh();
+        });
 
         loadUserData();
         updateAuctionStats();

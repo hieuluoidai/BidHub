@@ -20,9 +20,8 @@ public class Auction extends Entity implements Serializable, Subject {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // Danh sách observer đăng ký theo dõi phiên này
-    // transient để không serialize danh sách observer qua socket
-    private transient List<Observer> observers = new ArrayList<>();
+    // Danh sách observer đăng ký theo dõi phiên này.
+    private transient List<Observer> observers;
 
     public Auction(String id, Item item, LocalDateTime startTime, LocalDateTime endTime) {
         super(id);
@@ -34,12 +33,16 @@ public class Auction extends Entity implements Serializable, Subject {
         this.observers  = new ArrayList<>();
     }
 
-    // ----------------------------------------------------------------
-    // Subject interface
-    // ----------------------------------------------------------------
+    private void readObject(java.io.ObjectInputStream in)
+            throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.observers = new ArrayList<>();
+    }
 
+    // Subject interface
     @Override
     public void attach(Observer observer) {
+        if (observers == null) observers = new ArrayList<>();
         if (!observers.contains(observer)) {
             observers.add(observer);
         }
@@ -47,11 +50,12 @@ public class Auction extends Entity implements Serializable, Subject {
 
     @Override
     public void detach(Observer observer) {
-        observers.remove(observer);
+        if (observers != null) observers.remove(observer);
     }
 
     @Override
     public void notifyObservers(String message) {
+        if (observers == null) return;
         // Tạo bản sao để tránh ConcurrentModificationException
         // nếu observer tự detach trong lúc nhận thông báo
         List<Observer> snapshot = new ArrayList<>(observers);
@@ -102,10 +106,8 @@ public class Auction extends Entity implements Serializable, Subject {
         notifyObservers("[STATUS] Phiên " + getAuctionId() + " → " + status);
     }
 
-    // ----------------------------------------------------------------
-    // Getters (giữ nguyên như cũ)
-    // ----------------------------------------------------------------
-
+    // Getters
+    
     public double getCurrentPrice() {
         return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
     }
