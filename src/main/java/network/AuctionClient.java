@@ -55,18 +55,20 @@ public class AuctionClient {
      * Phân loại và xử lý dữ liệu nhận được từ Server.
      */
     private void handleIncomingData(Object data) {
+        System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
+        
         Platform.runLater(() -> {
             if (data instanceof List<?>) {
-                @SuppressWarnings("unchecked")
-				List<Auction> auctions = (List<Auction>) data;
+                List<Auction> auctions = (List<Auction>) data;
+                System.out.println(">>> [CLIENT] Danh sách " + auctions.size() + " phiên");
+                for (Auction a : auctions) {
+                    System.out.println("    - " + a.getAuctionId() + " status=" + a.getStatus());
+                }
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
             } else if (data instanceof Auction updatedAuction) {
+                System.out.println(">>> [CLIENT] 1 auction: " + updatedAuction.getAuctionId() 
+                    + " status=" + updatedAuction.getStatus());
                 updateSingleAuction(updatedAuction);
-            } else if (data instanceof String msg) {
-            	if (msg.startsWith("BID_ERROR:")) {
-            	    String errorText = msg.substring("BID_ERROR:".length());
-            	    utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Đặt giá thất bại", errorText);
-            	}
             }
         });
     }

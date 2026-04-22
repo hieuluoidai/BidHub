@@ -15,7 +15,6 @@ public class DatabaseConnection {
     private static final String USERNAME = "root";     // Tên tài khoản MySQL
     private static final String PASSWORD = "password"; // Mật khẩu
 
-    // Biến tĩnh lưu trữ instance duy nhất của class này
     private static DatabaseConnection instance;
     // Biến lưu trữ đường truyền thực tế đến MySQL
     private Connection connection;
@@ -63,7 +62,7 @@ public class DatabaseConnection {
     }
 
     /**
-     * Dọn dẹp: Đóng kết nối khi Server chuẩn bị tắt để giải phóng tài nguyên cho máy tính.
+     * Đóng kết nối khi Server chuẩn bị tắt để giải phóng tài nguyên cho máy tính.
      */
     public void closeConnection() {
         try {

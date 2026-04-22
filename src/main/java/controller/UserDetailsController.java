@@ -31,10 +31,9 @@ public class UserDetailsController {
 
     public void setUserData(User user) {
         if (user == null) return;
-
-        // Avatar: chữ cái đầu của username
+        
         String firstChar = user.getUsername().substring(0, 1).toUpperCase();
-        lblAvatar.setText(firstChar);
+        lblAvatar.setText(firstChar); // Chữ cái đầu của username
 
         lblUsername.setText(user.getUsername());
         lblUserId  .setText(user.getUserId());
@@ -68,17 +67,24 @@ public class UserDetailsController {
         }
     }
 
-    // ---- Thống kê theo từng role ----
+    // Thống kê theo từng role
 
     private void loadSellerStats(User user) {
-        List<Auction> all = new AuctionDAO().findAll();
+        // 1. Lấy tập ID phiên thuộc seller này
+        java.util.Set<String> ownedIds = 
+            new database.AuctionDAO().getAuctionIdsBySeller(user.getUserId());
 
-        // Đếm phiên seller này tạo (cần query chính xác – xem note dưới)
-        long totalCreated = countAuctionsBySeller(user.getUserId());
-        long running      = 0;
-        long finished     = 0;
+        long totalCreated = ownedIds.size();
+
+        // 2. Lấy list phiên realtime từ AppState
+        java.util.List<Auction> all = new java.util.ArrayList<>(
+            model.manager.AppState.getInstance().getAuctionList()
+        );
+
+        // 3. Đếm RUNNING và FINISHED nhưng chỉ cho phiên của seller này
+        long running = 0, finished = 0;
         for (Auction a : all) {
-            if (!isOwnedBy(a, user.getUserId())) continue;
+            if (!ownedIds.contains(a.getAuctionId())) continue;
             if      ("RUNNING" .equals(a.getStatus())) running++;
             else if ("FINISHED".equals(a.getStatus())) finished++;
         }
@@ -95,8 +101,9 @@ public class UserDetailsController {
 
     private void loadBidderStats(User user) {
         BidTransactionDAO bidDao = new BidTransactionDAO();
-        int totalBids = bidDao.countBidsByBidderId(user.getUserId());
-        int totalWon  = bidDao.countWinsByBidderId(user.getUserId());
+        int totalBids    = bidDao.countBidsByBidderId(user.getUserId());
+        int totalWon     = bidDao.countWinsByBidderId(user.getUserId());
+        int totalActive  = bidDao.countActiveParticipations(user.getUserId());
 
         lblStat1Label.setText("Lượt bid");
         lblStat1Value.setText(String.valueOf(totalBids));
@@ -105,11 +112,15 @@ public class UserDetailsController {
         lblStat2Value.setText(String.valueOf(totalWon));
 
         lblStat3Label.setText("Đang tham gia");
-        lblStat3Value.setText("–");  // có thể bổ sung sau
+        lblStat3Value.setText(String.valueOf(totalActive));
     }
 
     private void loadAdminStats(User user) {
-        List<Auction> all = new AuctionDAO().findAll();
+        // Lấy danh sách từ AppState (đã sync với server qua socket)
+        // thay vì từ DB để có trạng thái realtime
+        java.util.List<Auction> all = new java.util.ArrayList<>(
+            model.manager.AppState.getInstance().getAuctionList()
+        );
 
         lblStat1Label.setText("Tổng phiên");
         lblStat1Value.setText(String.valueOf(all.size()));

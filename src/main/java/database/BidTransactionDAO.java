@@ -75,12 +75,11 @@ public class BidTransactionDAO {
 
     /**
      * Tìm ra người chiến thắng của một phiên đấu giá đã kết thúc.
-     * Tiêu chí: Giá cao nhất. Nếu có 2 người cùng giá, ai bid trước người đó thắng.
      */
     public String[] findWinner(String auctionId) {
-        // ORDER BY bid_amount DESC: Xếp người trả giá cao nhất lên đầu.
-        // ORDER BY bid_time ASC: Nếu trùng giá, ai bid trước thì xếp trên.
-        // LIMIT 1: Chỉ lấy đúng 1 người đứng trên cùng danh sách.
+        // Xếp người trả giá cao nhất lên đầu.
+        // Nếu trùng giá, ai bid trước thì xếp trên.
+        // Chỉ lấy đúng 1 người đứng trên cùng danh sách.
         String sql = """
                 SELECT bidder_id, bid_amount
                 FROM bid_transactions
@@ -106,7 +105,7 @@ public class BidTransactionDAO {
     }
 
     /**
-     * Đếm tổng số lượt đã bidtrong một phiên cụ thể.
+     * Đếm tổng số lượt đã bid trong một phiên cụ thể.
      */
     public int countBidsByAuctionId(String auctionId) {
         String sql = "SELECT COUNT(*) FROM bid_transactions WHERE auction_id = ?";
@@ -150,6 +149,25 @@ public class BidTransactionDAO {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
             System.err.println("Lỗi đếm phiên thắng: " + e.getMessage());
+        }
+        return 0;
+    }
+    
+    public int countActiveParticipations(String bidderId) {
+        // Đếm số phiên RUNNING/OPEN mà bidder này đã từng bid
+        String sql = """
+                SELECT COUNT(DISTINCT bt.auction_id)
+                FROM bid_transactions bt
+                INNER JOIN auctions a ON bt.auction_id = a.auction_id
+                WHERE bt.bidder_id = ?
+                  AND a.status IN ('OPEN', 'RUNNING')
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, bidderId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            System.err.println("Lỗi đếm phiên đang tham gia: " + e.getMessage());
         }
         return 0;
     }

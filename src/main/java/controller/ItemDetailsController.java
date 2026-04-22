@@ -60,7 +60,7 @@ public class ItemDetailsController {
         }
         lblExtraInfo.setText(extraInfoText);
 
-        // Hiển thị người đang dânx đầu
+        // Hiển thị người đang dẫn đầu
         if (auction.getHighestBid() != null) {
             lblHighestBidder.setText(auction.getHighestBid().getBidder().getUsername());
             lblBidTime.setText(auction.getHighestBid().getTimestamp().format(formatter));
@@ -81,7 +81,7 @@ public class ItemDetailsController {
     }
 
     /**
-     * Mở trực tiếp hộp thoại Bid ngay tại màn hình chi tiết.
+     * Mở trực tiếp hộp thoại Bid ngay tại màn hình viewDetails.
      */
     @FXML
     public void handleOpenBidDialog() {
@@ -101,7 +101,7 @@ public class ItemDetailsController {
             stage.showAndWait();
 
             // Update lại giao diện sau khi bid
-            // Sau khi đóng Pop-up đặt giá, ta cần update số tiền mới ngay lập tức trên màn hình viewDetails
+            // Sau khi đóng Pop-up đặt giá, update số tiền mới ngay lập tức trên màn hình viewDetails
             lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
 
             if (auction.getHighestBid() != null) {

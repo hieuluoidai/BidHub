@@ -72,36 +72,41 @@ public class AuctionManager {
     }
     
     /**
-     * Tự động update trạng thái phiên t(Real-time update).
+     * Tự động update trạng thái phiên (Real-time update).
      */
     public void startAutoClosureService(network.AuctionServer server) {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        database.AuctionDAO auctionDao = new database.AuctionDAO();
         
         scheduler.scheduleAtFixedRate(() -> {
             synchronized (auctions) {
                 LocalDateTime now = LocalDateTime.now();
                 for (Auction auction : auctions) {
+                    
                     // 1. Tự động set trạng thái RUNNING khi đến giờ bắt đầu
                     if ("OPEN".equals(auction.getStatus()) && now.isAfter(auction.getStartTime())) {
                         auction.setStatus("RUNNING");
+                        auctionDao.updateStatus(auction.getAuctionId(), "RUNNING"); // ← THÊM
                         System.out.println(">>> [BẮT ĐẦU] Phiên " + auction.getAuctionId());
-                        server.broadcast(auction); // Update ngay lập tức cho tất cả Client
+                        server.broadcast(auction);
                     }
                     
                     // 2. Tự động kết thúc phiên khi hết thời gian
                     if ("RUNNING".equals(auction.getStatus()) && now.isAfter(auction.getEndTime())) {
                         auction.setStatus("FINISHED");
+                        auctionDao.updateStatus(auction.getAuctionId(), "FINISHED"); // ← THÊM
                         
                         String winner = (auction.getHighestBid() != null) 
                                         ? auction.getHighestBid().getBidder().getUsername() 
                                         : "Không có";
-                        System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId() + " - Người thắng: " + winner);
+                        System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId() 
+                                           + " - Người thắng: " + winner);
                         
-                        server.broadcast(auction); // Thông báo kết quả cuối cùng cho các Client
+                        server.broadcast(auction);
                     }
                 }
             }
-        }, 0, 1, TimeUnit.SECONDS); // Kiểm tra chính xác mỗi giây một lần
+        }, 0, 1, TimeUnit.SECONDS);
     }
     
     /**

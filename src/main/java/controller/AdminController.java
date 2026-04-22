@@ -81,7 +81,7 @@ public class AdminController {
             return row;
         });
 
-        // ⭐ YÊU CẦU SERVER GỬI LẠI TOÀN BỘ PHIÊN ĐẤU GIÁ
+        // Yêu cầu server gửi lại danh sách đấu giá
         // Vì socket vừa mới kết nối, server chưa auto-push dữ liệu
         try {
             AppState.getInstance().getClient().send("REFRESH_DATA");
@@ -156,8 +156,6 @@ public class AdminController {
         }
     }
 
-    // ----- Chức năng bổ sung -----
-
     /** Mở cửa sổ chi tiết phiên đấu giá (double-click hoặc nút View Details) */
     private void openItemDetails(Auction auction) {
         if (auction == null) return;
@@ -183,7 +181,6 @@ public class AdminController {
     @FXML
     void handleViewDetails() {
         // Kiểm tra tab đang mở để quyết định xem chi tiết phiên hay chi tiết user
-        // Cần thêm fx:id="mainTabPane" vào TabPane trong FXML
 
         if (mainTabPane != null && mainTabPane.getSelectionModel().getSelectedIndex() == 1) {
             // Tab 1 = Quản lý người dùng

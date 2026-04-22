@@ -74,7 +74,7 @@ public class CreateSessionController {
             String desc = textDescription.getText();
             String extraInfo = textExtraInfo.getText();
 
-            // 2. Kiểm tra tính hợp lệ (Validation) - Không được để trống thông tin quan trọng
+            // 2. Kiểm tra tính hợp lệ (Validation)
             if (type == null) {
                 showError("Vui lòng chọn loại sản phẩm!");
                 return;
@@ -131,7 +131,7 @@ public class CreateSessionController {
     }
 
     /**
-     * Tiện ích: Hiện thông báo lỗi màu đỏ.
+     * Hiện thông báo lỗi màu đỏ.
      */
     private void showError(String msg) {
         labelError.setTextFill(Color.RED);
@@ -139,7 +139,7 @@ public class CreateSessionController {
     }
 
     /**
-     * Tiện ích: Tìm và đóng cửa sổ hiện tại.
+     * Tìm và đóng cửa sổ hiện tại.
      */
     private void closeWindow() {
         // Lấy Stage thông qua ô nhập tên item.

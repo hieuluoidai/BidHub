@@ -52,13 +52,10 @@ public class ItemDAO {
             // Override đúng cột theo từng loại
             if (item instanceof Electronics e) {
                 stmt.setString(7, e.getBrand());
-                // Nếu Electronics có warranty thì set thêm: stmt.setInt(8, e.getWarrantyMonths());
             } else if (item instanceof Art a) {
                 stmt.setString(9, a.getAuthor());
-                // Nếu Art có material: stmt.setString(10, a.getMaterial());
             } else if (item instanceof Vehicle v) {
                 stmt.setString(7, v.getBrand());
-                // Nếu Vehicle có model/year: stmt.setString(11, v.getModel()); stmt.setInt(12, v.getManufactureYear());
             }
 
             stmt.executeUpdate();
@@ -109,7 +106,6 @@ public class ItemDAO {
 
     /**
      * Xóa một sản phẩm khỏi DB. 
-     * (Thường dùng khi chủ phòng muốn hủy đấu giá).
      */
     public boolean delete(String itemId) {
         String sql = "DELETE FROM items WHERE item_id = ?";
@@ -134,7 +130,7 @@ public class ItemDAO {
         String description   = rs.getString("description");
         double startingPrice = rs.getDouble("starting_price");
         
-        // Dùng item_type (được lưu bằng chữ in hoa trong DB) để quyết định sẽ gọi Constructor nào
+        // Dùng item_type để quyết định sẽ gọi Constructor nào
         String itemType      = rs.getString("item_type").toUpperCase(); 
 
         return switch (itemType) {

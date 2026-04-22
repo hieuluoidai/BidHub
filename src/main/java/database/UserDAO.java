@@ -66,7 +66,7 @@ public class UserDAO {
     }
 
     /**
-     * Xác thực đăng nhập: Kiểm tra cả tên đăng nhập và mật khẩu.
+     * Xác thực đăng nhập
      */
     public User login(String username, String password) {
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
@@ -98,7 +98,7 @@ public class UserDAO {
             stmt.executeUpdate(); // Thực thi lệnh chèn dữ liệu
             return true;
         } catch (SQLException e) {
-            // Mã lỗi 1062 là Duplicate Entry (Trùng lặp dữ liệu duy nhất trong MySQL)
+            // Mã lỗi 1062 là Duplicate Entry
             if (e.getErrorCode() == 1062) {
                 System.err.println("Lỗi: Tên đăng nhập hoặc Email này đã có người dùng rồi!");
             } else {

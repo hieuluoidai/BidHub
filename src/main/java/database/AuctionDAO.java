@@ -14,7 +14,7 @@ import java.util.List;
 public class AuctionDAO {
 
     private final Connection conn;
-    // Khai báo ItemDAO để tìm kiếm thông tin món hàng
+    // Khai báo ItemDAO
     private final ItemDAO itemDAO; 
 
     /**
@@ -29,17 +29,17 @@ public class AuctionDAO {
      * Lưu một phiên đấu giá mới vào hệ thống.
      */
     public boolean save(Auction auction) {
-        // Chỉ lưu ID của món hàng (item_id) chứ không lưu toàn bộ thông tin món hàng vào bảng
+        // Chỉ lưu item_id chứ không lưu toàn bộ thông tin món hàng vào bảng
         String sql = """
                 INSERT INTO auctions (auction_id, item_id, status, start_time, end_time)
                 VALUES (?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, auction.getAuctionId());
-            stmt.setString(2, auction.getItem().getItemId()); // Trích xuất ID từ đối tượng Item
+            stmt.setString(2, auction.getItem().getItemId()); // Get ID từ đối tượng Item
             stmt.setString(3, auction.getStatus());
             
-            // Ép kiểu thời gian: Đổi từ LocalDateTime của Java sang chuẩn Timestamp của MySQL
+            // Ép kiểu: Đổi từ LocalDateTime của Java sang Timestamp của MySQL
             stmt.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
             stmt.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
             
@@ -50,24 +50,26 @@ public class AuctionDAO {
             return false;
         }
     }
-
+    
     /**
-     * Cập nhật trạng thái của phiên đấu giá
+     * Cập nhật trạng thái của một phiên đấu giá trong DB.
+     * Được gọi bởi AuctionManager khi phiên chuyển OPEN→RUNNING hoặc RUNNING→FINISHED.
      */
     public boolean updateStatus(String auctionId, String newStatus) {
         String sql = "UPDATE auctions SET status = ? WHERE auction_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, newStatus);
             stmt.setString(2, auctionId);
-            return stmt.executeUpdate() > 0;
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("Lỗi cập nhật trạng thái: " + e.getMessage());
+            System.err.println("Lỗi cập nhật trạng thái phiên: " + e.getMessage());
             return false;
         }
     }
 
     /**
-     * Lấy toàn bộ danh sách phiên đấu giá (Sẽ dùng cho tính năng Quản lý của Admin).
+     * Lấy toàn bộ danh sách phiên đấu giá
      */
     public List<Auction> findAll() {
         List<Auction> auctions = new ArrayList<>();
@@ -144,11 +146,8 @@ public class AuctionDAO {
         Auction auction = new Auction(auctionId, item, startTime, endTime);
         auction.setStatus(status);
 
-        // =========================================================================
-        // PHẦN CODE BỔ SUNG ĐỂ VÁ LỖI MẤT DỮ LIỆU NGƯỜI ĐẤU GIÁ
-        // =========================================================================
         database.BidTransactionDAO bidDAO = new database.BidTransactionDAO();
-        // Gọi hàm findWinner bạn đã viết sẵn để lấy [bidder_id, bid_amount]
+        // Gọi hàm findWinner để lấy [bidder_id, bid_amount]
         String[] winnerData = bidDAO.findWinner(auctionId); 
 
         if (winnerData != null) {
@@ -157,7 +156,7 @@ public class AuctionDAO {
 
             // Tìm đối tượng User từ Database dựa vào bidderId
             database.UserDAO userDAO = new database.UserDAO();
-            model.user.User highestBidder = userDAO.findById(bidderId); // Giả sử UserDAO của bạn có hàm này
+            model.user.User highestBidder = userDAO.findById(bidderId);
 
             if (highestBidder != null) {
                 // Tái tạo lại đối tượng BidTransaction từ dữ liệu nạp lên
@@ -173,7 +172,7 @@ public class AuctionDAO {
     }
     
     public int countBySellerId(String sellerId) {
-        // Đếm số phiên của một seller (join qua bảng items vì auctions không lưu trực tiếp sellerId)
+        // Đếm số phiên của một seller
         String sql = """
             SELECT COUNT(*) FROM auctions a
             INNER JOIN items i ON a.item_id = i.item_id
@@ -187,5 +186,26 @@ public class AuctionDAO {
             System.err.println("Lỗi đếm phiên theo seller: " + e.getMessage());
         }
         return 0;
+    }
+    
+    public java.util.Set<String> getAuctionIdsBySeller(String sellerId) {
+        // Trả về tập ID các phiên thuộc seller này
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        String sql = """
+                SELECT a.auction_id
+                FROM auctions a
+                INNER JOIN items i ON a.item_id = i.item_id
+                WHERE i.seller_id = ?
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, sellerId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                ids.add(rs.getString("auction_id"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy danh sách phiên của seller: " + e.getMessage());
+        }
+        return ids;
     }
 }
