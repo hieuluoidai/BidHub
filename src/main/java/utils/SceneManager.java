@@ -17,15 +17,15 @@ public class SceneManager {
     }
 
     public void showLogin() {
-        switchScene("/view/login.fxml", "Hệ thống Đấu giá - Đăng nhập");
+        switchScene("/view/login.fxml", "BidHub - Đăng nhập");
     }
 
     public void showDashboard() {
-        switchScene("/view/dashboard.fxml", "Bảng điều khiển Đấu giá");
+        switchScene("/view/dashboard.fxml", "BidHub - Bảng điều khiển");
     }
     
     public void showAdminDashboard() {
-        switchScene("/view/admin_dashboard.fxml", "Admin Dashboard");
+        switchScene("/view/admin_dashboard.fxml", "BidHub - Admin Dashboard");
     }
 
     /**
