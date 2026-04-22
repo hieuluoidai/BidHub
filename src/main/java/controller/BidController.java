@@ -29,7 +29,8 @@ public class BidController {
     public void setAuctionData(Auction auction) {
         this.currentAuction = auction;
         labelItemName.setText("Sản phẩm: " + auction.getItemName());
-        labelCurrentPrice.setText("Giá hiện tại: $" + auction.getCurrentPrice());
+        // Dùng format %.2f để hiển thị giá đúng 2 chữ số thập phân thay vì toString mặc định
+        labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f", auction.getCurrentPrice()));
     }
 
     /**
@@ -47,6 +48,17 @@ public class BidController {
             }
 
             double amount = Double.parseDouble(amountStr);
+
+            if (amount <= 0) {
+                showError("Số tiền phải lớn hơn 0!");
+                return;
+            }
+
+            if (amount <= currentAuction.getCurrentPrice()) {
+                showError(String.format("Giá đặt phải cao hơn giá hiện tại ($%.2f)!", currentAuction.getCurrentPrice()));
+                return;
+            }
+
             User currentUser = AppState.getInstance().getCurrentUser();
 
             if (!(currentUser instanceof Bidder)) {
@@ -54,9 +66,9 @@ public class BidController {
                 return;
             }
 
-            // Chỉ gửi lệnh dạng String lên Server, KHÔNG tự validate ở đây
+            // Gửi lệnh dạng String lên Server
             // Format: "BID:<auctionId>:<amount>:<bidderId>"
-            String command = "BID:" 
+            String command = "BID:"
                 + currentAuction.getAuctionId() + ":"
                 + amount + ":"
                 + currentUser.getUserId();
@@ -74,10 +86,7 @@ public class BidController {
      */
     @FXML
     void handleCancel() {
-        // Lấy Stage (cửa sổ hiện tại) trực tiếp từ biến cancelButton
         Stage currentStage = (Stage) cancelButton.getScene().getWindow();
-        
-        // Đóng cửa sổ
         currentStage.close();
     }
 
@@ -86,15 +95,13 @@ public class BidController {
      */
     private void showError(String msg) {
         labelError.setText(msg);
-        labelError.setTextFill(javafx.scene.paint.Color.RED);
     }
 
     /**
-     * Tiện ích: Tìm Stage hiện tại từ sự kiện nhấn nút và đóng nó lại.
+     * Tiện ích: Đóng cửa sổ bid hiện tại.
      */
     private void closeStage() {
-        // Tìm Stage thông qua ô nhập giá tiền
-        Stage stage = (Stage) textBidAmount.getScene().getWindow();
+        Stage stage = (Stage) cancelButton.getScene().getWindow();
         stage.close();
     }
 }

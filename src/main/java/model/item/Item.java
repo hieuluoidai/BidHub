@@ -30,5 +30,5 @@ public abstract class Item extends Entity implements Serializable {
     public String getDescription()   { return description; }
     
     // Update giá hiện tại (thường dùng khi có người Bid mới)
-    public void setCurrentPrice(double price) { this.startingPrice = price; }
+    public void setStartingPrice(double price) { this.startingPrice = price; }
 }

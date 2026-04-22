@@ -18,8 +18,15 @@ public class LoginController {
 
     @FXML
     void handleLogin() {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
+        // Thêm trim() để tránh lỗi do người dùng vô tình nhập thêm dấu cách
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
+
+        // Kiểm tra rỗng
+        if (username.isEmpty() || password.isEmpty()) {
+            showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!");
+            return;
+        }
 
         UserDAO userDAO   = new UserDAO();
         User    foundUser = userDAO.login(username, password);

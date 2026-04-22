@@ -36,27 +36,26 @@ public class AuctionManager {
         }
     }
 
-    	// Tìm phiên đấu giá bằng Id
+    // Tìm phiên đấu giá bằng Id
     public synchronized Auction getAuctionById(String auctionId) {
         for (Auction auction : auctions) {
             if (auction.getAuctionId().equals(auctionId)) {
                 return auction;
             }
         }
-        return null; 
+        return null;
     }
-    
+
     // Xử lý bid đồng thời, ngăn chặn Race Condition.
     public synchronized boolean processBid(String auctionId, double newPrice, User bidder) {
         Auction auction = getAuctionById(auctionId);
-        
+
         if (auction == null) {
             System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
             return false;
         }
-        
+
         try {
-            // Kiểm tra giá và bid
             auction.placeBid(bidder, newPrice);
             return true;
         } catch (IllegalStateException | IllegalArgumentException e) {
@@ -64,57 +63,63 @@ public class AuctionManager {
             return false;
         }
     }
-    
 
     // Trả về copy List để bảo vệ List gốc (Encapsulation).
     public synchronized List<Auction> getAllAuctions() {
         return new ArrayList<>(this.auctions);
     }
-    
+
     /**
      * Tự động update trạng thái phiên (Real-time update).
      */
     public void startAutoClosureService(network.AuctionServer server) {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         database.AuctionDAO auctionDao = new database.AuctionDAO();
-        
+
         scheduler.scheduleAtFixedRate(() -> {
+            boolean hasChange = false;  // Đánh dấu có thay đổi để broadcast 1 lần duy nhất
+
             synchronized (auctions) {
                 LocalDateTime now = LocalDateTime.now();
                 for (Auction auction : auctions) {
-                    
+
                     // 1. Tự động set trạng thái RUNNING khi đến giờ bắt đầu
                     if ("OPEN".equals(auction.getStatus()) && now.isAfter(auction.getStartTime())) {
                         auction.setStatus("RUNNING");
-                        auctionDao.updateStatus(auction.getAuctionId(), "RUNNING"); // ← THÊM
+                        auctionDao.updateStatus(auction.getAuctionId(), "RUNNING");
                         System.out.println(">>> [BẮT ĐẦU] Phiên " + auction.getAuctionId());
-                        server.broadcast(auction);
+                        hasChange = true;
                     }
-                    
+
                     // 2. Tự động kết thúc phiên khi hết thời gian
                     if ("RUNNING".equals(auction.getStatus()) && now.isAfter(auction.getEndTime())) {
                         auction.setStatus("FINISHED");
-                        auctionDao.updateStatus(auction.getAuctionId(), "FINISHED"); // ← THÊM
-                        
-                        String winner = (auction.getHighestBid() != null) 
-                                        ? auction.getHighestBid().getBidder().getUsername() 
+                        auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
+
+                        String winner = (auction.getHighestBid() != null)
+                                        ? auction.getHighestBid().getBidder().getUsername()
                                         : "Không có";
-                        System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId() 
+                        System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
                                            + " - Người thắng: " + winner);
-                        
-                        server.broadcast(auction);
+                        hasChange = true;
                     }
                 }
             }
+
+            // Broadcast TOÀN BỘ danh sách ra ngoài block synchronized để tránh giữ lock lâu
+            if (hasChange) {
+                server.broadcast(getAllAuctions());
+            }
+
         }, 0, 1, TimeUnit.SECONDS);
     }
-    
+
     /**
      * Đồng bộ hóa dữ liệu phiên từ Database or Client gửi lên.
      */
     public synchronized void updateAuction(Auction updatedAuction) {
         if (updatedAuction == null) return;
-        
+
         for (int i = 0; i < auctions.size(); i++) {
             if (auctions.get(i).getAuctionId().equals(updatedAuction.getAuctionId())) {
                 auctions.set(i, updatedAuction);
