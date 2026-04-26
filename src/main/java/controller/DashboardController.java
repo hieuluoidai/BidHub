@@ -126,7 +126,7 @@ public class DashboardController {
      */
     private void setupTableEvents() {
         auctionTable.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2 && auctionTable.getSelectionModel().getSelectedItem() != null) {
+           if (e.getClickCount() == 2 && auctionTable.getSelectionModel().getSelectedItem() != null) {
                 handleViewDetails();
             }
         });

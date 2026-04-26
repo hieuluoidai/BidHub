@@ -42,45 +42,67 @@ public class BidController {
 
         try {
             String amountStr = textBidAmount.getText().trim();
-            if (amountStr.isEmpty()) {
-                showError("Vui lòng nhập số tiền!");
-                return;
-            }
+            if (amountStr.isEmpty()) { showError("Vui lòng nhập số tiền!"); return; }
 
             double amount = Double.parseDouble(amountStr);
-
-            if (amount <= 0) {
-                showError("Số tiền phải lớn hơn 0!");
-                return;
-            }
+            if (amount <= 0) { showError("Số tiền phải lớn hơn 0!"); return; }
 
             if (amount <= currentAuction.getCurrentPrice()) {
-                showError(String.format("Giá đặt phải cao hơn giá hiện tại ($%.2f)!", currentAuction.getCurrentPrice()));
+                showError(String.format("Giá đặt phải cao hơn giá hiện tại ($%.2f)!",
+                        currentAuction.getCurrentPrice()));
                 return;
             }
 
             User currentUser = AppState.getInstance().getCurrentUser();
-
             if (!(currentUser instanceof Bidder)) {
                 showError("Chỉ người mua (Bidder) mới có quyền đặt giá!");
                 return;
             }
 
-            // Gửi lệnh dạng String lên Server
-            // Format: "BID:<auctionId>:<amount>:<bidderId>"
+            // Đăng ký callback nhận BidResult trước khi gửi lệnh
+            AppState.getInstance().getClient().setBidResultCallback(result -> {
+                handleBidResult(result);
+                AppState.getInstance().getClient().setBidResultCallback(null);
+            });
+
             String command = "BID:"
-                + currentAuction.getAuctionId() + ":"
-                + amount + ":"
-                + currentUser.getUserId();
+                    + currentAuction.getAuctionId() + ":"
+                    + amount + ":"
+                    + currentUser.getUserId();
 
             AppState.getInstance().getClient().send(command);
-            closeStage();
+            setConfirmButtonEnabled(false); // Tránh double-click khi đang chờ
 
         } catch (NumberFormatException e) {
             showError("Số tiền không hợp lệ (phải là số)!");
         }
     }
 
+    private void handleBidResult(model.auction.BidResult result) {
+        setConfirmButtonEnabled(true);
+
+        switch (result.getStatus()) {
+            case SUCCESS:
+                closeStage();
+                utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Đặt giá thành công!", result.getMessage());
+                break;
+            case OUTBID:
+                labelCurrentPrice.setText(String.format(
+                        "Giá hiện tại: $%.2f", result.getCurrentPrice()));
+                showError("Bạn bị vượt giá! " + result.getMessage());
+                break;
+            case FAILURE:
+                showError(result.getMessage());
+                break;
+        }
+    }
+
+    private void setConfirmButtonEnabled(boolean enabled) {
+        javafx.scene.Node confirmBtn = cancelButton.getScene().lookup("#confirmButton");
+        if (confirmBtn instanceof javafx.scene.control.Button btn) {
+            btn.setDisable(!enabled);
+        }
+    }
     /**
      * Xử lý khi nhấn nút "Hủy" -> Đóng cửa sổ.
      */
