@@ -96,6 +96,8 @@ public class AuctionManager {
                         auction.setStatus("FINISHED");
                         auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
 
+                        model.manager.ConcurrentBidManager.getInstance()
+                                .releaseLock(auction.getAuctionId());
                         String winner = (auction.getHighestBid() != null)
                                         ? auction.getHighestBid().getBidder().getUsername()
                                         : "Không có";

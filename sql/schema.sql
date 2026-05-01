@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS bid_transactions (
     FOREIGN KEY (auction_id) REFERENCES auctions(auction_id) ON DELETE CASCADE,
     FOREIGN KEY (bidder_id)  REFERENCES users(user_id)    ON DELETE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_bid_auction_amount
+    ON bid_transactions (auction_id, bid_amount DESC);
+
+CREATE INDEX IF NOT EXISTS idx_bid_bidder
+    ON bid_transactions (bidder_id);
 
 -- ------------------------------------------------------------------------------
 -- 5. DỮ LIỆU MẪU

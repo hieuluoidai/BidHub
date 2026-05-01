@@ -15,7 +15,7 @@ public class Main extends Application {
     public void start(@SuppressWarnings("exports") Stage primaryStage) {
         try {
             // 1. Thiết lập các thuộc tính cơ bản cho cửa sổ chính (Main Stage)
-            primaryStage.setTitle("UET Auction System");
+            primaryStage.setTitle("BidHub");
             
             // Xử lý nạp icon ứng dụng (bọc try-catch để tránh crash nếu thiếu tài nguyên)
             try {

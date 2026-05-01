@@ -3,6 +3,7 @@ module online.auction.system {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;
+    requires mysql.connector.j;
 
     // Cho phép JavaFX truy cập vào các class trong package application và controller
     opens model.auction to javafx.base;

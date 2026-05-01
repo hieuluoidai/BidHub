@@ -91,38 +91,52 @@ public class ClientHandler implements Runnable {
                 send(AuctionManager.getInstance().getAllAuctions());
             }
             else if (msg.startsWith("BID:")) {
-                // Format mới: "BID:<auctionId>:<amount>:<bidderId>"
-                String[] parts = msg.split(":");
-                String auctionId = parts[1];
-                double newPrice  = Double.parseDouble(parts[2]);
-                String bidderId  = parts[3];
-
-                // Tìm đối tượng User thực từ DB (tránh dùng user từ client gửi lên)
-                User bidder = new database.UserDAO().findById(bidderId);
-                if (bidder == null) {
-                    send("ERROR: Không tìm thấy người dùng!");
-                    return;
-                }
-
-                // processBid là synchronized → an toàn đa luồng
-                boolean success = AuctionManager.getInstance()
-                                                .processBid(auctionId, newPrice, bidder);
-
-                if (success) {
-                    // Lưu DB
-                    Auction updated = AuctionManager.getInstance()
-                                                    .getAuctionById(auctionId);
-                    saveBidToDatabase(updated);
-
-                    // Broadcast kết quả mới cho tất cả client
-                    server.broadcast(AuctionManager.getInstance().getAllAuctions());
-                } else {
-                    // Gửi lỗi về riêng client này
-                    send("BID_ERROR:Giá đặt không hợp lệ hoặc phiên đã đóng!");
-                }
+                handleConcurrentBid(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xử lý bid đồng thời. Format: "BID:<auctionId>:<amount>:<bidderId>"
+     */
+    private void handleConcurrentBid(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 4) {
+            send(model.auction.BidResult.failure("?", 0, "Lệnh BID sai định dạng!"));
+            return;
+        }
+
+        String auctionId = parts[1];
+        double amount;
+        try {
+            amount = Double.parseDouble(parts[2]);
+        } catch (NumberFormatException e) {
+            send(model.auction.BidResult.failure(auctionId, 0, "Số tiền không hợp lệ!"));
+            return;
+        }
+        String bidderId = parts[3];
+
+        User bidder = new database.UserDAO().findById(bidderId);
+        if (bidder == null) {
+            send(model.auction.BidResult.failure(auctionId, amount, "Người dùng không tồn tại!"));
+            return;
+        }
+
+        model.auction.BidResult result =
+                model.manager.ConcurrentBidManager.getInstance().processBid(auctionId, amount, bidder);
+
+        System.out.printf(">>> [BID] %s $%.2f phiên %s → %s%n",
+                bidder.getUsername(), amount, auctionId, result.getStatus());
+
+        // Gửi kết quả riêng về client vừa bid
+        send(result);
+
+        if (result.isSuccess()) {
+            Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
+            if (updated != null) saveBidToDatabase(updated);
+            server.broadcast(AuctionManager.getInstance().getAllAuctions());
         }
     }
 

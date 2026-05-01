@@ -10,10 +10,15 @@ import model.auction.Auction;
  * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
  */
 public class AuctionClient {
+    private java.util.function.Consumer<model.auction.BidResult> bidResultCallback;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isRunning = false;
+
+    public void setBidResultCallback(java.util.function.Consumer<model.auction.BidResult> callback) {
+        this.bidResultCallback = callback;
+    }
 
     /**
      * Thiết lập kết nối tới Server và kích hoạt luồng lắng nghe dữ liệu.
@@ -58,23 +63,44 @@ public class AuctionClient {
     private void handleIncomingData(Object data) {
         System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
 
+        // Xử lý BidResult trước — phản hồi riêng cho lần bid vừa rồi
+        if (data instanceof model.auction.BidResult bidResult) {
+            System.out.println(">>> [CLIENT] BidResult: " + bidResult);
+            Platform.runLater(() -> {
+                if (bidResultCallback != null) {
+                    bidResultCallback.accept(bidResult);
+                } else {
+                    showBidResultAlert(bidResult);
+                }
+            });
+            return;
+        }
+
         Platform.runLater(() -> {
             if (data instanceof List<?>) {
                 List<Auction> auctions = (List<Auction>) data;
                 System.out.println(">>> [CLIENT] Danh sách " + auctions.size() + " phiên");
-                for (Auction a : auctions) {
-                    System.out.println("    - " + a.getAuctionId() + " status=" + a.getStatus());
-                }
-                // setAll() sẽ trigger ListChangeListener với kiểu REPLACED
-                // khiến TableView tự redraw toàn bộ các cell
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
 
             } else if (data instanceof Auction updatedAuction) {
                 System.out.println(">>> [CLIENT] 1 auction: " + updatedAuction.getAuctionId()
-                    + " status=" + updatedAuction.getStatus());
+                        + " status=" + updatedAuction.getStatus());
                 updateSingleAuction(updatedAuction);
             }
         });
+    }
+
+    private void showBidResultAlert(model.auction.BidResult result) {
+        javafx.scene.control.Alert.AlertType type = switch (result.getStatus()) {
+            case SUCCESS -> javafx.scene.control.Alert.AlertType.INFORMATION;
+            case OUTBID  -> javafx.scene.control.Alert.AlertType.WARNING;
+            case FAILURE -> javafx.scene.control.Alert.AlertType.ERROR;
+        };
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(type);
+        alert.setTitle("Kết quả đặt giá");
+        alert.setHeaderText(null);
+        alert.setContentText(result.getMessage());
+        alert.showAndWait();
     }
 
     /**
