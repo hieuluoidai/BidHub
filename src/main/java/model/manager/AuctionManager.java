@@ -9,6 +9,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
 
+import exception.AuctionClosedException;
+import exception.InvalidBidException;
+
 /**
  * Quản lý và điều hành toàn hệ thống phía Server
  */
@@ -58,7 +61,7 @@ public class AuctionManager {
         try {
             auction.placeBid(bidder, newPrice);
             return true;
-        } catch (IllegalStateException | IllegalArgumentException e) {
+        } catch (InvalidBidException | AuctionClosedException e) {
             System.err.println("Lỗi đặt giá: " + e.getMessage());
             return false;
         }
