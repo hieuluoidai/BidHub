@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="">
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat(exception): add custom exceptions and integrate into core logic">
+      <change afterPath="$PROJECT_DIR$/src/main/java/exception/AuctionClosedException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/exception/AuthenticationException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/exception/InvalidBidException.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/schema.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/BidController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/BidController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/LoginController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/LoginController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/model/AuctionTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/model/AuctionTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +27,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="hieuluoidai &lt;25020154@vnu.edu.vn&gt;" />
+      </list>
+    </option>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
         <entry key="$PROJECT_DIR$" value="main" />
@@ -46,25 +51,57 @@
     &quot;accountId&quot;: &quot;8657b623-f528-4eee-9f13-0bba891e3462&quot;
   }
 }</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
   <component name="ProjectId" id="3CX2WiJ97pMZ92fwPEs8NfFOPlZ" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.AuctionServer.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.AuctionServer.executor": "Run",
+    "Application.Main.executor": "Run",
+    "JUnit.AuctionManagerTest.executor": "Run",
+    "JUnit.AuctionTest.executor": "Run",
+    "JUnit.BidTransactionTest.executor": "Run",
+    "JUnit.ItemFactoryTest.executor": "Run",
+    "JUnit.ItemHierarchyTest.executor": "Run",
+    "JUnit.UserTest.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "dev",
+    "kotlin-language-version-configured": "true"
   }
-}</component>
+}]]></component>
+  <component name="RunManager">
+    <configuration name="AuctionServer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="network.AuctionServer" />
+      <module name="online-auction-system" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="network.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.AuctionServer" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -80,6 +117,15 @@
       <option name="presentableId" value="Default" />
       <updated>1776517627508</updated>
     </task>
+    <task id="LOCAL-00001" summary="chore: prepare to merge main, add tests and fix realtime updates&#10;&#10;- Add JUnit test classes for core logic">
+      <option name="closed" value="true" />
+      <created>1777603869641</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1777603869641</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -92,5 +138,11 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="chore: prepare to merge main, add tests and fix realtime updates&#10;&#10;- Add JUnit test classes for core logic" />
+    <MESSAGE value="Merge branch 'dev' of https://github.com/hieuluoidai/online-auction-system into dev&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;src/main/java/controller/BidController.java&#10;#&#9;src/main/java/model/manager/AuctionManager.java&#10;#&#9;src/main/java/network/AuctionClient.java" />
+    <MESSAGE value="feat(exception): add custom exceptions and integrate into core logic" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(exception): add custom exceptions and integrate into core logic" />
   </component>
 </project>

@@ -5,6 +5,8 @@ import model.core.Observer;
 import model.core.Subject;
 import model.item.Item;
 import model.user.User;
+import exception.AuctionClosedException;
+import exception.InvalidBidException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -72,16 +74,12 @@ public class Auction extends Entity implements Serializable, Subject {
             throws IllegalStateException, IllegalArgumentException {
 
         if (!"RUNNING".equals(this.status)) {
-            throw new IllegalStateException(
-                "Phiên đấu giá hiện không diễn ra (Trạng thái: " + this.status + ")"
-            );
+            throw new AuctionClosedException(getAuctionId(), this.status);
         }
 
         double currentPrice = getCurrentPrice();
         if (amount <= currentPrice) {
-            throw new IllegalArgumentException(
-                "Giá đặt ($" + amount + ") phải cao hơn giá hiện tại ($" + currentPrice + ")!"
-            );
+            throw new InvalidBidException(amount, currentPrice);
         }
 
         BidTransaction newBid = new BidTransaction(bidder, amount);

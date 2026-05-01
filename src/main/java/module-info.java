@@ -12,4 +12,5 @@ module online.auction.system {
 
     // Xuất package nếu các module khác cần dùng
     exports application;
+    exports exception;
 }

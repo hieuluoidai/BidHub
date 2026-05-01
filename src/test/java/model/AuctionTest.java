@@ -6,6 +6,9 @@ import model.item.Electronics;
 import model.item.Item;
 import model.user.Bidder;
 
+import exception.InvalidBidException;
+import exception.AuctionClosedException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -130,12 +133,12 @@ class AuctionTest {
     // ================================================================
 
     @Test
-    @DisplayName("Bid thấp hơn giá hiện tại phải ném IllegalArgumentException")
-    void placeBid_amountBelowCurrent_throwsIllegalArgument() {
+    @DisplayName("Bid thấp hơn giá hiện tại phải ném InvalidBidException")
+    void placeBid_amountBelowCurrent_throwsInvalidBid() {
         auction.setStatus("RUNNING");
 
-        IllegalArgumentException ex = assertThrows(
-            IllegalArgumentException.class,
+        InvalidBidException ex = assertThrows(
+            InvalidBidException.class,
             () -> auction.placeBid(bidder1, STARTING_PRICE - 1)
         );
 
@@ -143,23 +146,23 @@ class AuctionTest {
     }
 
     @Test
-    @DisplayName("Bid bằng giá hiện tại phải ném IllegalArgumentException")
-    void placeBid_amountEqualCurrent_throwsIllegalArgument() {
+    @DisplayName("Bid bằng giá hiện tại phải ném InvalidBidException")
+    void placeBid_amountEqualCurrent_throwsInvalidBid() {
         auction.setStatus("RUNNING");
 
         assertThrows(
-            IllegalArgumentException.class,
+            InvalidBidException.class,
             () -> auction.placeBid(bidder1, STARTING_PRICE)
         );
     }
 
     @Test
-    @DisplayName("Bid âm phải ném IllegalArgumentException")
-    void placeBid_negativeAmount_throwsIllegalArgument() {
+    @DisplayName("Bid âm phải ném InvalidBidException")
+    void placeBid_negativeAmount_throwsInvalidBid() {
         auction.setStatus("RUNNING");
 
         assertThrows(
-            IllegalArgumentException.class,
+            InvalidBidException.class,
             () -> auction.placeBid(bidder1, -50.0)
         );
     }
@@ -169,11 +172,11 @@ class AuctionTest {
     // ================================================================
 
     @Test
-    @DisplayName("Bid khi phiên OPEN phải ném IllegalStateException")
-    void placeBid_whenStatusOpen_throwsIllegalState() {
+    @DisplayName("Bid khi phiên OPEN phải ném AuctionClosedException")
+    void placeBid_whenStatusOpen_throwsAuctionClosed() {
         // auction mặc định ở trạng thái OPEN
-        IllegalStateException ex = assertThrows(
-            IllegalStateException.class,
+        AuctionClosedException ex = assertThrows(
+            AuctionClosedException.class,
             () -> auction.placeBid(bidder1, 150.0)
         );
 
@@ -181,23 +184,23 @@ class AuctionTest {
     }
 
     @Test
-    @DisplayName("Bid khi phiên FINISHED phải ném IllegalStateException")
-    void placeBid_whenStatusFinished_throwsIllegalState() {
+    @DisplayName("Bid khi phiên FINISHED phải ném AuctionClosedException")
+    void placeBid_whenStatusFinished_throwsAuctionClosed() {
         auction.setStatus("FINISHED");
 
         assertThrows(
-            IllegalStateException.class,
+            AuctionClosedException.class,
             () -> auction.placeBid(bidder1, 150.0)
         );
     }
 
     @Test
-    @DisplayName("Bid khi phiên CANCELED phải ném IllegalStateException")
-    void placeBid_whenStatusCanceled_throwsIllegalState() {
+    @DisplayName("Bid khi phiên CANCELED phải ném AuctionClosedException")
+    void placeBid_whenStatusCanceled_throwsAuctionClosed() {
         auction.setStatus("CANCELED");
 
         assertThrows(
-            IllegalStateException.class,
+                AuctionClosedException.class,
             () -> auction.placeBid(bidder1, 150.0)
         );
     }
@@ -287,7 +290,7 @@ class AuctionTest {
                 try {
                     startSignal.await(); // Chờ tín hiệu bắt đầu cùng lúc
                     auction.placeBid(bidder, amount);
-                } catch (IllegalArgumentException | IllegalStateException ignored) {
+                } catch (InvalidBidException | AuctionClosedException ignored) {
                     // Các bid bị từ chối (giá đã bị vượt qua) là hành vi đúng
                 } catch (Exception e) {
                     errors.add(e.getMessage());
