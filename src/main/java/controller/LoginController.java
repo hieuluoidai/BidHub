@@ -10,7 +10,6 @@ import javafx.scene.paint.Color;
 import model.manager.AppState;
 import model.user.Admin;
 import model.user.User;
-import exception.AuthenticationException;
 
 public class LoginController {
 

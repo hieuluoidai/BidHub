@@ -15,7 +15,7 @@ public class AuctionDAO {
 
     private final Connection conn;
     // Khai báo ItemDAO
-    private final ItemDAO itemDAO; 
+    private final ItemDAO itemDAO;
 
     /**
      * Khởi tạo kết nối DB và khởi tạo ItemDAO.
@@ -23,6 +23,117 @@ public class AuctionDAO {
     public AuctionDAO() {
         this.conn    = DatabaseConnection.getInstance().getConnection();
         this.itemDAO = new ItemDAO();
+    }
+
+    /**
+     * Cập nhật thời gian bắt đầu và kết thúc của một phiên đấu giá.
+     * Chỉ áp dụng được khi phiên đang ở trạng thái OPEN (chưa bắt đầu).
+     */
+    public boolean updateTime(String auctionId, LocalDateTime startTime, LocalDateTime endTime) {
+        String sql = """
+                UPDATE auctions
+                   SET start_time = ?, end_time = ?
+                 WHERE auction_id = ?
+                   AND status     = 'OPEN'
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setTimestamp(1, Timestamp.valueOf(startTime));
+            stmt.setTimestamp(2, Timestamp.valueOf(endTime));
+            stmt.setString(3, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật thời gian phiên: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Xóa một phiên đấu giá.
+     * Chiến lược: xóa Item tương ứng → DB tự ON DELETE CASCADE xóa luôn auction + bid_transactions.
+     * Nhờ vậy mọi dữ liệu liên quan được dọn sạch chỉ trong 1 transaction.
+     */
+    public boolean delete(String auctionId) {
+        // Bước 1: Tra item_id tương ứng (để dùng cho DELETE cascade)
+        String itemId = null;
+        String sqlFindItem = "SELECT item_id FROM auctions WHERE auction_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sqlFindItem)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) itemId = rs.getString("item_id");
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm item_id của phiên: " + e.getMessage());
+            return false;
+        }
+
+        if (itemId == null) {
+            System.err.println("Không tìm thấy phiên đấu giá: " + auctionId);
+            return false;
+        }
+
+        // Bước 2: Xóa item — FK ON DELETE CASCADE sẽ tự xóa auction + bid_transactions
+        return itemDAO.delete(itemId);
+    }
+
+    /**
+     * Phiên bản delete an toàn dành cho Seller: chỉ cho phép xóa nếu seller này là chủ
+     * VÀ phiên đang ở trạng thái OPEN (chưa có ai đấu giá).
+     * Trả về:
+     *  -  1: xóa thành công
+     *  -  0: không có quyền (không phải chủ phiên)
+     *  - -1: phiên không ở trạng thái OPEN
+     *  - -2: lỗi DB hoặc không tồn tại
+     */
+    public int deleteIfOwnerAndOpen(String auctionId, String sellerId) {
+        String sql = """
+                SELECT i.seller_id, a.status
+                  FROM auctions a
+                  INNER JOIN items i ON a.item_id = i.item_id
+                 WHERE a.auction_id = ?
+                """;
+        String ownerId = null, status = null;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                ownerId = rs.getString("seller_id");
+                status  = rs.getString("status");
+            } else {
+                return -2; // Không tồn tại
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi kiểm tra quyền xóa: " + e.getMessage());
+            return -2;
+        }
+
+        if (!sellerId.equals(ownerId)) return 0;
+        if (!"OPEN".equals(status))    return -1;
+
+        return delete(auctionId) ? 1 : -2;
+    }
+
+    /**
+     * Xóa phiên nếu seller là chủ — không giới hạn status.
+     * Trả về 1 nếu xóa thành công, 0 nếu không phải chủ, -2 nếu lỗi.
+     */
+    public int deleteIfOwner(String auctionId, String sellerId) {
+        String sql = """
+                SELECT i.seller_id
+                  FROM auctions a
+                  INNER JOIN items i ON a.item_id = i.item_id
+                 WHERE a.auction_id = ?
+                """;
+        String ownerId = null;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) ownerId = rs.getString("seller_id");
+            else return -2;
+        } catch (SQLException e) {
+            System.err.println("Lỗi kiểm tra quyền xóa: " + e.getMessage());
+            return -2;
+        }
+        if (!sellerId.equals(ownerId)) return 0;
+        return delete(auctionId) ? 1 : -2;
     }
 
     /**
@@ -38,11 +149,11 @@ public class AuctionDAO {
             stmt.setString(1, auction.getAuctionId());
             stmt.setString(2, auction.getItem().getItemId()); // Get ID từ đối tượng Item
             stmt.setString(3, auction.getStatus());
-            
+
             // Ép kiểu: Đổi từ LocalDateTime của Java sang Timestamp của MySQL
             stmt.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
             stmt.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
-            
+
             stmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -50,7 +161,7 @@ public class AuctionDAO {
             return false;
         }
     }
-    
+
     /**
      * Cập nhật trạng thái của một phiên đấu giá trong DB.
      * Được gọi bởi AuctionManager khi phiên chuyển OPEN→RUNNING hoặc RUNNING→FINISHED.
@@ -129,17 +240,17 @@ public class AuctionDAO {
         String auctionId = rs.getString("auction_id");
         String itemId    = rs.getString("item_id");
         String status    = rs.getString("status");
-        
+
         // Dịch ngược thời gian: Từ Timestamp của MySQL về lại LocalDateTime của Java
         LocalDateTime startTime = rs.getTimestamp("start_time").toLocalDateTime();
         LocalDateTime endTime   = rs.getTimestamp("end_time").toLocalDateTime();
 
         // 2. Dùng itemDAO để tìm món hàng có ID tương ứng trong bảng items
         var item = itemDAO.findById(itemId);
-        
+
         if (item == null) {
             System.err.println("Cảnh báo dữ liệu: Không tìm thấy món hàng " + itemId + " cho phiên " + auctionId);
-            return null; 
+            return null;
         }
 
         // 3. Ghép nối Sản phẩm và Thời gian lại thành một Phiên đấu giá
@@ -148,7 +259,7 @@ public class AuctionDAO {
 
         database.BidTransactionDAO bidDAO = new database.BidTransactionDAO();
         // Gọi hàm findWinner để lấy [bidder_id, bid_amount]
-        String[] winnerData = bidDAO.findWinner(auctionId); 
+        String[] winnerData = bidDAO.findWinner(auctionId);
 
         if (winnerData != null) {
             String bidderId = winnerData[0];
@@ -161,7 +272,7 @@ public class AuctionDAO {
             if (highestBidder != null) {
                 // Tái tạo lại đối tượng BidTransaction từ dữ liệu nạp lên
                 model.auction.BidTransaction restoredBid = new model.auction.BidTransaction(highestBidder, amount);
-                
+
                 // Bơm lại dữ liệu này vào phiên đấu giá
                 auction.setHighestBid(restoredBid);
             }
@@ -170,7 +281,7 @@ public class AuctionDAO {
 
         return auction;
     }
-    
+
     public int countBySellerId(String sellerId) {
         // Đếm số phiên của một seller
         String sql = """
@@ -187,7 +298,7 @@ public class AuctionDAO {
         }
         return 0;
     }
-    
+
     public java.util.Set<String> getAuctionIdsBySeller(String sellerId) {
         // Trả về tập ID các phiên thuộc seller này
         java.util.Set<String> ids = new java.util.HashSet<>();

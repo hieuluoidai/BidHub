@@ -11,85 +11,86 @@
 <?import javafx.scene.text.Font?>
 
 <StackPane styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
-   <children>
-      <VBox maxHeight="500.0" maxWidth="500.0" prefWidth="450.0" spacing="15.0" styleClass="card" stylesheets="@style.css">
-          <children>
-              <Label fx:id="lblItemName" styleClass="label-header" text="Tên sản phẩm" wrapText="true">
-                  <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
-              </Label>
-      
-              <HBox spacing="3.0">
-                  <Label text="Thể loại:" />
-                  <Label fx:id="lblCategory" text="Item" textFill="#000000" />
-              </HBox>
-      
-              <HBox spacing="0">
-                  <Label text="" />
-                  <Label fx:id="lblExtraInfo" text="Không có thông tin" textFill="#000000" />
-              </HBox>
-      
-              <Separator>
-               <VBox.margin>
-                  <Insets bottom="10.0" top="10.0" />
-               </VBox.margin>
-            </Separator>
-      
-              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                  <Label text="Giá hiện tại:">
-                      <font>
-                     <Font size="18.0" />
-                  </font>
-                  </Label>
-                  <Label fx:id="lblCurrentPrice" styleClass="label-price" text="0.0 VNĐ" textFill="RED">
-                      <font>
-                     <Font name="System Bold" size="20.0" />
-                  </font>
-                  </Label>
-              </HBox>
-      
-              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                  <Label text="Người đang giữ giá:" />
-                  <Label fx:id="lblHighestBidder" text="Chưa có ai (Giá khởi điểm)" textFill="#475569">
-                      <font>
-                     <Font name="System Bold" size="14.0" />
-                  </font>
-                  </Label>
-              </HBox>
-      
-              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                  <Label text="Thời điểm trả giá:" />
-                  <Label fx:id="lblBidTime" text="-" textFill="#7f8c8d">
-                      <font>
-                     <Font name="System Italic" size="13.0" />
-                  </font>
-                  </Label>
-              </HBox>
-            <HBox alignment="CENTER_LEFT" spacing="10.0" VBox.vgrow="ALWAYS">
-               <children>
-                  <Label text="Thời điểm kết thúc: " />
-            
-                          <Label fx:id="lblEndTime" minWidth="-Infinity" styleClass="badge-urgent" text="12/34/56 12:34:56" textFill="#dc2626" HBox.hgrow="ALWAYS">
-                     <font>
-                        <Font size="13.0" />
-                     </font>
-                  </Label>
-               </children>
-            </HBox>
-      
-              <TextArea fx:id="txtDescription" editable="false" prefHeight="100.0" styleClass="text-field" text="Mô tả chi tiết sản phẩm..." wrapText="true" />
-            <HBox alignment="CENTER_RIGHT" prefHeight="46.0" prefWidth="360.0" spacing="15.0">
-               <children>
-                  <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="46.0" prefWidth="85.0" styleClass="button-secondary" text="Cancel" />
-            
-                    <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="46.0" prefWidth="184.0" styleClass="button-primary" text="Tham gia đấu giá ngay!" />
-               </children>
-            </HBox>
-          </children>
-         <padding>
-            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-         </padding>
-      </VBox>
-   </children>
+    <children>
+        <VBox maxHeight="500.0" maxWidth="500.0" prefWidth="450.0" spacing="15.0" styleClass="card" stylesheets="@style.css">
+            <children>
+                <Label fx:id="lblItemName" styleClass="label-header" text="Tên sản phẩm" wrapText="true">
+                    <font>
+                        <Font name="System Bold" size="24.0" />
+                    </font>
+                </Label>
+
+                <HBox spacing="3.0">
+                    <Label text="Thể loại:" />
+                    <Label fx:id="lblCategory" text="Item" textFill="#000000" />
+                </HBox>
+
+                <HBox spacing="0">
+                    <Label text="" />
+                    <Label fx:id="lblExtraInfo" text="Không có thông tin" textFill="#000000" />
+                </HBox>
+
+                <Separator>
+                    <VBox.margin>
+                        <Insets bottom="10.0" top="10.0" />
+                    </VBox.margin>
+                </Separator>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="Giá hiện tại:">
+                        <font>
+                            <Font size="18.0" />
+                        </font>
+                    </Label>
+                    <Label fx:id="lblCurrentPrice" styleClass="label-price" text="0.0 VNĐ" textFill="RED">
+                        <font>
+                            <Font name="System Bold" size="20.0" />
+                        </font>
+                    </Label>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="Người đang giữ giá:" />
+                    <Label fx:id="lblHighestBidder" text="Chưa có ai (Giá khởi điểm)" textFill="#475569">
+                        <font>
+                            <Font name="System Bold" size="14.0" />
+                        </font>
+                    </Label>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="Thời điểm trả giá:" />
+                    <Label fx:id="lblBidTime" text="-" textFill="#7f8c8d">
+                        <font>
+                            <Font name="System Italic" size="13.0" />
+                        </font>
+                    </Label>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="10.0" VBox.vgrow="ALWAYS">
+                    <children>
+                        <Label text="Thời điểm kết thúc: " />
+
+                        <Label fx:id="lblEndTime" minWidth="-Infinity" styleClass="badge-urgent" text="12/34/56 12:34:56" textFill="#dc2626" HBox.hgrow="ALWAYS">
+                            <font>
+                                <Font size="13.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </HBox>
+
+                <TextArea fx:id="txtDescription" editable="false" prefHeight="100.0" styleClass="text-field" text="Mô tả chi tiết sản phẩm..." wrapText="true" />
+                <HBox alignment="CENTER_RIGHT" prefHeight="46.0" prefWidth="360.0" spacing="10.0">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="46.0" prefWidth="80.0" styleClass="button-secondary" text="Cancel" />
+                        <Button fx:id="btnEdit" mnemonicParsing="false" onAction="#handleEdit" prefHeight="46.0" prefWidth="80.0" styleClass="button-secondary" text="Sửa" visible="false" managed="false" />
+                        <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#handleDelete" prefHeight="46.0" prefWidth="80.0" styleClass="button-danger" text="Xóa" visible="false" managed="false" />
+                        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="46.0" prefWidth="184.0" styleClass="button-primary" text="Tham gia đấu giá ngay!" />
+                    </children>
+                </HBox>
+            </children>
+            <padding>
+                <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+            </padding>
+        </VBox>
+    </children>
 </StackPane>

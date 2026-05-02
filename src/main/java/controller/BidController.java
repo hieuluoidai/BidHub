@@ -24,6 +24,20 @@ public class BidController {
     private Auction currentAuction;
 
     /**
+     * Callback nhận BidResult khi bid xong (SUCCESS/OUTBID/FAILURE).
+     * ItemDetailsController đăng ký để cập nhật UI ngay lập tức từ kết quả,
+     * không cần chờ server broadcast.
+     */
+    private java.util.function.Consumer<model.auction.BidResult> onBidDoneCallback;
+
+    public void setOnBidDoneCallback(java.util.function.Consumer<model.auction.BidResult> callback) {
+        this.onBidDoneCallback = callback;
+    }
+
+    /** Giữ lại để không break code cũ */
+    public void setOnBidSuccessCallback(Runnable callback) {}
+
+    /**
      * Nhận dữ liệu phiên đấu giá từ màn hình Dashboard truyền sang để hiển thị.
      */
     public void setAuctionData(Auction auction) {
@@ -84,16 +98,20 @@ public class BidController {
         switch (result.getStatus()) {
             case SUCCESS:
                 closeStage();
-                utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Đặt giá thành công!", result.getMessage());
                 break;
             case OUTBID:
                 labelCurrentPrice.setText(String.format(
                         "Giá hiện tại: $%.2f", result.getCurrentPrice()));
-                showError("Bạn bị vượt giá! " + result.getMessage());
+                showError("Bị vượt giá! " + result.getMessage());
                 break;
             case FAILURE:
                 showError(result.getMessage());
                 break;
+        }
+
+        // Báo cho ItemDetailsController biết kết quả để update UI ngay
+        if (onBidDoneCallback != null) {
+            onBidDoneCallback.accept(result);
         }
     }
 
