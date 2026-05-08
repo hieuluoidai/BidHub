@@ -39,6 +39,14 @@
             <version>8.3.0</version>
         </dependency>
 
+        <!-- ==================== SECURITY ==================== -->
+        <!-- jBCrypt: băm mật khẩu chuẩn công nghiệp (one-way, salt tự động) -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
         <!-- ==================== UNIT TEST ==================== -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

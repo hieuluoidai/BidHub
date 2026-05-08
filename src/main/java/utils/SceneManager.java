@@ -20,6 +20,10 @@ public class SceneManager {
         switchScene("/view/login.fxml", "BidHub - Đăng nhập");
     }
 
+    public void showRegister() {
+        switchScene("/view/register.fxml", "BidHub - Đăng ký tài khoản");
+    }
+
     public void showDashboard() {
         switchScene("/view/dashboard.fxml", "BidHub - Bảng điều khiển");
     }
@@ -29,7 +33,7 @@ public class SceneManager {
     }
 
     /**
-     * Thực hiện thay đổi nội dung màn hình. 
+     * Thực hiện thay đổi nội dung màn hình.
      * Tận dụng lại Scene đã có để tối ưu tài nguyên.
      */
     private void switchScene(String fxmlPath, String title) {
@@ -45,7 +49,6 @@ public class SceneManager {
                 // Thêm Css
                 String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
                 scene.getStylesheets().add(cssUrl);
-                // ---------------------------------
                 
                 stage.setScene(scene);
             } else {

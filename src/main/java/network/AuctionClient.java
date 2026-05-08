@@ -3,8 +3,10 @@ package network;
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import model.auction.Auction;
+import model.auction.BidResult;
 
 /**
  * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
@@ -15,9 +17,9 @@ public class AuctionClient {
     private ObjectInputStream in;
     private boolean isRunning = false;
 
-    /**
-     * Thiết lập kết nối tới Server và kích hoạt luồng lắng nghe dữ liệu.
-     */
+    /** Callback nhận BidResult. */
+    private volatile Consumer<BidResult> onBidResult;
+
     public void connect(String host, int port) throws IOException {
         if (socket != null && !socket.isClosed()) return;
 
@@ -26,7 +28,6 @@ public class AuctionClient {
         in = new ObjectInputStream(socket.getInputStream());
         isRunning = true;
 
-        // Chạy luồng nghe riêng biệt để không gây treo giao diện (UI Freeze)
         Thread listenerThread = new Thread(this::listen);
         listenerThread.setDaemon(true);
         listenerThread.start();
@@ -35,8 +36,12 @@ public class AuctionClient {
     }
 
     /**
-     * Vòng lặp liên tục nhận dữ liệu từ Server.
+     * Đăng ký callback nhận BidResult. Truyền null để hủy đăng ký.
      */
+    public void setOnBidResult(Consumer<BidResult> handler) {
+        this.onBidResult = handler;
+    }
+
     private void listen() {
         try {
             while (isRunning) {
@@ -51,35 +56,29 @@ public class AuctionClient {
         }
     }
 
-    /**
-     * Phân loại và xử lý dữ liệu nhận được từ Server.
-     */
     @SuppressWarnings("unchecked")
     private void handleIncomingData(Object data) {
         System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
 
         Platform.runLater(() -> {
-            if (data instanceof List<?>) {
+            if (data instanceof BidResult result) {
+                System.out.println(">>> [CLIENT] BidResult: " + result);
+                Consumer<BidResult> handler = this.onBidResult;
+                if (handler != null) handler.accept(result);
+
+            } else if (data instanceof List<?>) {
                 List<Auction> auctions = (List<Auction>) data;
                 System.out.println(">>> [CLIENT] Danh sách " + auctions.size() + " phiên");
-                for (Auction a : auctions) {
-                    System.out.println("    - " + a.getAuctionId() + " status=" + a.getStatus());
-                }
-                // setAll() sẽ trigger ListChangeListener với kiểu REPLACED
-                // khiến TableView tự redraw toàn bộ các cell
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
 
             } else if (data instanceof Auction updatedAuction) {
                 System.out.println(">>> [CLIENT] 1 auction: " + updatedAuction.getAuctionId()
-                    + " status=" + updatedAuction.getStatus());
+                        + " status=" + updatedAuction.getStatus());
                 updateSingleAuction(updatedAuction);
             }
         });
     }
 
-    /**
-     * Gửi yêu cầu/dữ liệu lên Server.
-     */
     public void send(Object data) {
         try {
             if (out != null) {
@@ -92,9 +91,6 @@ public class AuctionClient {
         }
     }
 
-    /**
-     * Ngắt kết nối và giải phóng tài nguyên.
-     */
     public void close() {
         isRunning = false;
         try {
@@ -104,13 +100,6 @@ public class AuctionClient {
         }
     }
 
-    /**
-     * Cập nhật thông tin một phiên đấu giá cụ thể trong danh sách hiển thị.
-     *
-     * BUG FIX: Sau khi set() lại phần tử, force trigger listener bằng cách
-     * gọi thêm 1 operation tạm thời. Điều này đảm bảo TableView luôn refresh
-     * ngay cả khi chỉ 1 phiên thay đổi.
-     */
     private void updateSingleAuction(model.auction.Auction updated) {
         var list = model.manager.AppState.getInstance().getAuctionList();
         for (int i = 0; i < list.size(); i++) {

@@ -18,17 +18,16 @@ public class LoginController {
 
     @FXML
     void handleLogin() {
-        // Thêm trim() để tránh lỗi do người dùng vô tình nhập thêm dấu cách
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
-        // Kiểm tra rỗng
         if (username.isEmpty() || password.isEmpty()) {
             showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!");
             return;
         }
 
         UserDAO userDAO   = new UserDAO();
+        // login() sẽ verify bằng BCrypt bên trong
         User    foundUser = userDAO.login(username, password);
 
         if (foundUser != null) {
@@ -36,7 +35,6 @@ public class LoginController {
                 AppState.getInstance().getClient().connect("localhost", 1234);
                 AppState.getInstance().setCurrentUser(foundUser);
 
-                // Phân nhánh theo role
                 if (foundUser instanceof Admin) {
                     AppState.getInstance().getSceneManager().showAdminDashboard();
                 } else {
@@ -50,6 +48,14 @@ public class LoginController {
         } else {
             showError("Tên đăng nhập hoặc mật khẩu không chính xác!");
         }
+    }
+
+    /**
+     * Chuyển sang màn hình đăng ký tài khoản mới.
+     */
+    @FXML
+    void handleRegister() {
+        AppState.getInstance().getSceneManager().showRegister();
     }
 
     private void showError(String msg) {

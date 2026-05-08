@@ -59,7 +59,7 @@
       <HBox alignment="CENTER_RIGHT" spacing="15.0">
          <children>
             <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" styleClass="button-secondary" text="Cancel" />
-            <Button defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" styleClass="button-primary" text="Confirm Bid" />
+            <Button fx:id="confirmButton" defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" styleClass="button-primary" text="Confirm Bid" />
          </children>
          <VBox.margin>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />

@@ -2,56 +2,97 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #f0f2f5;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
-   <center>
-      <StackPane BorderPane.alignment="CENTER">
-         <children>
-            <VBox alignment="CENTER" maxHeight="400.0" maxWidth="450.0" spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 15, 0, 0, 5);">
-               <padding>
-                  <Insets bottom="50.0" left="40.0" right="40.0" top="50.0" />
-               </padding>
-               <children>
+<HBox prefHeight="600.0" prefWidth="1100.0"
+      stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.LoginController">
 
-                  <Label styleClass="label-header" text="Welcome Back!">
-                     <font>
-                        <Font name="System Bold" size="30.0" />
-                     </font>
-                  </Label>
-                  <Label text="Please login to access the Auction System" textFill="#64748b">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets bottom="15.0" />
-                     </VBox.margin>
-                  </Label>
+    <VBox alignment="CENTER" spacing="24.0" styleClass="auth-brand-panel"
+          HBox.hgrow="ALWAYS" minWidth="380.0" prefWidth="450.0">
+        <padding>
+            <Insets top="60.0" right="50.0" bottom="60.0" left="50.0"/>
+        </padding>
 
-                  <TextField fx:id="usernameField" prefHeight="45.0" promptText="Username" style="-fx-background-radius: 5; -fx-font-size: 14px;" />
-                  <PasswordField fx:id="passwordField" prefHeight="45.0" promptText="Password" style="-fx-background-radius: 5; -fx-font-size: 14px;" />
+        <ImageView fitHeight="140.0" fitWidth="140.0" preserveRatio="true">
+            <image>
+                <Image url="@../Images/bid-hub-logo.png"/>
+            </image>
+        </ImageView>
 
-                  <Label fx:id="messageLabel" textFill="#ff3333" wrapText="true">
-                     <font>
-                        <Font size="13.0" />
-                     </font>
-                  </Label>
+        <Label styleClass="brand-title" text="BidHub"/>
+        <Label styleClass="brand-subtitle" text="Hệ thống đấu giá trực tuyến" wrapText="true"/>
 
-                  <Button defaultButton="true" mnemonicParsing="false" onAction="#handleLogin" prefHeight="50.0" prefWidth="400.0" styleClass="button-primary" text="LOGIN">
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                  </Button>
+        <Region prefHeight="20.0"/>
 
-               </children>
+        <VBox spacing="18.0" maxWidth="320.0">
+            <HBox spacing="14.0" alignment="CENTER_LEFT">
+                <Label styleClass="brand-bullet-icon" text="✓"/>
+                <Label styleClass="brand-bullet-text"
+                       text="Đăng nhập an toàn với bảo mật BCrypt"
+                       wrapText="true" HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <HBox spacing="14.0" alignment="CENTER_LEFT">
+                <Label styleClass="brand-bullet-icon" text="✓"/>
+                <Label styleClass="brand-bullet-text"
+                       text="Tham gia hàng nghìn phiên đấu giá đang diễn ra"
+                       wrapText="true" HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <HBox spacing="14.0" alignment="CENTER_LEFT">
+                <Label styleClass="brand-bullet-icon" text="✓"/>
+                <Label styleClass="brand-bullet-text"
+                       text="Theo dõi giá realtime, cập nhật từng giây"
+                       wrapText="true" HBox.hgrow="ALWAYS"/>
+            </HBox>
+        </VBox>
+    </VBox>
+
+    <StackPane HBox.hgrow="ALWAYS" style="-fx-background-color: white;">
+        <VBox alignment="CENTER" maxWidth="420.0" spacing="20.0">
+            <padding>
+                <Insets top="40.0" right="40.0" bottom="40.0" left="40.0"/>
+            </padding>
+
+            <VBox spacing="6.0" alignment="TOP_LEFT" maxWidth="Infinity">
+                <Label styleClass="auth-title" text="Chào mừng trở lại!"/>
+                <Label styleClass="auth-subtitle"
+                       text="Đăng nhập để truy cập tài khoản của bạn"/>
             </VBox>
-         </children>
-      </StackPane>
-   </center>
-</BorderPane>
+
+            <VBox spacing="6.0">
+                <Label styleClass="form-label" text="Tên đăng nhập"/>
+                <TextField fx:id="usernameField" styleClass="form-input"
+                           promptText="Nhập tên đăng nhập"/>
+            </VBox>
+
+            <VBox spacing="6.0">
+                <Label styleClass="form-label" text="Mật khẩu"/>
+                <PasswordField fx:id="passwordField" styleClass="form-input"
+                               promptText="Nhập mật khẩu"/>
+            </VBox>
+
+            <Label fx:id="messageLabel" styleClass="form-error" wrapText="true"/>
+
+            <Button defaultButton="true" mnemonicParsing="false" onAction="#handleLogin"
+                    maxWidth="Infinity"
+                    styleClass="button-primary,button-large" text="ĐĂNG NHẬP"/>
+
+            <HBox alignment="CENTER" spacing="2.0">
+                <Label styleClass="auth-helper-text" text="Chưa có tài khoản? "/>
+                <Hyperlink onAction="#handleRegister" styleClass="auth-link"
+                           text="Đăng ký ngay"/>
+            </HBox>
+        </VBox>
+    </StackPane>
+</HBox>
