@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
 
 /**
- * Quản lý và điều hành toàn hệ thống phía Server
+ * Quản lý và điều hành toàn hệ thống phía Server.
  */
 public class AuctionManager {
     private static AuctionManager instance;
@@ -46,24 +46,6 @@ public class AuctionManager {
         return null;
     }
 
-    // Xử lý bid đồng thời, ngăn chặn Race Condition.
-    public synchronized boolean processBid(String auctionId, double newPrice, User bidder) {
-        Auction auction = getAuctionById(auctionId);
-
-        if (auction == null) {
-            System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
-            return false;
-        }
-
-        try {
-            auction.placeBid(bidder, newPrice);
-            return true;
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            System.err.println("Lỗi đặt giá: " + e.getMessage());
-            return false;
-        }
-    }
-
     // Trả về copy List để bảo vệ List gốc (Encapsulation).
     public synchronized List<Auction> getAllAuctions() {
         return new ArrayList<>(this.auctions);
@@ -71,13 +53,15 @@ public class AuctionManager {
 
     /**
      * Tự động update trạng thái phiên (Real-time update).
+     * Khi phiên FINISHED → giải phóng lock của ConcurrentBidManager để tránh
+     * giữ lock vô tận cho các phiên đã kết thúc.
      */
     public void startAutoClosureService(network.AuctionServer server) {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         database.AuctionDAO auctionDao = new database.AuctionDAO();
 
         scheduler.scheduleAtFixedRate(() -> {
-            boolean hasChange = false;  // Đánh dấu có thay đổi để broadcast 1 lần duy nhất
+            boolean hasChange = false;
 
             synchronized (auctions) {
                 LocalDateTime now = LocalDateTime.now();
@@ -96,22 +80,47 @@ public class AuctionManager {
                         auction.setStatus("FINISHED");
                         auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
 
+                        // Giải phóng lock của phiên đã đóng để không giữ tài nguyên
+                        ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
+
                         String winner = (auction.getHighestBid() != null)
-                                        ? auction.getHighestBid().getBidder().getUsername()
-                                        : "Không có";
+                                ? auction.getHighestBid().getBidder().getUsername()
+                                : "Không có";
                         System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
-                                           + " - Người thắng: " + winner);
+                                + " - Người thắng: " + winner);
                         hasChange = true;
                     }
                 }
             }
 
-            // Broadcast TOÀN BỘ danh sách ra ngoài block synchronized để tránh giữ lock lâu
             if (hasChange) {
                 server.broadcast(getAllAuctions());
             }
 
         }, 0, 1, TimeUnit.SECONDS);
+    }
+    
+    /**
+     * @deprecated Cách bid cũ — synchronized lock trên TOÀN BỘ manager khiến bid
+     * trên các phiên khác nhau không chạy song song được. Giữ lại để tương thích
+     * test cũ; production hãy gọi processBid của ConcurrentBidManager.
+     */
+    @Deprecated
+    public synchronized boolean processBid(String auctionId, double newPrice, User bidder) {
+        Auction auction = getAuctionById(auctionId);
+ 
+        if (auction == null) {
+            System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
+            return false;
+        }
+ 
+        try {
+            auction.placeBid(bidder, newPrice);
+            return true;
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            System.err.println("Lỗi đặt giá: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -123,10 +132,21 @@ public class AuctionManager {
         for (int i = 0; i < auctions.size(); i++) {
             if (auctions.get(i).getAuctionId().equals(updatedAuction.getAuctionId())) {
                 auctions.set(i, updatedAuction);
-                System.out.println(">>> Đã đồng bộ giá phiên " + updatedAuction.getAuctionId() + " ($" + updatedAuction.getCurrentPrice() + ")");
+                System.out.println(">>> Đã đồng bộ giá phiên " + updatedAuction.getAuctionId()
+                        + " ($" + updatedAuction.getCurrentPrice() + ")");
                 return;
             }
         }
-        addAuction(updatedAuction); // Thêm mới nếu chưa tồn tại
+        addAuction(updatedAuction);
+    }
+
+    /**
+     * Xóa toàn bộ phiên trong memory.
+     * CHỈ DÙNG TRONG UNIT TEST để tránh state pollution của Singleton giữa
+     * các test method.
+     */
+    public synchronized void clearAll() {
+        auctions.clear();
+        System.out.println(">>> [TEST] Đã xóa toàn bộ phiên trong memory");
     }
 }

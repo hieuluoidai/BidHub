@@ -15,7 +15,6 @@
 
    <padding><Insets bottom="25.0" left="25.0" right="25.0" top="25.0"/></padding>
 
-   <!-- Avatar + Tên -->
    <HBox alignment="CENTER_LEFT" spacing="15.0">
       <Label fx:id="lblAvatar" text="?"
              style="-fx-background-color: #3B82F6;
@@ -39,7 +38,6 @@
 
    <Separator/>
 
-   <!-- Thông tin cơ bản -->
    <VBox spacing="12.0">
       <Label text="Thông tin tài khoản"
              style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
@@ -63,7 +61,6 @@
 
    <Separator/>
 
-   <!-- Thống kê hoạt động -->
    <VBox spacing="12.0">
       <Label text="Hoạt động trên hệ thống"
              style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
@@ -97,7 +94,6 @@
 
    <Region VBox.vgrow="ALWAYS"/>
 
-   <!-- Nút đóng -->
    <HBox alignment="CENTER_RIGHT">
       <Button text="Đóng" onAction="#handleClose"
               styleClass="button-primary"
