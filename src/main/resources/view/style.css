@@ -1,18 +1,14 @@
-/* ===================================================================
-   BIDHUB STYLE SHEET
-   =================================================================== */
-
 /* 1. NỀN TẢNG CHUNG */
 .root {
     -fx-font-family: "Segoe UI", "Open Sans", "Helvetica Neue", sans-serif;
-    -fx-background-color: #F0F4F8; /* Nền xám xanh */
+    -fx-background-color: #F0F4F8; /* Nền xám xanh cực sang, làm nổi bật form màu trắng */
 }
 
 /* 2. HIỆU ỨNG THẺ NỔI (CARD) - Dành cho khung chứa Form hoặc Bảng */
 .card {
     -fx-background-color: white;
     -fx-background-radius: 12px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 15, 0, 0, 5);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 15, 0, 0, 5); /* Bóng đổ 3D */
     -fx-padding: 20px;
 }
 
@@ -20,269 +16,13 @@
 .label-header {
     -fx-font-size: 28px;
     -fx-font-weight: 800;
-    -fx-text-fill: #0D47A1;
+    -fx-text-fill: #0D47A1; /* Xanh hoàng gia (Royal Blue) */
     -fx-effect: dropshadow(two-pass-box, rgba(0,0,0,0.1), 2, 0, 0, 1);
 }
 
-/* ===================================================================
-   AUTH PAGES (LOGIN + REGISTER) — LAYOUT 2 CỘT
-   =================================================================== */
-
-/* Panel TRÁI: gradient xanh dương sang trọng */
-.auth-brand-panel {
-    -fx-background-color: linear-gradient(to bottom right, #1976D2, #0D47A1);
-}
-
-.brand-title {
-    -fx-text-fill: white;
-    -fx-font-size: 42px;
-    -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4, 0, 0, 2);
-}
-
-.brand-subtitle {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
-    -fx-font-size: 15px;
-    -fx-font-weight: 500;
-    -fx-text-alignment: center;
-    -fx-alignment: center;
-}
-
-.brand-bullet-icon {
-    -fx-text-fill: white;
-    -fx-font-size: 16px;
-    -fx-font-weight: 900;
-    -fx-background-color: rgba(255, 255, 255, 0.18);
-    -fx-background-radius: 12px;
-    -fx-min-width: 24px;
-    -fx-min-height: 24px;
-    -fx-alignment: center;
-}
-
-.brand-bullet-text {
-    -fx-text-fill: rgba(255, 255, 255, 0.92);
-    -fx-font-size: 14px;
-    -fx-font-weight: 500;
-}
-
-/* Panel PHẢI — phần form */
-.auth-title {
-    -fx-text-fill: #0F172A;
-    -fx-font-size: 28px;
-    -fx-font-weight: 800;
-}
-
-.auth-subtitle {
-    -fx-text-fill: #64748B;
-    -fx-font-size: 14px;
-}
-
-.auth-helper-text {
-    -fx-text-fill: #64748B;
-    -fx-font-size: 13px;
-}
-
-.auth-link {
-    -fx-text-fill: #1976D2;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-border-color: transparent;
-    -fx-padding: 0 0 0 0;
-    -fx-underline: false;
-}
-.auth-link:hover {
-    -fx-text-fill: #0D47A1;
-    -fx-underline: true;
-}
-
-/* Form labels */
-.form-label {
-    -fx-text-fill: #334155;
-    -fx-font-size: 12px;
-    -fx-font-weight: 700;
-}
-
-/* Form input — chuẩn cho mọi field trong form đăng ký/đăng nhập */
-.form-input {
-    -fx-background-color: #F8FAFC;
-    -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
-    -fx-border-radius: 8px;
-    -fx-border-width: 1.5px;
-    -fx-padding: 11px 14px;
-    -fx-font-size: 14px;
-    -fx-text-fill: #0F172A;
-    -fx-pref-height: 44px;
-}
-.form-input:focused {
-    -fx-background-color: white;
-    -fx-border-color: #1976D2;
-    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.18), 6, 0, 0, 0);
-}
-
-.form-error {
-    -fx-text-fill: #EF4444;
-    -fx-font-size: 13px;
-    -fx-font-weight: 500;
-}
-
-/* Realtime validation hint dưới mỗi input — nhỏ và phụ trợ */
-.form-hint {
-    -fx-font-size: 11px;
-    -fx-font-weight: 500;
-    -fx-padding: 0 0 0 2px;
-}
-.form-hint.hint-ok {
-    -fx-text-fill: #10B981;  /* xanh lá — hợp lệ */
-}
-.form-hint.hint-error {
-    -fx-text-fill: #EF4444;  /* đỏ — chưa hợp lệ */
-}
-
-/* Khi field có lỗi realtime, đổi viền sang đỏ để bắt mắt */
-.form-input.input-error {
-    -fx-border-color: #EF4444;
-    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.18), 6, 0, 0, 0);
-}
-.form-input.input-error:focused {
-    -fx-border-color: #DC2626;
-    -fx-effect: dropshadow(three-pass-box, rgba(220, 38, 38, 0.25), 8, 0, 0, 0);
-}
-
-/* Nút lớn cho form auth */
-.button-large {
-    -fx-pref-height: 48px;
-    -fx-font-size: 14px;
-}
-
-/* ===================================================================
-   FIX ChoiceBox (BUG: text trắng trên nền trắng)
-   =================================================================== */
-.choice-box {
-    -fx-background-color: #F8FAFC;
-    -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
-    -fx-border-radius: 8px;
-    -fx-border-width: 1.5px;
-    -fx-padding: 4px 12px;
-}
-.choice-box:focused {
-    -fx-background-color: white;
-    -fx-border-color: #1976D2;
-    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.18), 6, 0, 0, 0);
-}
-/* Đây là chỗ hiển thị value đã chọn — fix cho hiện chữ đen */
-.choice-box > .label {
-    -fx-text-fill: #0F172A;
-    -fx-font-size: 14px;
-}
-/* Mũi tên dropdown */
-.choice-box .open-button {
-    -fx-padding: 0 4px 0 0;
-}
-.choice-box .open-button > .arrow {
-    -fx-background-color: #64748B;
-}
-/* Popup menu khi mở dropdown */
-.choice-box .context-menu {
-    -fx-background-color: white;
-    -fx-background-radius: 8px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
-    -fx-padding: 4px;
-}
-.choice-box .menu-item {
-    -fx-background-radius: 6px;
-    -fx-padding: 8px 12px;
-}
-.choice-box .menu-item .label {
-    -fx-text-fill: #0F172A;
-    -fx-font-size: 14px;
-}
-.choice-box .menu-item:focused {
-    -fx-background-color: #EFF6FF;
-}
-.choice-box .menu-item:focused .label {
-    -fx-text-fill: #1976D2;
-    -fx-font-weight: bold;
-}
-
-.date-picker {
-    -fx-background-color: #F8FAFC;
-    -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
-    -fx-border-radius: 8px;
-    -fx-border-width: 1.5px;
-    -fx-pref-height: 44px;
-    -fx-min-height: 44px;
-    -fx-max-height: 44px;
-}
-.date-picker:focused {
-    -fx-background-color: white;
-    -fx-border-color: #1976D2;
-    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.18), 6, 0, 0, 0);
-}
-.date-picker > .text-field {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    /* Padding nhỏ hơn vì container đã có viền → tránh cộng dồn vượt 44px */
-    -fx-padding: 0 12px 0 14px;
-    -fx-font-size: 14px;
-    -fx-effect: null;
-    -fx-pref-height: 40px;
-}
-.date-picker > .text-field:focused {
-    -fx-effect: null;
-}
-.date-picker > .arrow-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0 10px 0 4px;
-}
-.date-picker > .arrow-button > .arrow {
-    -fx-background-color: #64748B;
-}
-.date-picker > .arrow-button:hover > .arrow {
-    -fx-background-color: #1976D2;
-}
-
-/* DatePicker popup (lịch) */
-.date-picker-popup {
-    -fx-background-color: white;
-    -fx-background-radius: 10px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 14, 0, 0, 5);
-}
-.date-picker-popup .month-year-pane {
-    -fx-background-color: #1976D2;
-}
-.date-picker-popup .spinner .button {
-    -fx-background-color: transparent;
-}
-.date-picker-popup .spinner .label {
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-}
-.date-picker-popup .spinner .arrow {
-    -fx-background-color: white;
-}
-.date-picker-popup .day-cell {
-    -fx-background-color: white;
-    -fx-text-fill: #0F172A;
-}
-.date-picker-popup .day-cell:hover {
-    -fx-background-color: #EFF6FF;
-    -fx-text-fill: #1976D2;
-}
-.date-picker-popup .selected {
-    -fx-background-color: #1976D2;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-}
-.date-picker-popup .today {
-    -fx-background-color: #FEF3C7;
-    -fx-text-fill: #92400E;
-    -fx-font-weight: bold;
-}
-
 /* 4. BUTTONS */
+
+/* 4.1 button-primary (Đăng nhập, Lưu, Đặt giá) */
 .button-primary {
     -fx-background-color: #1976D2;
     -fx-text-fill: white;
@@ -293,14 +33,15 @@
 }
 .button-primary:hover {
     -fx-background-color: #1565C0;
-    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.4), 8, 0, 0, 3);
-    -fx-translate-y: -2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(25, 118, 210, 0.4), 8, 0, 0, 3); /* Bóng tỏa sáng màu xanh */
+    -fx-translate-y: -2px; /* Nảy nhẹ lên */
 }
 .button-primary:pressed {
     -fx-background-color: #0D47A1;
     -fx-translate-y: 0px;
 }
 
+/* 4.2 button-secondary (Hủy, Quay lại) */
 .button-secondary {
     -fx-background-color: transparent;
     -fx-text-fill: #455A64;
@@ -317,41 +58,46 @@
 }
 .button-danger {
     -fx-background-color: transparent;
-    -fx-text-fill: #EF4444;
-    -fx-border-color: #FECACA;
+    -fx-text-fill: #EF4444; /* Màu đỏ san hô */
+    -fx-border-color: #FECACA; /* Viền đỏ nhạt */
     -fx-border-radius: 8px;
     -fx-border-width: 1.5px;
     -fx-font-weight: bold;
     -fx-padding: 8px 22px;
     -fx-cursor: hand;
 }
+
+/* Hiệu ứng bừng sáng khi đưa chuột vào */
 .button-danger:hover {
-    -fx-background-color: #FEF2F2;
-    -fx-text-fill: #DC2626;
-    -fx-border-color: #F87171;
-    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.2), 5, 0, 0, 0);
+    -fx-background-color: #FEF2F2; /* Nền chuyển sang màu hồng nhạt */
+    -fx-text-fill: #DC2626; /* Chữ đậm lên */
+    -fx-border-color: #F87171; /* Viền rõ nét hơn */
+    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.2), 5, 0, 0, 0); /* Tỏa hào quang đỏ */
 }
+
 .button-danger:pressed {
     -fx-background-color: #FEE2E2;
 }
 
-/* 5. TEXTFIELD & COMBOBOX (cũ — dùng cho các form khác ngoài auth) */
+/* 5. TEXTFIELD & COMBOBOX */
 .text-field, .password-field, .combo-box {
-    -fx-background-color: #F8FAFC;
+    -fx-background-color: #F8FAFC; /* Màu nền xám khói nhẹ */
     -fx-background-radius: 6px;
     -fx-border-color: #E2E8F0;
     -fx-border-radius: 6px;
     -fx-border-width: 1.5px;
-    -fx-padding: 10px 12px;
+    -fx-padding: 10px 12px; /* Rộng rãi hơn */
     -fx-text-fill: #1E293B;
 }
 .text-field:focused, .password-field:focused, .combo-box:focused {
     -fx-background-color: white;
-    -fx-border-color: #3B82F6;
+    -fx-border-color: #3B82F6; /* Viền sáng lên màu xanh nước biển */
     -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 6, 0, 0, 0);
 }
 
 /* 6. TABLE VIEW */
+
+/* Bo góc tổng thể bảng và nền trắng */
 .table-view {
     -fx-background-color: white;
     -fx-border-color: #E2E8F0;
@@ -359,43 +105,61 @@
     -fx-background-radius: 8px;
     -fx-padding: 5px;
 }
+
+/* Header trong suốt, kẻ đáy 2px */
 .table-view .column-header, .table-view .filler {
     -fx-background-color: transparent;
     -fx-border-color: transparent transparent #E2E8F0 transparent;
     -fx-border-width: 0 0 2px 0;
     -fx-padding: 12px 0;
 }
+
+/* Xóa cái ô vuông thừa ở góc trên cùng bên phải bảng */
 .table-view .column-header > .container > .place-holder {
     -fx-background-color: transparent;
 }
+
+/* Header */
 .table-view .column-header .label {
     -fx-text-fill: #64748B;
     -fx-font-weight: 800;
     -fx-font-size: 13px;
     -fx-alignment: center-left;
 }
+
+/* Chiều cao và đường phân cách */
 .table-row-cell {
     -fx-border-color: transparent transparent #F1F5F9 transparent;
     -fx-border-width: 0 0 1px 0;
-    -fx-cell-size: 45px;
+    -fx-cell-size: 45px; 
 }
+
+/* Hiệu ứng sọc ngựa vằn giúp dễ theo dõi hàng ngang */
 .table-row-cell:odd {
     -fx-background-color: #FAFAFA;
 }
+
+/* Hover khói nhạt */
 .table-row-cell:hover {
-    -fx-background-color: #F8FAFC;
+    -fx-background-color: #F8FAFC; 
 }
+
+/* Màu xanh khi Click chọn */
 .table-view:focused .table-row-cell:filled:selected,
 .table-row-cell:filled:selected {
-    -fx-background-color: #EFF6FF;
+    -fx-background-color: #EFF6FF; 
     -fx-table-cell-border-color: transparent;
 }
+
+/* Chữ hóa xanh đậm */
 .table-row-cell:filled:selected .table-cell {
-    -fx-text-fill: #1D4ED8;
+    -fx-text-fill: #1D4ED8; 
     -fx-font-weight: bold;
 }
+
+/* XÓA VIỀN DỌC TỪNG Ô */
 .table-cell {
-    -fx-border-width: 0;
+    -fx-border-width: 0; 
     -fx-padding: 0 0 0 10px;
 }
 
@@ -413,18 +177,18 @@
 .scroll-bar .increment-button, .scroll-bar .decrement-button {
     -fx-pref-width: 0;
     -fx-pref-height: 0;
-    -fx-opacity: 0;
+    -fx-opacity: 0; /* Ẩn đi 2 cái nút mũi tên ở hai đầu thanh cuộn */
 }
 
-/* 8. LABEL HIỂN THỊ GIÁ TIỀN */
+/* 8. LABEL HIỂN THỊ GIÁ TIỀN*/
 .label-price {
-    -fx-text-fill: #2E7D32;
+    -fx-text-fill: #2E7D32; /* Màu xanh lá cây đậm (Forest Green) */
     -fx-font-weight: bold;
     -fx-font-size: 18px;
     -fx-effect: dropshadow(two-pass-box, rgba(46, 125, 50, 0.1), 2, 0, 0, 1);
 }
 
-/* 9. TEXTAREA */
+/* 9. Ô NHẬP VĂN BẢN DÀI (TEXTAREA) */
 .text-area {
     -fx-background-color: transparent;
     -fx-border-color: #E2E8F0;
@@ -432,25 +196,29 @@
     -fx-border-width: 1.5px;
     -fx-padding: 2px;
 }
+
+/* Xóa nền và hiệu ứng lún sâu của phần ruột bên trong */
 .text-area .viewport,
 .text-area .content {
-    -fx-background-color: #F8FAFC;
+    -fx-background-color: #F8FAFC; /* Màu xám khói đồng bộ với TextField */
     -fx-background-radius: 5px;
 }
+
+/* Hiệu ứng khi click vào ô mô tả */
 .text-area:focused {
     -fx-border-color: #3B82F6;
     -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 6, 0, 0, 0);
 }
 
-/* 10. URGENT BADGE */
+/* 10. HUY HIỆU THỜI GIAN (URGENT BADGE) */
 .badge-urgent {
-    -fx-background-color: #FEF2F2;
-    -fx-text-fill: #DC2626;
-    -fx-font-weight: 900;
+    -fx-background-color: #FEF2F2; /* Nền đỏ pastel siêu nhạt */
+    -fx-text-fill: #DC2626; /* Chữ màu đỏ rực rỡ */
+    -fx-font-weight: 900; /* In đậm tối đa */
     -fx-font-size: 14px;
-    -fx-padding: 8px 18px;
-    -fx-background-radius: 20px;
-    -fx-border-color: #FECACA;
+    -fx-padding: 8px 18px; /* Bơm phồng cái khung lên */
+    -fx-background-radius: 20px; /* Bo tròn xoe 2 đầu như viên thuốc */
+    -fx-border-color: #FECACA; /* Viền đỏ mờ */
     -fx-border-radius: 20px;
 }
 
@@ -460,12 +228,18 @@
     -fx-tab-min-height: 32px;
     -fx-background-color: transparent;
 }
+
+/* Ẩn border header mặc định */
 .tab-pane > .tab-header-area > .tab-header-background {
     -fx-background-color: transparent;
 }
+
+/* Padding cho vùng header chứa các tab */
 .tab-pane > .tab-header-area {
     -fx-padding: 8 0 8 10;
 }
+
+/* ========== TAB BÌNH THƯỜNG (chưa chọn) ========== */
 .tab-pane .tab {
     -fx-background-color: #F1F5F9;
     -fx-background-radius: 6px 6px 0 0;
@@ -473,30 +247,41 @@
     -fx-cursor: hand;
     -fx-border-color: transparent;
 }
+
 .tab-pane .tab .tab-label {
     -fx-text-fill: #64748B;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
+
+/* ========== TAB KHI HOVER ========== */
 .tab-pane .tab:hover {
     -fx-background-color: #E0E7FF;
 }
+
 .tab-pane .tab:hover .tab-label {
     -fx-text-fill: #3B82F6;
 }
+
+/* ========== TAB ĐANG ĐƯỢC CHỌN ========== */
 .tab-pane .tab:selected {
     -fx-background-color: #3B82F6;
     -fx-background-radius: 8px 8px 0 0;
     -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 8, 0, 0, 2);
 }
+
 .tab-pane .tab:selected .tab-label {
     -fx-text-fill: white;
 }
+
+/* Bỏ cái đường viền xấu xí mặc định khi tab được chọn */
 .tab-pane > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
     -fx-border-color: transparent;
     -fx-border-insets: 0;
     -fx-border-width: 0;
 }
+
+/* Nội dung bên trong tab */
 .tab-pane > .tab-content-area {
     -fx-background-color: white;
     -fx-background-radius: 0 8px 8px 8px;

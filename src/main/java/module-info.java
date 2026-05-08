@@ -1,11 +1,8 @@
 module online.auction.system {
-    // Danh sách các nguyên liệu cần cho dự án
+    // Danh sách các "nguyên liệu" cần cho dự án
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;
-
-    // Thư viện băm mật khẩu BCrypt
-    requires jbcrypt;
 
     // Cho phép JavaFX truy cập vào các class trong package application và controller
     opens model.auction to javafx.base;
