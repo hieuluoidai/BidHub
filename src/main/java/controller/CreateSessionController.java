@@ -1,8 +1,11 @@
 package controller;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
@@ -30,6 +33,11 @@ public class CreateSessionController {
     @FXML private Label labelItemType;
     @FXML private Label labelItemName;
 
+    // Các control để chọn ngày + giờ kết thúc
+    @FXML private DatePicker datePickerEndDate;
+    @FXML private ComboBox<String> cbEndHour;
+    @FXML private ComboBox<String> cbEndMinute;
+
     /**
      * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.
      */
@@ -44,7 +52,7 @@ public class CreateSessionController {
 
             switch (newVal) {
                 case "Electronics":
-                		labelExtraInfo.setText("Hãng sản xuất (Brand)");
+                    labelExtraInfo.setText("Hãng sản xuất (Brand)");
                     textExtraInfo.setPromptText("Ví dụ: Apple, Samsung...");
                     break;
                 case "Art":
@@ -59,6 +67,15 @@ public class CreateSessionController {
                     labelExtraInfo.setText("Thông tin thêm");
             }
         });
+
+        // Nạp giờ (00–23) và phút (00, 05, 10, ..., 55) dạng String 2 chữ số
+        for (int h = 0; h < 24; h++) cbEndHour.getItems().add(String.format("%02d", h));
+        for (int m = 0; m < 60; m += 5) cbEndMinute.getItems().add(String.format("%02d", m));
+
+        // Mặc định: 7 ngày sau, lúc 23:55
+        datePickerEndDate.setValue(LocalDate.now().plusDays(7));
+        cbEndHour.setValue("23");
+        cbEndMinute.setValue("55");
     }
 
     /**
@@ -67,52 +84,61 @@ public class CreateSessionController {
     @FXML
     void handleSave() {
         try {
-            // 1. Thu thập dữ liệu từ các ô nhập thông tin
+            // 1. Thu thập dữ liệu
             String type = cbItemType.getValue();
             String name = textItemName.getText();
             String priceStr = textStartingPrice.getText();
             String desc = textDescription.getText();
             String extraInfo = textExtraInfo.getText();
+            LocalDate endDate = datePickerEndDate.getValue();
+            String endHourStr = cbEndHour.getValue();
+            String endMinStr  = cbEndMinute.getValue();
 
-            // 2. Kiểm tra tính hợp lệ (Validation)
-            if (type == null) {
-                showError("Vui lòng chọn loại sản phẩm!");
-                return;
-            }
-
+            // 2. Validation
+            if (type == null) { showError("Vui lòng chọn loại sản phẩm!"); return; }
             if (name.isEmpty() || priceStr.isEmpty() || extraInfo.isEmpty()) {
                 showError("Vui lòng điền đầy đủ các thông tin bắt buộc!");
                 return;
             }
-
-            double startingPrice = Double.parseDouble(priceStr);
-            if (startingPrice <= 0) {
-                showError("Giá khởi điểm phải lớn hơn 0!");
+            if (endDate == null || endHourStr == null || endMinStr == null) {
+                showError("Vui lòng chọn đầy đủ ngày, giờ và phút kết thúc!");
                 return;
             }
 
-            // 3. Tạo đối tượng (Factory Pattern)
-            // Tạo ID duy nhất dựa trên thời gian hiện tại để tránh trùng lặp
+            double startingPrice = Double.parseDouble(priceStr);
+            if (startingPrice <= 0) { showError("Giá khởi điểm phải lớn hơn 0!"); return; }
+
+            // 3. Ghép ngày + giờ + phút thành LocalDateTime
+            int endHour = Integer.parseInt(endHourStr);
+            int endMin  = Integer.parseInt(endMinStr);
+            LocalDateTime endTime   = LocalDateTime.of(endDate, LocalTime.of(endHour, endMin));
+            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15); // Bắt đầu sau 15s
+
+            if (!endTime.isAfter(startTime)) {
+                showError("Thời điểm kết thúc phải sau thời điểm bắt đầu (sau 15s từ bây giờ)!");
+                return;
+            }
+
+            // 4. Tạo Item & Auction (Factory Pattern)
             String itemId = "ITEM_" + System.currentTimeMillis();
             Item newItem = ItemFactory.createItem(type, itemId, name, desc, startingPrice, extraInfo);
 
-            // 4. Thiết lập phiên đấu giá sản phẩm này
             String auctionId = "AUC_" + System.currentTimeMillis();
-            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15); // Bắt đầu sau 15 giây kể từ lúc tạo phiên
-            LocalDateTime endTime = startTime.plusDays(7); // Kéo dài trong 1 tuần
-
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
             String sellerId = AppState.getInstance().getCurrentUser().getUserId();
 
-            // 5. Lưu trữ
-            // Lưu vào MySQL thông qua các lớp DAO.
+            // 5. Lưu DB
             new database.ItemDAO().save(newItem, sellerId);
             new database.AuctionDAO().save(newAuction);
 
-            // Gửi đối tượng mới tạo lên Server để Server báo cho tất cả các Client khác.
+            // 6. Broadcast cho mọi client
             AppState.getInstance().getClient().send(newAuction);
 
-            System.out.println(">>> Đã tạo và gửi phiên đấu giá thành công: " + auctionId);
+            // Phiên mới được tạo → cache permission cũ đã không còn đúng
+            utils.SessionPermission.invalidateCache();
+
+            System.out.println(">>> Đã tạo phiên: " + auctionId
+                    + " | kết thúc: " + endTime);
             closeWindow();
 
         } catch (NumberFormatException e) {

@@ -8,6 +8,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
+import exception.InvalidBidException;
+import exception.AuctionClosedException;
 
 /**
  * Quản lý và điều hành toàn hệ thống phía Server.
@@ -46,6 +48,27 @@ public class AuctionManager {
         return null;
     }
 
+    /**
+     * Xử lý bid đồng thời, ngăn chặn Race Condition.
+     * Sử dụng các Exception cụ thể để báo lỗi chính xác về Client.
+     */
+    public synchronized boolean processBid(String auctionId, double newPrice, User bidder) {
+        Auction auction = getAuctionById(auctionId);
+
+        if (auction == null) {
+            System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
+            return false;
+        }
+
+        try {
+            auction.placeBid(bidder, newPrice);
+            return true;
+        } catch (InvalidBidException | AuctionClosedException e) {
+            System.err.println("Lỗi đặt giá: " + e.getMessage());
+            return false;
+        }
+    }
+
     // Trả về copy List để bảo vệ List gốc (Encapsulation).
     public synchronized List<Auction> getAllAuctions() {
         return new ArrayList<>(this.auctions);
@@ -80,7 +103,7 @@ public class AuctionManager {
                         auction.setStatus("FINISHED");
                         auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
 
-                        // Giải phóng lock của phiên đã đóng để không giữ tài nguyên
+                        // Giải phóng lock của phiên đã đóng để không giữ tài nguyên (Logic của Hiếu)
                         ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
 
                         String winner = (auction.getHighestBid() != null)
@@ -98,29 +121,6 @@ public class AuctionManager {
             }
 
         }, 0, 1, TimeUnit.SECONDS);
-    }
-    
-    /**
-     * @deprecated Cách bid cũ — synchronized lock trên TOÀN BỘ manager khiến bid
-     * trên các phiên khác nhau không chạy song song được. Giữ lại để tương thích
-     * test cũ; production hãy gọi processBid của ConcurrentBidManager.
-     */
-    @Deprecated
-    public synchronized boolean processBid(String auctionId, double newPrice, User bidder) {
-        Auction auction = getAuctionById(auctionId);
- 
-        if (auction == null) {
-            System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
-            return false;
-        }
- 
-        try {
-            auction.placeBid(bidder, newPrice);
-            return true;
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            System.err.println("Lỗi đặt giá: " + e.getMessage());
-            return false;
-        }
     }
 
     /**
@@ -141,9 +141,38 @@ public class AuctionManager {
     }
 
     /**
+     * Xóa phiên đấu giá khỏi danh sách trong bộ nhớ.
+     * Cần gọi sau khi đã xóa khỏi DB để giữ trạng thái nhất quán giữa server-memory và DB.
+     * Đồng thời giải phóng lock của ConcurrentBidManager nếu có.
+     */
+    public synchronized boolean removeAuction(String auctionId) {
+        boolean removed = auctions.removeIf(a -> a.getAuctionId().equals(auctionId));
+        if (removed) {
+            ConcurrentBidManager.getInstance().releaseLock(auctionId);
+            System.out.println(">>> Hệ thống: Đã xóa phiên đấu giá " + auctionId);
+        }
+        return removed;
+    }
+
+    /**
+     * Reload lại 1 phiên đấu giá từ DB vào memory (sau khi user sửa thông tin).
+     * Logic: xóa instance cũ → load lại từ DB → add vào.
+     * Nếu DB không còn (do bị xóa) thì chỉ remove khỏi memory.
+     */
+    public synchronized void reloadAuctionFromDB(String auctionId) {
+        auctions.removeIf(a -> a.getAuctionId().equals(auctionId));
+        Auction reloaded = new database.AuctionDAO().findById(auctionId);
+        if (reloaded != null) {
+            auctions.add(reloaded);
+            System.out.println(">>> Đã reload phiên " + auctionId + " từ DB");
+        }
+    }
+
+    /**
      * Xóa toàn bộ phiên trong memory.
-     * CHỈ DÙNG TRONG UNIT TEST để tránh state pollution của Singleton giữa
-     * các test method.
+     * CHỈ DÙNG TRONG UNIT TEST để đảm bảo mỗi test bắt đầu với state sạch —
+     * tránh state pollution của Singleton giữa các test method.
+     * KHÔNG được dùng trong production logic.
      */
     public synchronized void clearAll() {
         auctions.clear();

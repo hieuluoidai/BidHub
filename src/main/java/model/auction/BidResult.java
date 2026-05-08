@@ -4,6 +4,11 @@ import java.io.Serializable;
 
 /**
  * Kết quả của một lần đặt giá — được gửi từ Server về đúng Client đã bid.
+ *
+ * Có 3 trạng thái:
+ * SUCCESS  — bid thành công, bạn đang dẫn đầu
+ * OUTBID   — bid thất bại vì người khác đã vào giá cao hơn trong cùng lúc
+ * FAILURE  — bid không hợp lệ (phiên đóng, sai định dạng, v.v.)
  */
 public class BidResult implements Serializable {
 
@@ -31,7 +36,7 @@ public class BidResult implements Serializable {
     /** Bid thành công — bidder đang dẫn đầu. */
     public static BidResult success(String auctionId, double amount, String winnerUsername) {
         return new BidResult(Status.SUCCESS, auctionId, amount, amount,
-                String.format("Đặt giá $%.2f thành công! Bạn đang dẫn đầu.", amount),
+                String.format("✅ Đặt giá $%.2f thành công! Bạn đang dẫn đầu.", amount),
                 winnerUsername);
     }
 
@@ -46,12 +51,12 @@ public class BidResult implements Serializable {
         return new BidResult(Status.FAILURE, auctionId, amount, -1, reason, null);
     }
 
-    public Status  getStatus()         { return status; }
-    public String  getAuctionId()      { return auctionId; }
-    public double  getBidAmount()      { return bidAmount; }
-    public double  getCurrentPrice()   { return currentPrice; }
-    public String  getMessage()        { return message; }
-    public String  getWinnerUsername() { return winnerUsername; }
+    public Status getStatus()          { return status; }
+    public String getAuctionId()       { return auctionId; }
+    public double getBidAmount()       { return bidAmount; }
+    public double getCurrentPrice()    { return currentPrice; }
+    public String getMessage()         { return message; }
+    public String getWinnerUsername()  { return winnerUsername; }
     public boolean isSuccess()         { return status == Status.SUCCESS; }
     public boolean isOutbid()          { return status == Status.OUTBID; }
 

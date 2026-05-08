@@ -12,9 +12,10 @@ import model.manager.AppState;
 import model.user.Bidder;
 import model.user.User;
 import utils.AlertHelper;
+import java.util.function.Consumer;
 
 /**
- * Điều khiển cửa sổ Bid.
+ * Điều khiển cửa sổ đặt giá (Bid Window).
  */
 public class BidController {
 
@@ -27,9 +28,22 @@ public class BidController {
 
     private Auction currentAuction;
 
+    /**
+     * Callback nhận BidResult để báo về cho màn hình cha (ItemDetailsController)
+     * cập nhật UI ngay mà không cần chờ Server broadcast toàn bộ list.
+     */
+    private Consumer<BidResult> onBidDoneCallback;
+
+    public void setOnBidDoneCallback(Consumer<BidResult> callback) {
+        this.onBidDoneCallback = callback;
+    }
+
+    /**
+     * Nhận dữ liệu phiên đấu giá từ màn hình Dashboard/Details truyền sang.
+     */
     public void setAuctionData(Auction auction) {
         this.currentAuction = auction;
-        labelItemName.setText("Sản phẩm: " + auction.getItemName());
+        labelItemName.setText("Sản phẩm: " + auction.getItem().getItemName());
         labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f", auction.getCurrentPrice()));
     }
 
@@ -50,6 +64,7 @@ public class BidController {
                 showError("Số tiền phải lớn hơn 0!");
                 return;
             }
+
             if (amount <= currentAuction.getCurrentPrice()) {
                 showError(String.format("Giá đặt phải cao hơn giá hiện tại ($%.2f)!",
                         currentAuction.getCurrentPrice()));
@@ -62,52 +77,55 @@ public class BidController {
                 return;
             }
 
-            // Disable nút trong lúc chờ phản hồi để tránh double-click
+            // 1. Vô hiệu hóa nút bấm để tránh gửi trùng (Race Condition phía Client)
             setLoading(true);
 
-            // Đăng ký callback nhận kết quả từ server
-            AppState.getInstance().getClient().setOnBidResult(this::handleBidResult);
+            // 2. Đăng ký nhận kết quả trả về từ ConcurrentBidManager
+            AppState.getInstance().getClient().setBidResultCallback(this::handleBidResult);
 
-            // Gửi lệnh BID
-            String command = "BID:"
-                    + currentAuction.getAuctionId() + ":"
-                    + amount + ":"
-                    + currentUser.getUserId();
+            // 3. Gửi lệnh BID theo giao thức đồng bộ: BID:<auctionId>:<amount>:<bidderId>
+            String command = String.format("BID:%s:%.2f:%s",
+                    currentAuction.getAuctionId(),
+                    amount,
+                    currentUser.getUserId());
+            
             AppState.getInstance().getClient().send(command);
 
         } catch (NumberFormatException e) {
-            showError("Số tiền không hợp lệ (phải là số)!");
+            showError("Số tiền không hợp lệ (phải là định dạng số)!");
         }
     }
 
     /**
-     * Callback xử lý BidResult từ server (đã ở trên FX thread sẵn rồi).
+     * Xử lý kết quả trả về từ Server (đã được bọc trong Platform.runLater từ AuctionClient).
      */
     private void handleBidResult(BidResult result) {
-        // Bỏ qua nếu kết quả không phải của phiên này (an toàn nếu user mở nhiều bid window)
+        // Bỏ qua nếu kết quả thuộc về phiên khác (trong trường hợp user mở nhiều cửa sổ bid)
         if (currentAuction == null || !currentAuction.getAuctionId().equals(result.getAuctionId())) {
             return;
         }
 
-        // Gỡ callback để không nhận thêm
-        AppState.getInstance().getClient().setOnBidResult(null);
+        // Gỡ callback sau khi đã nhận được phản hồi
+        AppState.getInstance().getClient().setBidResultCallback(null);
         setLoading(false);
+
+        // Báo kết quả cho các controller khác đang lắng nghe
+        if (onBidDoneCallback != null) {
+            onBidDoneCallback.accept(result);
+        }
 
         switch (result.getStatus()) {
             case SUCCESS -> {
-                AlertHelper.show(AlertHelper.Type.SUCCESS,
-                        "Đặt giá thành công", result.getMessage());
+                AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", result.getMessage());
                 closeStage();
             }
             case OUTBID -> {
-                // Cập nhật giá hiển thị + giữ cửa sổ để user bid lại
-                labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f",
-                        result.getCurrentPrice()));
+                // Cập nhật giá mới nhất để user biết đường bid lại ngay
+                labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f", result.getCurrentPrice()));
                 showError(result.getMessage());
             }
             case FAILURE -> {
-                AlertHelper.show(AlertHelper.Type.ERROR,
-                        "Đặt giá thất bại", result.getMessage());
+                AlertHelper.show(AlertHelper.Type.ERROR, "Thất bại", result.getMessage());
                 closeStage();
             }
         }
@@ -115,17 +133,14 @@ public class BidController {
 
     @FXML
     void handleCancel() {
-        // Gỡ callback nếu user hủy giữa chừng
-        AppState.getInstance().getClient().setOnBidResult(null);
-        Stage currentStage = (Stage) cancelButton.getScene().getWindow();
-        currentStage.close();
+        // Hủy đăng ký callback nếu thoát ngang
+        AppState.getInstance().getClient().setBidResultCallback(null);
+        closeStage();
     }
 
     private void setLoading(boolean loading) {
-        Platform.runLater(() -> {
-            if (confirmButton != null) confirmButton.setDisable(loading);
-            if (cancelButton  != null) cancelButton.setDisable(loading);
-        });
+        if (confirmButton != null) confirmButton.setDisable(loading);
+        if (cancelButton != null) cancelButton.setDisable(loading);
     }
 
     private void showError(String msg) {

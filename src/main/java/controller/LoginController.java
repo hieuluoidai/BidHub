@@ -1,6 +1,7 @@
 package controller;
 
 import database.UserDAO;
+import exception.AuthenticationException;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -26,27 +27,30 @@ public class LoginController {
             return;
         }
 
-        UserDAO userDAO   = new UserDAO();
-        // login() sẽ verify bằng BCrypt bên trong
-        User    foundUser = userDAO.login(username, password);
+        try {
+            UserDAO userDAO   = new UserDAO();
+            // login() sẽ verify bằng BCrypt bên trong
+            User    foundUser = userDAO.login(username, password);
 
-        if (foundUser != null) {
-            try {
-                AppState.getInstance().getClient().connect("localhost", 1234);
-                AppState.getInstance().setCurrentUser(foundUser);
-
-                if (foundUser instanceof Admin) {
-                    AppState.getInstance().getSceneManager().showAdminDashboard();
-                } else {
-                    AppState.getInstance().getSceneManager().showDashboard();
-                }
-
-            } catch (Exception e) {
-                showError("Lỗi: Không thể kết nối tới Server!");
-                e.printStackTrace();
+            // Thay vì kiểm tra null → ném exception
+            if (foundUser == null) {
+                throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không chính xác!");
             }
-        } else {
-            showError("Tên đăng nhập hoặc mật khẩu không chính xác!");
+
+            AppState.getInstance().getClient().connect("localhost", 1234);
+            AppState.getInstance().setCurrentUser(foundUser);
+
+            if (foundUser instanceof Admin) {
+                AppState.getInstance().getSceneManager().showAdminDashboard();
+            } else {
+                AppState.getInstance().getSceneManager().showDashboard();
+            }
+
+        } catch (AuthenticationException e) {      // ← bắt riêng lỗi login
+            showError(e.getMessage());
+        } catch (Exception e) {                    // ← giữ nguyên lỗi kết nối server
+            showError("Lỗi: Không thể kết nối tới Server!");
+            e.printStackTrace();
         }
     }
 

@@ -72,10 +72,10 @@ public class ItemDAO {
     public List<Item> findAll() {
         List<Item> items = new ArrayList<>();
         String sql = "SELECT * FROM items";
-        
+
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             // Duyệt qua từng dòng kết quả và biến nó thành đối tượng Java
             while (rs.next()) {
                 items.add(mapResultSetToItem(rs));
@@ -94,12 +94,115 @@ public class ItemDAO {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, itemId);
             ResultSet rs = stmt.executeQuery();
-            
+
             if (rs.next()) {
                 return mapResultSetToItem(rs);
             }
         } catch (SQLException e) {
             System.err.println("Lỗi tìm kiếm sản phẩm theo ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Cập nhật thông tin một sản phẩm đã có trong DB.
+     * Lưu ý: Không cho phép đổi item_type (Electronics/Art/Vehicle)
+     * vì các cột đặc thù (brand, artist...) phụ thuộc vào type.
+     *
+     * @param item     Item đã được cập nhật (cùng item_id, có thể đổi name/desc/price/extra)
+     * @param sellerId ID của người bán — để đảm bảo chỉ chủ phiên mới sửa được
+     * @return true nếu update thành công ít nhất 1 dòng
+     */
+    public boolean update(Item item, String sellerId) {
+        // Mệnh đề WHERE có cả seller_id để chống "tampering":
+        // người khác mạo danh cũng không sửa được sản phẩm của người khác
+        String sql = """
+            UPDATE items
+               SET item_name      = ?,
+                   description    = ?,
+                   starting_price = ?,
+                   brand          = ?,
+                   artist         = ?
+             WHERE item_id   = ?
+               AND seller_id = ?
+            """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, item.getItemName());
+            stmt.setString(2, item.getDescription());
+            stmt.setDouble(3, item.getStartingPrice());
+
+            // Reset cả 2 cột đặc thù về NULL trước, sau đó set đúng cột theo type
+            stmt.setNull(4, Types.VARCHAR); // brand
+            stmt.setNull(5, Types.VARCHAR); // artist
+
+            if (item instanceof Electronics e) {
+                stmt.setString(4, e.getBrand());
+            } else if (item instanceof Art a) {
+                stmt.setString(5, a.getArtist());
+            } else if (item instanceof Vehicle v) {
+                stmt.setString(4, v.getBrand());
+            }
+
+            stmt.setString(6, item.getItemId());
+            stmt.setString(7, sellerId);
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật sản phẩm: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Phiên bản update cho Admin: không kiểm tra seller_id nên admin có quyền sửa mọi sản phẩm.
+     */
+    public boolean updateAsAdmin(Item item) {
+        String sql = """
+            UPDATE items
+               SET item_name      = ?,
+                   description    = ?,
+                   starting_price = ?,
+                   brand          = ?,
+                   artist         = ?
+             WHERE item_id = ?
+            """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, item.getItemName());
+            stmt.setString(2, item.getDescription());
+            stmt.setDouble(3, item.getStartingPrice());
+
+            stmt.setNull(4, Types.VARCHAR);
+            stmt.setNull(5, Types.VARCHAR);
+
+            if (item instanceof Electronics e) {
+                stmt.setString(4, e.getBrand());
+            } else if (item instanceof Art a) {
+                stmt.setString(5, a.getArtist());
+            } else if (item instanceof Vehicle v) {
+                stmt.setString(4, v.getBrand());
+            }
+
+            stmt.setString(6, item.getItemId());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật sản phẩm (admin): " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Tìm seller_id của một sản phẩm — phục vụ cho việc kiểm tra quyền sở hữu.
+     */
+    public String findSellerIdByItemId(String itemId) {
+        String sql = "SELECT seller_id FROM items WHERE item_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, itemId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getString("seller_id");
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm seller_id của sản phẩm: " + e.getMessage());
         }
         return null;
     }
@@ -111,7 +214,7 @@ public class ItemDAO {
         String sql = "DELETE FROM items WHERE item_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, itemId);
-            
+
             // executeUpdate trả về số dòng bị ảnh hưởng. Nếu > 0 nghĩa là xóa thành công.
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -129,7 +232,7 @@ public class ItemDAO {
         String itemName      = rs.getString("item_name");
         String description   = rs.getString("description");
         double startingPrice = rs.getDouble("starting_price");
-        
+
         // Dùng item_type để quyết định sẽ gọi Constructor nào
         String itemType      = rs.getString("item_type").toUpperCase();
 
@@ -140,7 +243,7 @@ public class ItemDAO {
             case "ART"         -> new Art(itemId, itemName, description, startingPrice, rs.getString("artist"));
             // Nếu là xe cộ, lấy cột 'brand'
             case "VEHICLE"     -> new Vehicle(itemId, itemName, description, startingPrice, rs.getString("brand"));
-            
+
             default -> throw new SQLException("Lỗi dữ liệu: Loại sản phẩm không hợp lệ: " + itemType);
         };
     }

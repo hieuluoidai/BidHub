@@ -502,3 +502,58 @@
     -fx-background-radius: 0 8px 8px 8px;
     -fx-padding: 12;
 }
+
+/* Tối ưu nút Danger để nó nổi bật hơn khi làm nút xác nhận chính */
+.button-danger-filled {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+.button-danger-filled:hover {
+    -fx-background-color: #DC2626;
+    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.4), 10, 0, 0, 4);
+}
+
+/* Hiệu ứng focus cho DatePicker trong EditSession */
+.date-picker .text-field {
+    -fx-background-color: transparent;
+}
+
+/* Nút Xóa phiên được đồng bộ hóa với style của Hiếu */
+.button-danger-confirm {
+    -fx-background-color: #EF4444; /* Màu đỏ Danger */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 24px;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+}
+
+.button-danger-confirm:hover {
+    -fx-background-color: #DC2626;
+    /* Hiệu ứng bóng đỏ giống nút Primary xanh của bạn */
+    -fx-effect: dropshadow(three-pass-box, rgba(239, 68, 68, 0.4), 8, 0, 0, 3);
+    -fx-translate-y: -2px;
+}
+
+.button-danger-confirm:pressed {
+    -fx-background-color: #B91C1C;
+    -fx-translate-y: 0px;
+}
+
+/* Viền chuyên dụng cho cửa sổ xác nhận để tránh bị lẫn nền */
+.confirm-dialog-border {
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    
+    /* Thêm viền màu Slate Light */
+    -fx-border-color: #CBD5E1; 
+    -fx-border-radius: 16px;
+    -fx-border-width: 1.5px;
+    
+    /* Đổ bóng đậm hơn để tạo chiều sâu (Shadow) */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 25, 0, 0, 10);
+}

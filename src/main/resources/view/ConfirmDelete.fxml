@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane style="-fx-background-color: transparent; -fx-padding: 40;" 
+           stylesheets="@style.css" 
+           xmlns="http://javafx.com/javafx/25" 
+           xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="controller.ConfirmDeleteController">
+   <children>
+      <VBox alignment="CENTER" spacing="22.0" styleClass="confirm-dialog-border" maxWidth="420.0" maxHeight="340.0">
+         <padding>
+            <Insets bottom="35.0" left="35.0" right="35.0" top="35.0" />
+         </padding>
+         <children>
+            <StackPane>
+               <children>
+                  <Circle fill="#FEF2F2" radius="32.0" stroke="#FEE2E2" strokeWidth="2.0" />
+                  <Label text="!" textFill="#EF4444" style="-fx-font-size: 36px; -fx-font-weight: 900;" />
+               </children>
+            </StackPane>
+
+            <VBox alignment="CENTER" spacing="8.0">
+               <children>
+                  <Label styleClass="auth-title" text="Xác nhận xóa phiên" />
+                  <Label styleClass="auth-subtitle" text="Hành động này sẽ xóa vĩnh viễn sản phẩm và lịch sử đấu giá." textAlignment="CENTER" wrapText="true" />
+               </children>
+            </VBox>
+
+            <VBox spacing="8.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 16;">
+               <children>
+                  <HBox spacing="8.0">
+                     <Label styleClass="form-label" text="Sản phẩm:" />
+                     <Label fx:id="labelItemName" text="Honda Wave" style="-fx-text-fill: #0F172A; -fx-font-weight: 600;" />
+                  </HBox>
+                  <HBox spacing="8.0">
+                     <Label styleClass="form-label" text="Mã phiên:" />
+                     <Label fx:id="labelAuctionId" text="AUC_12345" style="-fx-text-fill: #64748B; -fx-font-family: 'Consolas';" />
+                  </HBox>
+               </children>
+            </VBox>
+
+            <HBox alignment="CENTER" spacing="15.0">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="44.0" prefWidth="110.0" styleClass="button-secondary" text="Quay lại" />
+                  <Button mnemonicParsing="false" onAction="#handleConfirm" prefHeight="44.0" prefWidth="160.0" styleClass="button-danger-confirm" text="Xác nhận xóa" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</StackPane>

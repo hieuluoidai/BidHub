@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Bộ điều phối bid đồng thời — SINGLE POINT OF SYNCHRONIZATION cho mọi bid.
+ * Đảm bảo tính Thread-safe và hiệu năng cao bằng cơ chế Lock Per-Auction.
  */
 public class ConcurrentBidManager {
 
@@ -25,7 +26,7 @@ public class ConcurrentBidManager {
 
     private ConcurrentBidManager() {}
 
-    /** Singleton thread-safe (double-checked locking + volatile). */
+    /** Singleton thread-safe (double-checked locking + volatile) cho hiệu năng tối ưu. */
     public static ConcurrentBidManager getInstance() {
         if (instance == null) {
             synchronized (ConcurrentBidManager.class) {
@@ -35,22 +36,18 @@ public class ConcurrentBidManager {
         return instance;
     }
 
-    /**
-     * Lấy lock cho auctionId
-     */
+    /** Lấy hoặc tạo mới lock riêng cho từng auctionId (Fair lock). */
     private ReentrantLock getLock(String auctionId) {
         return auctionLocks.computeIfAbsent(auctionId, id -> new ReentrantLock(true));
     }
 
-    /**
-     * Bản test (không có DB).
-     */
+    /** Bản test/offline (không có DB). */
     public BidResult processBid(String auctionId, double amount, User bidder) {
         return processBid(auctionId, amount, bidder, null);
     }
 
     /**
-     * Bản production
+     * Bản production – Xử lý bid với đầy đủ cơ chế Double-check và lưu Database.
      */
     public BidResult processBid(String auctionId, double amount, User bidder,
                                 BidTransactionDAO bidDao) {
@@ -62,7 +59,7 @@ public class ConcurrentBidManager {
             return BidResult.failure(auctionId, amount, "Phiên đấu giá không tồn tại!");
         }
 
-        // ===== Optimistic pre-check (NGOÀI lock) =====
+        // ===== 1. Optimistic pre-check (NGOÀI lock để lọc nhanh) =====
         if (!"RUNNING".equals(auction.getStatus())) {
             failureCount.incrementAndGet();
             return BidResult.failure(auctionId, amount,
@@ -75,14 +72,14 @@ public class ConcurrentBidManager {
                             amount, auction.getCurrentPrice()));
         }
 
-        // ===== Critical section (lock per-auction) =====
+        // ===== 2. Critical section (lock per-auction) =====
         ReentrantLock lock = getLock(auctionId);
         if (lock.isLocked()) contentionCount.incrementAndGet();
 
         long t0 = System.nanoTime();
         lock.lock();
         try {
-            // Double-check vì state có thể đã đổi trong lúc chờ lock
+            // Double-check vì trạng thái có thể đã thay đổi trong lúc chờ lock
             auction = manager.getAuctionById(auctionId);
             if (auction == null) {
                 failureCount.incrementAndGet();
@@ -92,6 +89,7 @@ public class ConcurrentBidManager {
                 failureCount.incrementAndGet();
                 return BidResult.failure(auctionId, amount, "Phiên đã kết thúc trong lúc bạn chờ!");
             }
+            
             double currentPrice = auction.getCurrentPrice();
             if (amount <= currentPrice) {
                 outbidCount.incrementAndGet();
@@ -100,7 +98,7 @@ public class ConcurrentBidManager {
                                 currentPrice, amount));
             }
 
-            // ===== Memory update =====
+            // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
             try {
                 auction.placeBid(bidder, amount);
             } catch (IllegalArgumentException | IllegalStateException e) {
@@ -108,7 +106,7 @@ public class ConcurrentBidManager {
                 return BidResult.failure(auctionId, amount, e.getMessage());
             }
 
-            // ===== DB persist (ATOMIC với memory) =====
+            // ===== 4. Lưu vào DB (Đảm bảo tính nhất quán) =====
             if (bidDao != null) {
                 boolean saved = bidDao.save(auctionId, bidder.getUserId(), amount);
                 if (!saved) {
@@ -119,7 +117,7 @@ public class ConcurrentBidManager {
 
             successCount.incrementAndGet();
             long dt = System.nanoTime() - t0;
-            System.out.printf(">>> [LOCK] phiên %s | thread=%s | giữ lock %.2fms%n",
+            System.out.printf(">>> [LOCK SUCCESS] phiên %s | thread=%s | giữ lock %.2fms%n",
                     auctionId, Thread.currentThread().getName(), dt / 1_000_000.0);
 
             return BidResult.success(auctionId, amount, bidder.getUsername());
@@ -129,14 +127,16 @@ public class ConcurrentBidManager {
         }
     }
 
-    /** Giải phóng lock của phiên đã FINISHED. */
+    /** Giải phóng lock khi phiên đấu giá kết thúc. */
     public void releaseLock(String auctionId) {
         auctionLocks.remove(auctionId);
     }
 
-    public int activeLockCount() { return auctionLocks.size(); }
+    public int activeLockCount() { 
+        return auctionLocks.size(); 
+    }
 
-    // ===== Metrics getters (cho demo/log) =====
+    // ===== Metrics getters (Dùng cho báo cáo/demo bảo vệ đồ án) =====
     public long getSuccessCount()    { return successCount.get(); }
     public long getOutbidCount()     { return outbidCount.get(); }
     public long getFailureCount()    { return failureCount.get(); }
@@ -147,7 +147,7 @@ public class ConcurrentBidManager {
                 successCount.get(), outbidCount.get(), failureCount.get(), contentionCount.get());
     }
 
-    /** Reset metrics — chỉ dùng cho test. */
+    /** Reset metrics — chỉ dùng cho Unit Test. */
     public void resetMetrics() {
         successCount.set(0);
         outbidCount.set(0);
