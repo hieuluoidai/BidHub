@@ -70,13 +70,15 @@
 
                 <TextArea fx:id="txtDescription" editable="false" prefHeight="100.0" styleClass="text-area" wrapText="true" />
                 
-                <HBox alignment="CENTER_RIGHT" spacing="10.0">
+				<HBox alignment="CENTER_RIGHT" spacing="10.0">
                     <children>
                         <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="44.0" prefWidth="90.0" styleClass="button-secondary" text="Đóng" />
                         
-                        <Button fx:id="btnEdit" managed="false" mnemonicParsing="false" onAction="#handleEdit" prefHeight="44.0" prefWidth="70.0" styleClass="button-secondary" text="Sửa" visible="false" />
-                        <Button fx:id="btnDelete" managed="false" mnemonicParsing="false" onAction="#handleOpenDelete" prefHeight="44.0" prefWidth="70.0" styleClass="button-danger" text="Xóa" visible="false" />
+                        <Button fx:id="btnEdit" managed="false" mnemonicParsing="false" onAction="#handleEdit" prefHeight="44.0" prefWidth="75.0" styleClass="button-secondary" text="Sửa" visible="false" />
+                        <Button fx:id="btnCancel" managed="false" mnemonicParsing="false" onAction="#handleCancelAuction" prefHeight="44.0" prefWidth="115.0" styleClass="button-danger" text="Hủy phiên" visible="false" />
+                        <Button fx:id="btnDelete" managed="false" mnemonicParsing="false" onAction="#handleOpenDelete" prefHeight="44.0" prefWidth="75.0" styleClass="button-danger" text="Xóa" visible="false" />
                         
+                        <Button fx:id="btnPay" managed="false" mnemonicParsing="false" onAction="#handlePay" prefHeight="44.0" prefWidth="180.0" styleClass="button-primary" text="💰 Thanh toán ngay" visible="false" />
                         <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="44.0" styleClass="button-primary" text="Tham gia đấu giá ngay!" HBox.hgrow="ALWAYS" />
                     </children>
                 </HBox>

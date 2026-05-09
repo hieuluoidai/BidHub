@@ -44,6 +44,18 @@
                   <Button fx:id="bidButton" mnemonicParsing="false" onAction="#handleBid" prefHeight="30.0" prefWidth="100.0" styleClass="button-primary" text="Place Bid" />
                   <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="30.0" prefWidth="150.0" styleClass="button-primary" text="+ Create Session" />
                   <Region prefHeight="0.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+
+                  <!-- Balance hiển thị + nút Nạp tiền -->
+                  <Label text="Số dư:" style="-fx-font-size: 13px; -fx-text-fill: #475569; -fx-font-weight: bold;" />
+                  <Label fx:id="lblBalance" text="\$0.00"
+                         style="-fx-font-size: 16px; -fx-text-fill: #0369a1; -fx-font-weight: 800;
+                                -fx-padding: 4 12 4 12; -fx-background-color: #f0f9ff;
+                                -fx-background-radius: 6; -fx-border-color: #bae6fd;
+                                -fx-border-radius: 6;" />
+                  <Button fx:id="btnTopUp" mnemonicParsing="false" onAction="#handleTopUp"
+                          prefHeight="30.0" prefWidth="120.0" styleClass="button-primary"
+                          text="+ Nạp tiền" />
+
                   <Button mnemonicParsing="false" onAction="#handleLogout" styleClass="button-danger" text="Log out" textFill="RED" />
                </children>
             </HBox>

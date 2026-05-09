@@ -180,6 +180,117 @@ public class AuctionDAO {
     }
 
     /**
+     * Hủy phiên (CANCEL): cập nhật status sang 'CANCELED'.
+     * Quy tắc:
+     *   - Admin: cho phép hủy ở mọi trạng thái (trừ chính CANCELED/PAID)
+     *   - Seller: chỉ cho hủy phiên thuộc về mình và đang OPEN hoặc RUNNING
+     *
+     * @param requesterId ID người yêu cầu hủy
+     * @param isAdmin     true nếu requester là Admin
+     * @return  1 nếu hủy thành công
+     *          0 nếu không có quyền (không phải chủ phiên)
+     *         -1 nếu trạng thái không cho phép hủy
+     *         -2 nếu phiên không tồn tại / lỗi DB
+     */
+    public int cancelAuction(String auctionId, String requesterId, boolean isAdmin) {
+        // 1. Lấy thông tin phiên + chủ sở hữu
+        String selectSql = """
+                SELECT i.seller_id, a.status
+                  FROM auctions a
+                  INNER JOIN items i ON a.item_id = i.item_id
+                 WHERE a.auction_id = ?
+                """;
+        String ownerId = null, status = null;
+        try (PreparedStatement stmt = conn.prepareStatement(selectSql)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                ownerId = rs.getString("seller_id");
+                status  = rs.getString("status");
+            } else {
+                return -2;
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tra phiên để hủy: " + e.getMessage());
+            return -2;
+        }
+
+        // 2. Kiểm tra quyền
+        if (!isAdmin) {
+            if (!requesterId.equals(ownerId)) return 0;
+            // Seller chỉ được hủy OPEN hoặc RUNNING
+            if (!"OPEN".equals(status) && !"RUNNING".equals(status)) return -1;
+        } else {
+            // Admin không được hủy phiên đã CANCELED hoặc đã PAID
+            if ("CANCELED".equals(status) || "PAID".equals(status)) return -1;
+        }
+
+        // 3. Update sang CANCELED
+        String updateSql = "UPDATE auctions SET status = 'CANCELED' WHERE auction_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+            stmt.setString(1, auctionId);
+            return stmt.executeUpdate() > 0 ? 1 : -2;
+        } catch (SQLException e) {
+            System.err.println("Lỗi hủy phiên: " + e.getMessage());
+            return -2;
+        }
+    }
+
+    /**
+     * Lấy thông tin người thắng phiên đã FINISHED:
+     *   - winnerId: ID của bidder có giá cao nhất
+     *   - sellerId: ID của chủ sở hữu sản phẩm
+     *   - finalPrice: giá thắng cuộc
+     *
+     * @return mảng [winnerId, sellerId, finalPrice as String] hoặc null nếu
+     *         phiên chưa FINISHED, hoặc chưa có ai bid
+     */
+    public String[] findWinnerInfo(String auctionId) {
+        String sql = """
+                SELECT  bt.bidder_id   AS winner_id,
+                        i.seller_id    AS seller_id,
+                        bt.bid_amount  AS final_price
+                  FROM auctions a
+                  INNER JOIN items i ON a.item_id = i.item_id
+                  INNER JOIN bid_transactions bt ON bt.auction_id = a.auction_id
+                 WHERE a.auction_id = ?
+                   AND a.status     = 'FINISHED'
+                 ORDER BY bt.bid_amount DESC, bt.bid_time ASC
+                 LIMIT 1
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new String[] {
+                        rs.getString("winner_id"),
+                        rs.getString("seller_id"),
+                        String.valueOf(rs.getDouble("final_price"))
+                };
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tra thông tin người thắng: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Đánh dấu phiên đã PAID. Chỉ áp dụng được khi phiên đang ở FINISHED.
+     */
+    public boolean markAsPaid(String auctionId) {
+        String sql = "UPDATE auctions SET status = 'PAID' " +
+                     " WHERE auction_id = ? AND status = 'FINISHED'";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi đánh dấu PAID: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    /**
      * Lấy toàn bộ danh sách phiên đấu giá
      */
     public List<Auction> findAll() {

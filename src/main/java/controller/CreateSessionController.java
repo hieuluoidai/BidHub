@@ -37,6 +37,7 @@ public class CreateSessionController {
     @FXML private DatePicker datePickerEndDate;
     @FXML private ComboBox<String> cbEndHour;
     @FXML private ComboBox<String> cbEndMinute;
+    @FXML private TextField textStartDelay;       // Số giây đợi trước khi phiên RUNNING
 
     /**
      * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.
@@ -112,10 +113,18 @@ public class CreateSessionController {
             int endHour = Integer.parseInt(endHourStr);
             int endMin  = Integer.parseInt(endMinStr);
             LocalDateTime endTime   = LocalDateTime.of(endDate, LocalTime.of(endHour, endMin));
-            LocalDateTime startTime = LocalDateTime.now().plusSeconds(15); // Bắt đầu sau 15s
+
+            // Thời gian đợi trước khi phiên RUNNING — user tự nhập (mặc định 15s)
+            int startDelaySeconds = parseStartDelay();
+            if (startDelaySeconds < 0) {
+                showError("Thời gian bắt đầu phải là số nguyên dương (giây)!");
+                return;
+            }
+            LocalDateTime startTime = LocalDateTime.now().plusSeconds(startDelaySeconds);
 
             if (!endTime.isAfter(startTime)) {
-                showError("Thời điểm kết thúc phải sau thời điểm bắt đầu (sau 15s từ bây giờ)!");
+                showError("Thời điểm kết thúc phải sau thời điểm bắt đầu ("
+                        + startDelaySeconds + "s từ bây giờ)!");
                 return;
             }
 
@@ -162,6 +171,27 @@ public class CreateSessionController {
     private void showError(String msg) {
         labelError.setTextFill(Color.RED);
         labelError.setText(msg);
+    }
+
+    /**
+     * Đọc & validate trường "Bắt đầu sau (giây)" — mặc định 15s nếu để trống.
+     * Giới hạn 1–86400 giây (1 ngày) để tránh giá trị vô lý.
+     *
+     * @return số giây ≥ 0, hoặc -1 nếu input không hợp lệ
+     */
+    private int parseStartDelay() {
+        if (textStartDelay == null) return 15;   // FXML cũ chưa có field → giữ default 15s
+
+        String raw = textStartDelay.getText() == null ? "" : textStartDelay.getText().trim();
+        if (raw.isEmpty()) return 15;            // Để trống → mặc định 15s
+
+        try {
+            int sec = Integer.parseInt(raw);
+            if (sec < 1 || sec > 86400) return -1;
+            return sec;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /**

@@ -10,26 +10,37 @@ import model.auction.BidResult;
 
 /**
  * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
+ *
+ * Hỗ trợ 2 callback cơ chế:
+ *  - {@link #setBidResultCallback}: nhận BidResult sau khi bid (riêng cho BidController)
+ *  - {@link #setStringMessageCallback}: nhận String response (TOPUP_OK, PAY_OK, ...)
+ *    cho TopUpController và ItemDetailsController.
  */
 public class AuctionClient {
-    // Sử dụng volatile để đảm bảo an toàn đa luồng khi listener thread và UI thread cùng truy cập
+    // volatile vì listener thread và UI thread cùng truy cập
     private volatile Consumer<BidResult> bidResultCallback;
-    
+    private volatile Consumer<String>    stringMessageCallback;
+
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isRunning = false;
 
     /**
-     * Đăng ký callback để xử lý BidResult (ví dụ: cập nhật UI riêng cho người bid).
+     * Đăng ký callback nhận BidResult.
      */
     public void setBidResultCallback(Consumer<BidResult> callback) {
         this.bidResultCallback = callback;
     }
 
     /**
-     * Thiết lập kết nối tới Server và kích hoạt luồng lắng nghe dữ liệu.
+     * Đăng ký callback nhận String message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...).
+     * Truyền null để hủy đăng ký.
      */
+    public void setStringMessageCallback(Consumer<String> callback) {
+        this.stringMessageCallback = callback;
+    }
+
     public void connect(String host, int port) throws IOException {
         if (socket != null && !socket.isClosed()) return;
 
@@ -61,37 +72,42 @@ public class AuctionClient {
 
     @SuppressWarnings("unchecked")
     private void handleIncomingData(Object data) {
-        // Mọi thay đổi lên giao diện JavaFX phải chạy trong Platform.runLater
         Platform.runLater(() -> {
             System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
 
-            // 1. Xử lý Kết quả đặt giá (BidResult)
+            // 1. BidResult — kết quả đặt giá
             if (data instanceof BidResult result) {
                 System.out.println(">>> [CLIENT] BidResult nhận được: " + result);
                 if (bidResultCallback != null) {
                     bidResultCallback.accept(result);
                 } else {
-                    // Nếu controller chưa đăng ký callback, dùng thông báo mặc định
                     showBidResultAlert(result);
                 }
 
-            // 2. Xử lý Danh sách phiên đấu giá (Cập nhật Dashboard)
+            // 2. List<Auction> — toàn bộ danh sách phiên
             } else if (data instanceof List<?>) {
                 List<Auction> auctions = (List<Auction>) data;
                 System.out.println(">>> [CLIENT] Cập nhật danh sách " + auctions.size() + " phiên");
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
 
-            // 3. Xử lý Cập nhật một phiên đơn lẻ
+            // 3. Auction — cập nhật phiên đơn lẻ
             } else if (data instanceof Auction updatedAuction) {
                 System.out.println(">>> [CLIENT] Cập nhật phiên: " + updatedAuction.getAuctionId());
                 updateSingleAuction(updatedAuction);
+
+            // 4. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
+            } else if (data instanceof String msg) {
+                System.out.println(">>> [CLIENT] Server message: " + msg);
+                Consumer<String> handler = this.stringMessageCallback;
+                if (handler != null) {
+                    handler.accept(msg);
+                }
+                // Nếu không có handler đăng ký, tin nhắn sẽ bị bỏ qua —
+                // hợp lý vì các response như DELETE_OK đã được broadcast danh sách kèm theo.
             }
         });
     }
 
-    /**
-     * Hiển thị thông báo kết quả đặt giá dưới dạng Popup Alert.
-     */
     private void showBidResultAlert(BidResult result) {
         javafx.scene.control.Alert.AlertType type = switch (result.getStatus()) {
             case SUCCESS -> javafx.scene.control.Alert.AlertType.INFORMATION;
@@ -106,15 +122,12 @@ public class AuctionClient {
         alert.showAndWait();
     }
 
-    /**
-     * Gửi yêu cầu/dữ liệu lên Server.
-     */
     public void send(Object data) {
         try {
             if (out != null) {
                 out.writeObject(data);
                 out.flush();
-                out.reset(); // Quan trọng để gửi object đã thay đổi trạng thái
+                out.reset();
             }
         } catch (IOException e) {
             System.err.println(">>> Lỗi khi gửi dữ liệu: " + e.getMessage());

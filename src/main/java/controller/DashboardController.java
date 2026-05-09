@@ -32,6 +32,7 @@ import model.user.User;
 public class DashboardController {
 
     @FXML private Label titleLabel;
+    @FXML private Label lblBalance;        // hiển thị số dư hiện tại
     @FXML private TextField textSearch;
     @FXML private ComboBox<String> comboFilter;
     @FXML private TableView<Auction> auctionTable;
@@ -42,6 +43,7 @@ public class DashboardController {
     @FXML private TableColumn<Auction, String> colCategory;
     @FXML private Button bidButton;
     @FXML private Button createSessionButton;
+    @FXML private Button btnTopUp;          // nút nạp tiền
 
     /**
      * Khởi tạo cấu hình bảng, bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -118,6 +120,43 @@ public class DashboardController {
             boolean canCreate = (user instanceof Admin || user instanceof Seller);
             createSessionButton.setVisible(canCreate);
             createSessionButton.setManaged(canCreate);
+        }
+        refreshBalanceLabel();
+    }
+
+    /**
+     * Cập nhật label hiển thị số dư hiện tại.
+     * Gọi sau khi nạp tiền hoặc thanh toán xong để UI khớp với DB.
+     */
+    public void refreshBalanceLabel() {
+        if (lblBalance == null) return;
+        User user = AppState.getInstance().getCurrentUser();
+        if (user == null) return;
+        lblBalance.setText(String.format("$%,.2f", user.getBalance()));
+    }
+
+    /**
+     * Mở dialog nạp tiền.
+     */
+    @FXML
+    void handleTopUp() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/view/topup_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            controller.TopUpController controller = loader.getController();
+            // Khi nạp xong, cập nhật label balance trong dashboard
+            controller.setOnTopUpSuccess(this::refreshBalanceLabel);
+
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Nạp tiền vào ví");
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

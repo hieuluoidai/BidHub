@@ -112,6 +112,9 @@ public class AuctionManager {
                         System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
                                 + " - Người thắng: " + winner);
                         hasChange = true;
+
+                        // Note: KHÔNG còn auto-pay. Winner phải tự bấm nút Thanh toán
+                        // trong Item Details để chuyển FINISHED → PAID.
                     }
                 }
             }

@@ -93,6 +93,7 @@
                      <TableColumn fx:id="colUsername" text="Username" prefWidth="180"/>
                      <TableColumn fx:id="colEmail"    text="Email"    prefWidth="250"/>
                      <TableColumn fx:id="colRole"     text="Role"     prefWidth="120"/>
+                     <TableColumn fx:id="colBalance"  text="Số dư"    prefWidth="140"/>
                   </columns>
                   <columnResizePolicy>
                      <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

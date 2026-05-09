@@ -1,5 +1,6 @@
 package utils;
 
+import javafx.application.Platform; // <-- THÊM IMPORT NÀY
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,6 +15,7 @@ import javafx.stage.StageStyle;
 
 /**
  * Helper tạo popup đẹp, thay thế cho Alert mặc định của JavaFX.
+ * Đã tích hợp tính năng Thread-Safe (An toàn đa luồng).
  */
 public class AlertHelper {
 
@@ -36,6 +38,12 @@ public class AlertHelper {
 
     /** Hiện popup với title tuỳ chỉnh */
     public static void show(Type type, String title, String message) {
+        // TỰ ĐỘNG ĐIỀU HƯỚNG LUỒNG (TRÁNH LỖI ĐƠ APP)
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> show(type, title, message));
+            return;
+        }
+
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);

@@ -31,6 +31,7 @@ public class AdminController {
     @FXML private TableColumn<User, String> colUsername;
     @FXML private TableColumn<User, String> colEmail;
     @FXML private TableColumn<User, String> colRole;
+    @FXML private TableColumn<User, String> colBalance;
 
     @FXML private Label labelAdminName;
     @FXML private Label labelTotalAuctions;
@@ -130,6 +131,10 @@ public class AdminController {
         colEmail   .setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getEmail()));
         colRole    .setCellValueFactory(d -> new SimpleStringProperty(
             d.getValue().getClass().getSimpleName().toUpperCase()));
+        if (colBalance != null) {
+            colBalance.setCellValueFactory(d -> new SimpleStringProperty(
+                String.format("$%,.2f", d.getValue().getBalance())));
+        }
     }
 
     private void updateAuctionStats() {

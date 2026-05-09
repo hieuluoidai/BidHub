@@ -46,7 +46,7 @@
                 <HBox spacing="15.0">
                     <children>
                         <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label fx:id="labelStartingPrice" text="Starting Price ($)">
+                            <Label fx:id="labelStartingPrice" text="Starting Price (\$)">
                                 <font>
                                     <Font name="System Bold" size="12.0" />
                                 </font>
@@ -95,6 +95,19 @@
                             <ComboBox fx:id="cbEndMinute" prefHeight="46.0" prefWidth="102.0" promptText="Phút" />
                         </children>
                     </HBox>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <Label text="Bắt đầu sau (giây)">
+                        <font>
+                            <Font name="System Bold" size="12.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="textStartDelay" prefHeight="40.0"
+                               promptText="VD: 15 (mặc định nếu để trống)"
+                               style="-fx-background-radius: 5;" />
+                    <Label text="Phiên sẽ chuyển từ OPEN → RUNNING sau số giây này. Min 1, Max 86400 (1 ngày)."
+                           style="-fx-font-size: 11px; -fx-text-fill: #64748b;" wrapText="true" />
                 </VBox>
 
                 <Label fx:id="labelError" textFill="#ff3333" wrapText="true" />
