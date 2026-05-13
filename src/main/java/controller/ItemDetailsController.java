@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -19,6 +21,7 @@ import model.item.Vehicle;
 import model.manager.AppState;
 import model.user.Bidder;
 import utils.AlertHelper;
+import utils.ImageStorageService;
 import utils.SessionPermission;
 
 import java.io.IOException;
@@ -39,6 +42,7 @@ public class ItemDetailsController {
     @FXML private Label lblExtraInfo;
     @FXML private Label lblHighestBidder;
     @FXML private Label lblBidTime;
+    @FXML private ImageView itemImageView;    // Ảnh sản phẩm (nullable)
 
     @FXML private Button btnOpenBid;
     @FXML private Button btnEdit;
@@ -62,7 +66,7 @@ public class ItemDetailsController {
      */
     private void refreshUI() {
         if (auction == null) return;
-        
+
         lblItemName.setText(auction.getItemName());
         lblCategory.setText(auction.getItem().getClass().getSimpleName());
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
@@ -90,6 +94,21 @@ public class ItemDetailsController {
         } else {
             lblHighestBidder.setText("Chưa có ai (Giá khởi điểm)");
             lblBidTime.setText("-");
+        }
+
+        // Hiển thị ảnh sản phẩm (nếu có)
+        if (itemImageView != null) {
+            String imgPath = item.getImagePath();
+            if (imgPath != null && !imgPath.isBlank()) {
+                String uri = ImageStorageService.toFileUri(imgPath);
+                if (uri != null) {
+                    itemImageView.setImage(new Image(uri, 280, 0, true, true));
+                } else {
+                    itemImageView.setImage(null);  // File bị xóa khỏi disk
+                }
+            } else {
+                itemImageView.setImage(null);
+            }
         }
     }
 
@@ -200,16 +219,16 @@ public class ItemDetailsController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ConfirmDelete.fxml"));
             Parent root = loader.load();
-            
+
             ConfirmDeleteController controller = loader.getController();
             controller.setAuctionData(this.auction);
-            
+
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.initStyle(StageStyle.TRANSPARENT); 
-            
+            stage.initStyle(StageStyle.TRANSPARENT);
+
             Scene scene = new Scene(root);
-            scene.setFill(Color.TRANSPARENT); 
+            scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
             // Thêm kích thước Stage để không bị cắt bóng đổ
@@ -217,7 +236,7 @@ public class ItemDetailsController {
             stage.setHeight(420);
 
             stage.showAndWait();
-            
+
             if (controller.isConfirmed()) {
                 executeDelete();
             }
@@ -240,7 +259,7 @@ public class ItemDetailsController {
         AppState.getInstance().getClient().send(command);
 
         System.out.println(">>> Đã gửi yêu cầu xóa phiên: " + auctionId);
-        
+
         closeWindow();
         AlertHelper.show(AlertHelper.Type.INFO, "Yêu cầu xóa đã được gửi đi.");
     }
@@ -260,16 +279,16 @@ public class ItemDetailsController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ConfirmCancel.fxml"));
             Parent root = loader.load();
-            
+
             ConfirmCancelController controller = loader.getController();
             controller.setAuctionData(this.auction);
-            
+
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.initStyle(StageStyle.TRANSPARENT); 
-            
+            stage.initStyle(StageStyle.TRANSPARENT);
+
             Scene scene = new Scene(root);
-            scene.setFill(Color.TRANSPARENT); 
+            scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
             // Kích thước chuẩn để không bị cắt bóng đổ
@@ -277,7 +296,7 @@ public class ItemDetailsController {
             stage.setHeight(420);
 
             stage.showAndWait();
-            
+
             if (controller.isConfirmed()) {
                 String auctionId   = this.auction.getAuctionId();
                 String requesterId = AppState.getInstance().getCurrentUser().getUserId();
@@ -319,23 +338,23 @@ public class ItemDetailsController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ConfirmPay.fxml"));
             Parent root = loader.load();
-            
+
             ConfirmPayController controller = loader.getController();
             controller.setPaymentData(finalPrice, currentBalance);
-            
+
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.initStyle(StageStyle.TRANSPARENT); 
-            
+            stage.initStyle(StageStyle.TRANSPARENT);
+
             Scene scene = new Scene(root);
-            scene.setFill(Color.TRANSPARENT); 
+            scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
             stage.setWidth(500);
             stage.setHeight(460); // Cao hơn một chút để chứa danh sách biên lai
 
             stage.showAndWait();
-            
+
             // Nếu User bấm "Xác nhận thanh toán"
             if (controller.isConfirmed()) {
                 AppState.getInstance().getClient().setStringMessageCallback(this::handlePayResponse);
@@ -373,8 +392,8 @@ public class ItemDetailsController {
 
             // ĐÃ SỬA: Dùng AlertHelper hiện đại thay vì Alert mặc định
             utils.AlertHelper.show(
-                    utils.AlertHelper.Type.SUCCESS, 
-                    "Thanh toán thành công", 
+                    utils.AlertHelper.Type.SUCCESS,
+                    "Thanh toán thành công",
                     "Bạn đã thanh toán thành công cho phiên này. Sản phẩm chính thức thuộc về bạn!"
             );
 

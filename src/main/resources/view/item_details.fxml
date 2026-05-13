@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -12,13 +13,17 @@
 
 <StackPane styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
     <children>
-        <VBox maxHeight="600.0" maxWidth="500.0" prefWidth="480.0" spacing="15.0" styleClass="card">
+        <VBox maxHeight="780.0" maxWidth="500.0" prefWidth="480.0" spacing="15.0" styleClass="card">
             <children>
                 <Label fx:id="lblItemName" styleClass="label-header" text="Tên sản phẩm" wrapText="true">
                     <font>
                         <Font name="System Bold" size="24.0" />
                     </font>
                 </Label>
+
+                <HBox alignment="CENTER">
+                    <ImageView fx:id="itemImageView" fitWidth="280.0" fitHeight="180.0" preserveRatio="true" pickOnBounds="true" />
+                </HBox>
 
                 <VBox spacing="8.0">
                     <children>

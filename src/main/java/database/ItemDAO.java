@@ -28,34 +28,40 @@ public class ItemDAO {
     public boolean save(Item item, String sellerId) {
         String sql = """
             INSERT INTO items 
-                (item_id, item_name, description, starting_price, item_type, seller_id,
+                (item_id, item_name, description, image_path, starting_price, item_type, seller_id,
                  brand, warranty_months, artist, material, model, manufacture_year)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, item.getItemId());
             stmt.setString(2, item.getItemName());
             stmt.setString(3, item.getDescription());
-            stmt.setDouble(4, item.getStartingPrice());
-            stmt.setString(5, item.getItemType().toUpperCase());
-            stmt.setString(6, sellerId);
+            // image_path: NULL nếu không có ảnh
+            if (item.getImagePath() != null && !item.getImagePath().isBlank()) {
+                stmt.setString(4, item.getImagePath());
+            } else {
+                stmt.setNull(4, Types.VARCHAR);
+            }
+            stmt.setDouble(5, item.getStartingPrice());
+            stmt.setString(6, item.getItemType().toUpperCase());
+            stmt.setString(7, sellerId);
 
             // Mặc định tất cả cột đặc thù là NULL
-            stmt.setNull(7,  Types.VARCHAR); // brand
-            stmt.setNull(8,  Types.INTEGER); // warranty_months
-            stmt.setNull(9,  Types.VARCHAR); // artist
-            stmt.setNull(10, Types.VARCHAR); // material
-            stmt.setNull(11, Types.VARCHAR); // model
-            stmt.setNull(12, Types.INTEGER); // manufacture_year
+            stmt.setNull(8,  Types.VARCHAR); // brand
+            stmt.setNull(9,  Types.INTEGER); // warranty_months
+            stmt.setNull(10, Types.VARCHAR); // artist
+            stmt.setNull(11, Types.VARCHAR); // material
+            stmt.setNull(12, Types.VARCHAR); // model
+            stmt.setNull(13, Types.INTEGER); // manufacture_year
 
             // Override đúng cột theo từng loại
             if (item instanceof Electronics e) {
-                stmt.setString(7, e.getBrand());
+                stmt.setString(8, e.getBrand());
             } else if (item instanceof Art a) {
-                stmt.setString(9, a.getArtist());
+                stmt.setString(10, a.getArtist());
             } else if (item instanceof Vehicle v) {
-                stmt.setString(7, v.getBrand());
+                stmt.setString(8, v.getBrand());
             }
 
             stmt.executeUpdate();
@@ -120,6 +126,7 @@ public class ItemDAO {
             UPDATE items
                SET item_name      = ?,
                    description    = ?,
+                   image_path     = ?,
                    starting_price = ?,
                    brand          = ?,
                    artist         = ?
@@ -130,22 +137,28 @@ public class ItemDAO {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, item.getItemName());
             stmt.setString(2, item.getDescription());
-            stmt.setDouble(3, item.getStartingPrice());
+            // image_path: cho phép NULL nếu seller xóa ảnh
+            if (item.getImagePath() != null && !item.getImagePath().isBlank()) {
+                stmt.setString(3, item.getImagePath());
+            } else {
+                stmt.setNull(3, Types.VARCHAR);
+            }
+            stmt.setDouble(4, item.getStartingPrice());
 
             // Reset cả 2 cột đặc thù về NULL trước, sau đó set đúng cột theo type
-            stmt.setNull(4, Types.VARCHAR); // brand
-            stmt.setNull(5, Types.VARCHAR); // artist
+            stmt.setNull(5, Types.VARCHAR); // brand
+            stmt.setNull(6, Types.VARCHAR); // artist
 
             if (item instanceof Electronics e) {
-                stmt.setString(4, e.getBrand());
+                stmt.setString(5, e.getBrand());
             } else if (item instanceof Art a) {
-                stmt.setString(5, a.getArtist());
+                stmt.setString(6, a.getArtist());
             } else if (item instanceof Vehicle v) {
-                stmt.setString(4, v.getBrand());
+                stmt.setString(5, v.getBrand());
             }
 
-            stmt.setString(6, item.getItemId());
-            stmt.setString(7, sellerId);
+            stmt.setString(7, item.getItemId());
+            stmt.setString(8, sellerId);
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -162,6 +175,7 @@ public class ItemDAO {
             UPDATE items
                SET item_name      = ?,
                    description    = ?,
+                   image_path     = ?,
                    starting_price = ?,
                    brand          = ?,
                    artist         = ?
@@ -171,20 +185,25 @@ public class ItemDAO {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, item.getItemName());
             stmt.setString(2, item.getDescription());
-            stmt.setDouble(3, item.getStartingPrice());
+            if (item.getImagePath() != null && !item.getImagePath().isBlank()) {
+                stmt.setString(3, item.getImagePath());
+            } else {
+                stmt.setNull(3, Types.VARCHAR);
+            }
+            stmt.setDouble(4, item.getStartingPrice());
 
-            stmt.setNull(4, Types.VARCHAR);
             stmt.setNull(5, Types.VARCHAR);
+            stmt.setNull(6, Types.VARCHAR);
 
             if (item instanceof Electronics e) {
-                stmt.setString(4, e.getBrand());
+                stmt.setString(5, e.getBrand());
             } else if (item instanceof Art a) {
-                stmt.setString(5, a.getArtist());
+                stmt.setString(6, a.getArtist());
             } else if (item instanceof Vehicle v) {
-                stmt.setString(4, v.getBrand());
+                stmt.setString(5, v.getBrand());
             }
 
-            stmt.setString(6, item.getItemId());
+            stmt.setString(7, item.getItemId());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi cập nhật sản phẩm (admin): " + e.getMessage());
@@ -236,7 +255,7 @@ public class ItemDAO {
         // Dùng item_type để quyết định sẽ gọi Constructor nào
         String itemType      = rs.getString("item_type").toUpperCase();
 
-        return switch (itemType) {
+        Item item = switch (itemType) {
             // Nếu là đồ điện tử, lấy thêm cột 'brand'
             case "ELECTRONICS" -> new Electronics(itemId, itemName, description, startingPrice, rs.getString("brand"));
             // Nếu là đồ điện tử, lấy thêm cột 'artist'
@@ -246,5 +265,12 @@ public class ItemDAO {
 
             default -> throw new SQLException("Lỗi dữ liệu: Loại sản phẩm không hợp lệ: " + itemType);
         };
+
+        // Đọc image_path — bọc try/catch cho tương thích DB cũ chưa migrate
+        try {
+            item.setImagePath(rs.getString("image_path"));
+        } catch (SQLException ignore) { /* DB chưa có cột image_path */ }
+
+        return item;
     }
 }

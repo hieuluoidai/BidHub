@@ -1,19 +1,26 @@
 package controller;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import model.auction.Auction;
 import model.item.Item;
 import model.item.ItemFactory;
 import model.manager.AppState;
+import utils.ImageStorageService;
 
 /**
  * Điều khiển màn hình tạo phiên đấu giá mới.
@@ -38,6 +45,15 @@ public class CreateSessionController {
     @FXML private ComboBox<String> cbEndHour;
     @FXML private ComboBox<String> cbEndMinute;
     @FXML private TextField textStartDelay;       // Số giây đợi trước khi phiên RUNNING
+
+    // Các control cho ảnh sản phẩm
+    @FXML private ImageView imagePreview;
+    @FXML private Button    btnChooseImage;
+    @FXML private Button    btnRemoveImage;
+    @FXML private Label     lblImageStatus;
+
+    /** File ảnh user đã chọn (chưa copy vào uploads). Null nếu chưa chọn. */
+    private File selectedImageFile;
 
     /**
      * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.
@@ -132,6 +148,17 @@ public class CreateSessionController {
             String itemId = "ITEM_" + System.currentTimeMillis();
             Item newItem = ItemFactory.createItem(type, itemId, name, desc, startingPrice, extraInfo);
 
+            // 4b. Nếu user có chọn ảnh, copy vào uploads/ và set imagePath
+            if (selectedImageFile != null) {
+                try {
+                    String imagePath = ImageStorageService.saveImage(selectedImageFile, itemId);
+                    newItem.setImagePath(imagePath);
+                } catch (IOException | IllegalArgumentException ex) {
+                    showError("Lỗi lưu ảnh: " + ex.getMessage());
+                    return;
+                }
+            }
+
             String auctionId = "AUC_" + System.currentTimeMillis();
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
             String sellerId = AppState.getInstance().getCurrentUser().getUserId();
@@ -147,7 +174,8 @@ public class CreateSessionController {
             utils.SessionPermission.invalidateCache();
 
             System.out.println(">>> Đã tạo phiên: " + auctionId
-                    + " | kết thúc: " + endTime);
+                    + " | kết thúc: " + endTime
+                    + " | ảnh: " + (newItem.getImagePath() != null ? newItem.getImagePath() : "(không có)"));
             closeWindow();
 
         } catch (NumberFormatException e) {
@@ -197,6 +225,60 @@ public class CreateSessionController {
     /**
      * Tìm và đóng cửa sổ hiện tại.
      */
+    /**
+     * Mở FileChooser cho user chọn ảnh, sau đó hiển thị preview.
+     */
+    @FXML
+    void handleChooseImage() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Chọn ảnh sản phẩm");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Ảnh (JPG, PNG, GIF)",
+                        "*.jpg", "*.jpeg", "*.png", "*.gif"));
+
+        Stage owner = (Stage) textItemName.getScene().getWindow();
+        File file = chooser.showOpenDialog(owner);
+        if (file == null) return;
+
+        if (!ImageStorageService.isValidImageExtension(file.getName())) {
+            showError("Định dạng không hợp lệ. Chỉ chấp nhận JPG, PNG, GIF.");
+            return;
+        }
+
+        // Preview — load trực tiếp từ file, chưa copy
+        try {
+            Image img = new Image(file.toURI().toString(), 200, 0, true, true);
+            imagePreview.setImage(img);
+            selectedImageFile = file;
+            if (lblImageStatus != null) {
+                lblImageStatus.setText("Đã chọn: " + file.getName());
+                lblImageStatus.setTextFill(Color.web("#10B981"));
+            }
+            if (btnRemoveImage != null) {
+                btnRemoveImage.setVisible(true);
+                btnRemoveImage.setManaged(true);
+            }
+        } catch (Exception e) {
+            showError("Không đọc được ảnh: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Bỏ chọn ảnh — về trạng thái không có ảnh.
+     */
+    @FXML
+    void handleRemoveImage() {
+        selectedImageFile = null;
+        imagePreview.setImage(null);
+        if (lblImageStatus != null) {
+            lblImageStatus.setText("");
+        }
+        if (btnRemoveImage != null) {
+            btnRemoveImage.setVisible(false);
+            btnRemoveImage.setManaged(false);
+        }
+    }
+
     private void closeWindow() {
         // Lấy Stage thông qua ô nhập tên item.
         Stage stage = (Stage) textItemName.getScene().getWindow();

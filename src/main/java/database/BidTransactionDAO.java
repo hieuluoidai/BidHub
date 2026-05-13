@@ -171,4 +171,55 @@ public class BidTransactionDAO {
         }
         return 0;
     }
+
+    /**
+     * Tính TỔNG TIỀN bidder này đang "cam kết" — tức tổng giá đang dẫn đầu
+     * ở các phiên còn RUNNING.
+     *
+     * Logic SQL:
+     *   Với mỗi phiên RUNNING, tìm bid_amount MAX của phiên đó
+     *   Nếu bid cao nhất là của bidder này → cộng vào total
+     *   (tie-breaker: ai bid trước thì xếp trên — giống logic findWinner)
+     *
+     * @param bidderId       người cần tính commitment
+     * @param excludeAuction phiên cần loại trừ khỏi tính toán (vì đang định bid mới
+     *                        ở phiên này, sẽ tính riêng). Truyền null nếu không loại trừ.
+     * @return tổng cam kết (≥ 0)
+     */
+    public double getTopBidCommitment(String bidderId, String excludeAuction) {
+        // Subquery lấy bid cao nhất của mỗi phiên RUNNING (xếp theo giá DESC, thời gian ASC)
+        // Bên ngoài chỉ lấy những row mà top bidder == bidderId này, rồi SUM
+        String sql = """
+                SELECT COALESCE(SUM(top.bid_amount), 0) AS commitment
+                FROM (
+                    SELECT bt.auction_id, bt.bidder_id, bt.bid_amount,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY bt.auction_id
+                               ORDER BY bt.bid_amount DESC, bt.bid_time ASC
+                           ) AS rn
+                    FROM bid_transactions bt
+                    INNER JOIN auctions a ON bt.auction_id = a.auction_id
+                    WHERE a.status = 'RUNNING'
+                ) top
+                WHERE top.rn = 1
+                  AND top.bidder_id = ?
+                  AND (? IS NULL OR top.auction_id <> ?)
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, bidderId);
+            // Truyền excludeAuction 2 lần (cho IS NULL check và <> check)
+            if (excludeAuction == null) {
+                stmt.setNull(2, Types.VARCHAR);
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(2, excludeAuction);
+                stmt.setString(3, excludeAuction);
+            }
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getDouble("commitment");
+        } catch (SQLException e) {
+            System.err.println("Lỗi tính commitment: " + e.getMessage());
+        }
+        return 0;
+    }
 }

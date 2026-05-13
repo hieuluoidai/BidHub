@@ -98,6 +98,44 @@ public class ConcurrentBidManager {
                                 currentPrice, amount));
             }
 
+            // ===== 2b. Check balance: bidder phải có đủ tiền để cam kết bid =====
+            // Tính tổng các bid đang dẫn đầu của bidder ở các phiên RUNNING khác
+            // (không tính phiên hiện tại — bid mới ở phiên này sẽ thay thế bid cũ).
+            // Yêu cầu: balance >= other_commitment + amount.
+            //
+            // Note: chỉ check khi có bidDao thật (production). Trong unit test
+            // (ConcurrentBidStressTest), bidDao = null → bỏ qua check để test
+            // tập trung vào logic concurrency, không phụ thuộc DB.
+            if (bidDao != null) {
+                database.UserDAO userDao = new database.UserDAO();
+                double balance = userDao.getBalance(bidder.getUserId());
+                if (balance < 0) {
+                    failureCount.incrementAndGet();
+                    return BidResult.failure(auctionId, amount, "Không đọc được số dư của bạn!");
+                }
+
+                double otherCommitment = bidDao.getTopBidCommitment(
+                        bidder.getUserId(), auctionId);
+                double required = otherCommitment + amount;
+
+                if (balance < required) {
+                    failureCount.incrementAndGet();
+                    String detail;
+                    if (otherCommitment > 0) {
+                        detail = String.format(
+                                "Bạn cần $%.2f (đang dẫn đầu $%.2f ở phiên khác + bid này $%.2f), " +
+                                        "nhưng số dư chỉ có $%.2f. Hãy nạp thêm tiền hoặc bid thấp hơn.",
+                                required, otherCommitment, amount, balance);
+                    } else {
+                        detail = String.format(
+                                "Số dư không đủ! Cần $%.2f, bạn có $%.2f. Hãy nạp thêm tiền.",
+                                amount, balance);
+                    }
+                    return BidResult.failure(auctionId, amount, detail);
+                }
+            }
+
+
             // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
             try {
                 auction.placeBid(bidder, amount);
