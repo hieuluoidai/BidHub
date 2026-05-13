@@ -44,6 +44,7 @@ public class DashboardController {
     @FXML private Button bidButton;
     @FXML private Button createSessionButton;
     @FXML private Button btnTopUp;          // nút nạp tiền
+    @FXML private Label sidebarUserLabel;
 
     /**
      * Khởi tạo cấu hình bảng, bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -116,7 +117,10 @@ public class DashboardController {
     private void setupPermissions() {
         User user = AppState.getInstance().getCurrentUser();
         if (user != null) {
-            titleLabel.setText("Welcome, " + user.getUsername() + " (" + user.getClass().getSimpleName() + ")");
+            titleLabel.setText("Welcome, " + user.getUsername());
+            if (sidebarUserLabel != null) {
+                sidebarUserLabel.setText("👤  " + user.getUsername() + "\n" + user.getClass().getSimpleName());
+            }
             boolean canCreate = (user instanceof Admin || user instanceof Seller);
             createSessionButton.setVisible(canCreate);
             createSessionButton.setManaged(canCreate);

@@ -57,6 +57,7 @@ public class SceneManager {
             }
             
             stage.setTitle(title);
+            stage.sizeToScene();
             stage.centerOnScreen();
             stage.show();
             

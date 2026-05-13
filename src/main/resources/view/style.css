@@ -544,6 +544,162 @@
     -fx-translate-y: 0px;
 }
 
+/* ===================================================================
+   DASHBOARD — SIDEBAR LAYOUT
+   =================================================================== */
+.dashboard-root {
+    -fx-background-color: #F4F6FB;
+}
+
+.main-content {
+    -fx-background-color: transparent;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    -fx-background-color: linear-gradient(to bottom, #0D47A1 0%, #1565C0 55%, #1976D2 100%);
+    -fx-effect: dropshadow(gaussian, rgba(13, 71, 161, 0.35), 18, 0, 4, 0);
+}
+.sidebar-logo {
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.45), 14, 0.2, 0, 0);
+}
+.sidebar-brand {
+    -fx-text-fill: white;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-font-family: "Georgia", "Segoe UI", serif;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 1);
+}
+.sidebar-brand-sub {
+    -fx-text-fill: rgba(255,255,255,0.7);
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-font-weight: 500;
+}
+.sidebar-section {
+    -fx-text-fill: rgba(255,255,255,0.5);
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-padding: 0 0 4 6;
+}
+
+.sidebar-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(255,255,255,0.82);
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 11 16 11 16;
+    -fx-background-radius: 10px;
+    -fx-cursor: hand;
+}
+.sidebar-item:hover {
+    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-text-fill: white;
+}
+.sidebar-item-active {
+    -fx-background-color: rgba(255,255,255,0.22);
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0, 0, 2);
+}
+
+.sidebar-user {
+    -fx-text-fill: rgba(255,255,255,0.85);
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 8 0 6 8;
+    -fx-border-color: rgba(255,255,255,0.18) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.sidebar-logout {
+    -fx-background-color: rgba(239, 68, 68, 0.15);
+    -fx-text-fill: #FECACA;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 11 16 11 16;
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(255,255,255,0.18);
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+}
+.sidebar-logout:hover {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-border-color: #EF4444;
+}
+
+/* --- MAIN CONTENT --- */
+.page-title {
+    -fx-text-fill: #0F172A;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+}
+.page-subtitle {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+}
+
+.toolbar-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(three-pass-box, rgba(13, 71, 161, 0.08), 12, 0, 0, 3);
+}
+.table-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(three-pass-box, rgba(13, 71, 161, 0.08), 12, 0, 0, 3);
+}
+
+.filter-label {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+/* Balance pill — phiên bản sáng cho main content */
+.balance-pill-light {
+    -fx-background-color: #F0F9FF;
+    -fx-background-radius: 22px;
+    -fx-border-color: #BAE6FD;
+    -fx-border-radius: 22px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 7 18 7 16;
+}
+.balance-icon { -fx-font-size: 15px; }
+.balance-label-light {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+.balance-value-light {
+    -fx-text-fill: #0369A1;
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+}
+
+/* Stat chips dùng cho admin */
+.stat-chip {
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 20px;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+.stat-blue   { -fx-background-color: #EFF6FF; -fx-text-fill: #1D4ED8; }
+.stat-green  { -fx-background-color: #F0FDF4; -fx-text-fill: #15803D; }
+.stat-orange { -fx-background-color: #FFF7ED; -fx-text-fill: #C2410C; }
+.stat-purple { -fx-background-color: #FDF4FF; -fx-text-fill: #7E22CE; }
+
+/* Ẩn tab header — điều hướng qua sidebar */
+.hidden-tabs > .tab-header-area { -fx-pref-height: 0; -fx-max-height: 0; -fx-min-height: 0; visibility: hidden; }
+.hidden-tabs > .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
 /* Viền chuyên dụng cho cửa sổ xác nhận để tránh bị lẫn nền */
 .confirm-dialog-border {
     -fx-background-color: white;

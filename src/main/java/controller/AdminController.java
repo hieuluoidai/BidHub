@@ -42,12 +42,16 @@ public class AdminController {
     @FXML private Label labelTotalSellers;
     
     @FXML private TabPane mainTabPane;
+    @FXML private Button navAuctionsBtn;
+    @FXML private Button navUsersBtn;
+    @FXML private Label pageTitleLabel;
+    @FXML private Label pageSubtitleLabel;
 
     @FXML
     public void initialize() {
         User currentUser = AppState.getInstance().getCurrentUser();
         if (currentUser != null) {
-            labelAdminName.setText("Admin: " + currentUser.getUsername());
+            labelAdminName.setText("👤  " + currentUser.getUsername());
         }
 
         setupAuctionTable();
@@ -227,6 +231,31 @@ public class AdminController {
     void handleRefresh() {
         updateAuctionStats();
         loadUserData();
+    }
+
+    @FXML
+    void handleNavAuctions() {
+        if (mainTabPane != null) mainTabPane.getSelectionModel().select(0);
+        setActiveNav(navAuctionsBtn, navUsersBtn);
+        if (pageTitleLabel != null) pageTitleLabel.setText("Phiên đấu giá");
+        if (pageSubtitleLabel != null) pageSubtitleLabel.setText("Tổng quan toàn bộ phiên đấu giá trong hệ thống");
+    }
+
+    @FXML
+    void handleNavUsers() {
+        if (mainTabPane != null) mainTabPane.getSelectionModel().select(1);
+        setActiveNav(navUsersBtn, navAuctionsBtn);
+        if (pageTitleLabel != null) pageTitleLabel.setText("Quản lý người dùng");
+        if (pageSubtitleLabel != null) pageSubtitleLabel.setText("Danh sách tất cả tài khoản trong hệ thống");
+    }
+
+    private void setActiveNav(Button active, Button... others) {
+        if (active != null && !active.getStyleClass().contains("sidebar-item-active")) {
+            active.getStyleClass().add("sidebar-item-active");
+        }
+        for (Button b : others) {
+            if (b != null) b.getStyleClass().removeAll("sidebar-item-active");
+        }
     }
 
     @FXML

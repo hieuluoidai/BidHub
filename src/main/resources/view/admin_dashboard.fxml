@@ -2,107 +2,126 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="650.0" prefWidth="950.0"
+<BorderPane prefHeight="760.0" prefWidth="1280.0"
+            styleClass="dashboard-root"
             stylesheets="@style.css"
             xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controller.AdminController">
 
-   <top>
-      <VBox styleClass="card" spacing="8.0">
-         <padding><Insets bottom="15.0" left="25.0" right="25.0" top="15.0"/></padding>
-         <HBox alignment="CENTER_LEFT" spacing="12.0">
-   			<VBox spacing="2.0">
-      			<Label text="Admin Dashboard" styleClass="label-header">
-         			<font><Font name="System Bold" size="22.0"/></font>
-     			</Label>
-      			<Label fx:id="labelAdminName" textFill="#64748B"/>
-  			</VBox>
-  			<Region HBox.hgrow="ALWAYS"/>
-   			<Button styleClass="button-primary" text="View Details" onAction="#handleViewDetails" prefHeight="36.0" prefWidth="120.0"/>
-   			<Button styleClass="button-primary" text="+ Create Session" onAction="#handleCreateSession" prefHeight="36.0" prefWidth="150.0"/>
-  			<Button styleClass="button-primary" text="Refresh" onAction="#handleRefresh" prefHeight="36.0" prefWidth="100.0"/>
-   			<Button styleClass="button-danger"  text="Log out" onAction="#handleLogout" prefHeight="36.0" prefWidth="90.0"/>
-		 </HBox>
+   <!-- ================= SIDEBAR ================= -->
+   <left>
+      <VBox alignment="TOP_CENTER" prefWidth="240.0" spacing="6.0" styleClass="sidebar">
+         <padding><Insets bottom="20.0" left="14.0" right="14.0" top="24.0"/></padding>
+
+         <ImageView fitHeight="110.0" fitWidth="110.0" pickOnBounds="true" preserveRatio="true" styleClass="sidebar-logo">
+            <image><Image url="@../Images/bid-hub-logo.png"/></image>
+         </ImageView>
+         <Label styleClass="sidebar-brand" text="BidHub"/>
+         <Label styleClass="sidebar-brand-sub" text="Admin Console"/>
+
+         <Region prefHeight="24.0"/>
+
+         <Label styleClass="sidebar-section" text="MENU"/>
+
+         <Button fx:id="navAuctionsBtn" maxWidth="Infinity" mnemonicParsing="false"
+                 onAction="#handleNavAuctions"
+                 styleClass="sidebar-item, sidebar-item-active"
+                 text="⚖    Phiên đấu giá"/>
+
+         <Button fx:id="navUsersBtn" maxWidth="Infinity" mnemonicParsing="false"
+                 onAction="#handleNavUsers"
+                 styleClass="sidebar-item"
+                 text="👥    Quản lý người dùng"/>
+
+         <Region VBox.vgrow="ALWAYS"/>
+
+         <Label fx:id="labelAdminName" styleClass="sidebar-user" text="—" wrapText="true"/>
+         <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#handleLogout"
+                 styleClass="sidebar-logout" text="⏻    Đăng xuất"/>
       </VBox>
-   </top>
+   </left>
 
+   <!-- ================= MAIN CONTENT ================= -->
    <center>
-      <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" style="-fx-font-size: 13px;">
-         <padding><Insets bottom="15.0" left="15.0" right="15.0" top="10.0"/></padding>
+      <VBox spacing="16.0" styleClass="main-content">
+         <padding><Insets bottom="22.0" left="26.0" right="26.0" top="22.0"/></padding>
 
-         <Tab text="Tất cả phiên đấu giá">
-            <VBox spacing="10.0">
-               <padding><Insets top="12.0"/></padding>
-
-               <HBox spacing="12.0">
-                  <Label fx:id="labelTotalAuctions" text="Tổng phiên: --"
-                         style="-fx-background-color:#EFF6FF; -fx-text-fill:#1D4ED8;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-                  <Label fx:id="labelRunningAuctions" text="Đang chạy: --"
-                         style="-fx-background-color:#F0FDF4; -fx-text-fill:#15803D;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-                  <Label fx:id="labelFinishedAuctions" text="Đã kết thúc: --"
-                         style="-fx-background-color:#FFF7ED; -fx-text-fill:#C2410C;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-               </HBox>
-
-               <TableView fx:id="auctionTable" VBox.vgrow="ALWAYS">
-                  <columns>
-                     <TableColumn fx:id="colAucId"     text="ID"           prefWidth="130"/>
-                     <TableColumn fx:id="colAucItem"   text="Sản phẩm"     prefWidth="220"/>
-                     <TableColumn fx:id="colAucStatus" text="Trạng thái"   prefWidth="110"/>
-                     <TableColumn fx:id="colAucPrice"  text="Giá cao nhất" prefWidth="130"/>
-                     <TableColumn fx:id="colAucWinner" text="Người thắng"  prefWidth="150"/>
-                  </columns>
-                  <columnResizePolicy>
-                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                  </columnResizePolicy>
-               </TableView>
+         <!-- TOP BAR -->
+         <HBox alignment="CENTER_LEFT" spacing="14.0">
+            <VBox spacing="2.0">
+               <Label fx:id="pageTitleLabel" styleClass="page-title" text="Phiên đấu giá"/>
+               <Label fx:id="pageSubtitleLabel" styleClass="page-subtitle" text="Tổng quan toàn bộ phiên đấu giá trong hệ thống"/>
             </VBox>
-         </Tab>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button styleClass="button-primary" text="View Details"   onAction="#handleViewDetails"  prefHeight="38.0" prefWidth="130.0"/>
+            <Button styleClass="button-primary" text="+ Create Session" onAction="#handleCreateSession" prefHeight="38.0" prefWidth="160.0"/>
+            <Button styleClass="button-primary" text="Refresh"        onAction="#handleRefresh"       prefHeight="38.0" prefWidth="100.0"/>
+         </HBox>
 
-         <Tab text="Quản lý người dùng">
-            <VBox spacing="10.0">
-               <padding><Insets top="12.0"/></padding>
+         <!-- TAB CONTENT (tab header bị ẩn — điều hướng qua sidebar) -->
+         <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" styleClass="hidden-tabs" VBox.vgrow="ALWAYS">
 
-               <HBox spacing="12.0">
-                  <Label fx:id="labelTotalUsers" text="Tổng users: --"
-                         style="-fx-background-color:#EFF6FF; -fx-text-fill:#1D4ED8;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-                  <Label fx:id="labelTotalBidders" text="Bidders: --"
-                         style="-fx-background-color:#F0FDF4; -fx-text-fill:#15803D;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-                  <Label fx:id="labelTotalSellers" text="Sellers: --"
-                         style="-fx-background-color:#FDF4FF; -fx-text-fill:#7E22CE;
-                                -fx-padding: 6 14 6 14; -fx-background-radius:6;
-                                -fx-font-weight:bold; -fx-font-size:12px;"/>
-               </HBox>
+            <Tab text="Phiên đấu giá">
+               <VBox spacing="12.0">
+                  <padding><Insets top="6.0"/></padding>
 
-               <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
-                  <columns>
-                     <TableColumn fx:id="colUserId"   text="User ID"  prefWidth="150"/>
-                     <TableColumn fx:id="colUsername" text="Username" prefWidth="180"/>
-                     <TableColumn fx:id="colEmail"    text="Email"    prefWidth="250"/>
-                     <TableColumn fx:id="colRole"     text="Role"     prefWidth="120"/>
-                     <TableColumn fx:id="colBalance"  text="Số dư"    prefWidth="140"/>
-                  </columns>
-                  <columnResizePolicy>
-                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                  </columnResizePolicy>
-               </TableView>
-            </VBox>
-         </Tab>
+                  <HBox spacing="12.0">
+                     <Label fx:id="labelTotalAuctions" text="Tổng phiên: --" styleClass="stat-chip stat-blue"/>
+                     <Label fx:id="labelRunningAuctions" text="Đang chạy: --" styleClass="stat-chip stat-green"/>
+                     <Label fx:id="labelFinishedAuctions" text="Đã kết thúc: --" styleClass="stat-chip stat-orange"/>
+                  </HBox>
 
-      </TabPane>
+                  <StackPane styleClass="card table-card" VBox.vgrow="ALWAYS">
+                     <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/></padding>
+                     <TableView fx:id="auctionTable">
+                        <columns>
+                           <TableColumn fx:id="colAucId"     text="ID"           prefWidth="130"/>
+                           <TableColumn fx:id="colAucItem"   text="Sản phẩm"     prefWidth="220"/>
+                           <TableColumn fx:id="colAucStatus" text="Trạng thái"   prefWidth="110"/>
+                           <TableColumn fx:id="colAucPrice"  text="Giá cao nhất" prefWidth="130"/>
+                           <TableColumn fx:id="colAucWinner" text="Người thắng"  prefWidth="150"/>
+                        </columns>
+                        <columnResizePolicy>
+                           <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                     </TableView>
+                  </StackPane>
+               </VBox>
+            </Tab>
+
+            <Tab text="Quản lý người dùng">
+               <VBox spacing="12.0">
+                  <padding><Insets top="6.0"/></padding>
+
+                  <HBox spacing="12.0">
+                     <Label fx:id="labelTotalUsers"   text="Tổng users: --" styleClass="stat-chip stat-blue"/>
+                     <Label fx:id="labelTotalBidders" text="Bidders: --"    styleClass="stat-chip stat-green"/>
+                     <Label fx:id="labelTotalSellers" text="Sellers: --"    styleClass="stat-chip stat-purple"/>
+                  </HBox>
+
+                  <StackPane styleClass="card table-card" VBox.vgrow="ALWAYS">
+                     <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/></padding>
+                     <TableView fx:id="userTable">
+                        <columns>
+                           <TableColumn fx:id="colUserId"   text="User ID"  prefWidth="150"/>
+                           <TableColumn fx:id="colUsername" text="Username" prefWidth="180"/>
+                           <TableColumn fx:id="colEmail"    text="Email"    prefWidth="250"/>
+                           <TableColumn fx:id="colRole"     text="Role"     prefWidth="120"/>
+                           <TableColumn fx:id="colBalance"  text="Số dư"    prefWidth="140"/>
+                        </columns>
+                        <columnResizePolicy>
+                           <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                     </TableView>
+                  </StackPane>
+               </VBox>
+            </Tab>
+         </TabPane>
+      </VBox>
    </center>
-
 </BorderPane>
