@@ -335,6 +335,23 @@
     -fx-background-color: #FEE2E2;
 }
 
+.button-mini {
+    -fx-font-size: 11px !important;
+    -fx-padding: 4px 12px !important;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.button-success {
+    -fx-background-color: #10B981;
+    -fx-text-fill: white;
+    -fx-border-color: #059669;
+    -fx-font-weight: bold;
+}
+.button-success:hover {
+    -fx-background-color: #059669;
+}
+
 /* 5. TEXTFIELD & COMBOBOX (cũ — dùng cho các form khác ngoài auth) */
 .text-field, .password-field, .combo-box {
     -fx-background-color: #F8FAFC;

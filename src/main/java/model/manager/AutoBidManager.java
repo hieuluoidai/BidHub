@@ -57,10 +57,20 @@ public class AutoBidManager {
         if (existing != null) {
             userDAO.unlockBalance(userId, existing.getMaxBid());
             removeAutoBidFromMemory(existing);
+        } else {
+            // FIX: If no existing AutoBid, check if they have a manual bid as leader
+            // to avoid double-locking (manual bid lock + new autobid lock)
+            Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
+            if (auction != null && auction.getHighestBid() != null 
+                    && auction.getHighestBid().getBidder().getUserId().equals(userId)) {
+                double currentManualAmount = auction.getHighestBid().getBidAmount();
+                userDAO.unlockBalance(userId, currentManualAmount);
+                System.out.printf(">>> [AutoBid Upgrade] Unlocking manual bid $%.2f for %s before locking maxBid $%.2f%n",
+                        currentManualAmount, userId, maxBid);
+            }
         }
 
         if (userDAO.getBalance(userId) < maxBid) {
-            // Restore existing if update failed (though here we just fail)
             return "INSUFFICIENT_BALANCE";
         }
 

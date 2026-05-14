@@ -99,51 +99,46 @@ public class ConcurrentBidManager {
             }
 
             // ===== 2b. Lock & Balance check =====
-            // Nếu có bidDao (production), thực hiện khóa tiền để cam kết thanh toán.
+            database.UserDAO userDao = new database.UserDAO();
+            boolean lockAcquired = false;
+            double amountToUnlockOnFailure = 0;
+
             if (bidDao != null) {
-                database.UserDAO userDao = new database.UserDAO();
-                
-                // 1. Xác định người đang dẫn đầu HIỆN TẠI (trước khi ghi đè)
                 model.auction.BidTransaction prevBid = auction.getHighestBid();
                 String prevBidderId = (prevBid != null) ? prevBid.getBidder().getUserId() : null;
                 double prevAmount   = (prevBid != null) ? prevBid.getBidAmount() : 0;
 
-                // 2. Kiểm tra nếu cùng 1 người nâng giá
+                // Kiểm tra xem người đặt giá hiện tại có AutoBid không để tránh khóa trùng lặp
+                model.auction.AutoBid currentAB = new database.AutoBidDAO().findByUserAndAuction(bidder.getUserId(), auctionId);
+
                 if (bidder.getUserId().equals(prevBidderId)) {
-                    double diff = amount - prevAmount;
-                    if (diff > 0) {
+                    double baseLocked = (currentAB != null) ? currentAB.getMaxBid() : prevAmount;
+                    if (amount > baseLocked) {
+                        double diff = amount - baseLocked;
                         if (!userDao.lockBalance(bidder.getUserId(), diff)) {
                             failureCount.incrementAndGet();
                             return BidResult.failure(auctionId, amount, "Số dư không đủ để nâng giá!");
                         }
+                        lockAcquired = true;
+                        amountToUnlockOnFailure = diff;
                     }
                 } else {
-                    // Người mới nhảy vào bid
-                    if (!userDao.lockBalance(bidder.getUserId(), amount)) {
-                        failureCount.incrementAndGet();
-                        return BidResult.failure(auctionId, amount, "Số dư không đủ để cam kết bid!");
+                    double baseLocked = (currentAB != null) ? currentAB.getMaxBid() : 0;
+                    if (amount > baseLocked) {
+                        double diff = amount - baseLocked;
+                        if (!userDao.lockBalance(bidder.getUserId(), diff)) {
+                            failureCount.incrementAndGet();
+                            return BidResult.failure(auctionId, amount, "Số dư không đủ để cam kết bid!");
+                        }
+                        lockAcquired = true;
+                        amountToUnlockOnFailure = diff;
                     }
-                    // Giải phóng tiền cho người vừa bị vượt mặt (nếu không phải là Auto-Bid - sẽ do AutoBidManager quản lý)
-                    // Tuy nhiên để an toàn và đơn giản, nếu người đó không có AutoBid đang chạy thì ta unlock.
-                    // ĐỂ ĐẢM BẢO NHẤT QUÁN: Ta luôn unlock tiền Bid cũ tại đây, 
-                    // còn tiền cọc AutoBid sẽ do AutoBidManager tự quản lý riêng.
+
                     if (prevBidderId != null) {
-                        // Kiểm tra xem bid cũ có phải từ AutoBid không?
-                        // Nếu bid cũ là manual bid, ta unlock.
-                        // Nếu bid cũ là auto bid, AutoBidManager sẽ tự unlock khi nó 'exhausted'.
-                        // NHƯNG: Để đơn giản, ta quy ước: 
-                        // - Manual bid khóa đúng 'amount'.
-                        // - Auto-bid khóa đúng 'maxBid'.
-                        // Khi 1 manual bid bị outbid, unlock đúng 'amount'.
-                        // Khi 1 auto-bid bị outbid, NHƯNG maxBid vẫn > currentPrice -> KHÔNG unlock.
-                        // Khi 1 auto-bid bị outbid VÀ maxBid <= currentPrice -> Unlock 'maxBid'.
-                        
-                        // Lấy AutoBid của người cũ
                         model.auction.AutoBid prevAB = new database.AutoBidDAO().findByUserAndAuction(prevBidderId, auctionId);
                         if (prevAB == null) {
                             userDao.unlockBalance(prevBidderId, prevAmount);
                         }
-                        // Nếu có prevAB, AutoBidManager.executeAutoBids sẽ lo việc unlock nếu nó thua hoàn toàn.
                     }
                 }
             }
@@ -151,7 +146,10 @@ public class ConcurrentBidManager {
             // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
             try {
                 auction.placeBid(bidder, amount);
-            } catch (IllegalArgumentException | IllegalStateException e) {
+            } catch (Exception e) {
+                if (lockAcquired) {
+                    userDao.unlockBalance(bidder.getUserId(), amountToUnlockOnFailure);
+                }
                 failureCount.incrementAndGet();
                 return BidResult.failure(auctionId, amount, e.getMessage());
             }

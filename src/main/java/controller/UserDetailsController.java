@@ -155,7 +155,8 @@ public class UserDetailsController {
             isEditMode = true;
             toggleEditUI(true);
             btnEditProfile.setText("Lưu hồ sơ");
-            btnEditProfile.setStyle("-fx-background-color: #10B981; -fx-text-fill: white;");
+            btnEditProfile.getStyleClass().remove("button-secondary");
+            btnEditProfile.getStyleClass().add("button-success");
         } else {
             String newEmail = txtEmail.getText().trim();
             String newPhone = txtPhone.getText().trim();
@@ -174,12 +175,12 @@ public class UserDetailsController {
                     if (msg.equals("UPDATE_PROFILE_OK")) {
                         user.setPhoneNumber(newPhone);
                         user.setDateOfBirth(newDOB);
-                        // Email update logic could be here if needed
                         utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật hồ sơ!");
                         isEditMode = false;
                         toggleEditUI(false);
                         btnEditProfile.setText("Sửa hồ sơ");
-                        btnEditProfile.setStyle("");
+                        btnEditProfile.getStyleClass().remove("button-success");
+                        btnEditProfile.getStyleClass().add("button-secondary");
                         refreshProfileData();
                     } else {
                         utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
