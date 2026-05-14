@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
     private final AuctionServer server;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private String currentUserId; // Lưu ID người dùng của connection này
     private boolean active = true;
 
     public ClientHandler(Socket socket, AuctionServer server) {
@@ -55,9 +56,18 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public String getUserId() {
+        return currentUserId;
+    }
+
     private void handleRequest(Object request) {
         // TRƯỜNG HỢP 1: Nhận Object Auction (Tạo mới hoặc Update theo luồng cũ)
         if (request instanceof Auction incomingAuction) {
+            // Khi tạo phiên, cập nhật currentUserId từ owner nếu có
+            if (incomingAuction.getSellerId() != null) {
+                this.currentUserId = incomingAuction.getSellerId();
+            }
+            
             Auction existing = AuctionManager.getInstance().getAuctionById(incomingAuction.getAuctionId());
 
             if (existing != null) {
@@ -69,7 +79,8 @@ public class ClientHandler implements Runnable {
                 AuctionManager.getInstance().addAuction(incomingAuction);
                 System.out.println(">>> Đã tạo phiên mới: " + incomingAuction.getAuctionId());
             }
-            server.broadcast(AuctionManager.getInstance().getAllAuctions());
+            // Smart Broadcast: Chỉ gửi phiên vừa thay đổi/tạo mới
+            server.broadcast(incomingAuction);
         } 
         // TRƯỜNG HỢP 2: Nhận lệnh dạng chuỗi văn bản (String)
         else if (request instanceof String msg) {
@@ -79,29 +90,142 @@ public class ClientHandler implements Runnable {
 
     private void handleStringRequest(String msg) {
         try {
-            if (msg.equals("REFRESH_DATA")) {
-                send(AuctionManager.getInstance().getAllAuctions());
-            }
-            else if (msg.startsWith("BID:")) {
+            String[] parts = msg.split(":");
+            if (msg.startsWith("BID:")) {
+                if (parts.length >= 4) this.currentUserId = parts[3];
                 handleConcurrentBid(msg);
             }
             else if (msg.startsWith("DELETE_AUCTION:")) {
+                if (parts.length >= 3) this.currentUserId = parts[2];
                 handleDeleteAuction(msg);
             }
             else if (msg.startsWith("CANCEL_AUCTION:")) {
+                if (parts.length >= 3) this.currentUserId = parts[2];
                 handleCancelAuction(msg);
             }
             else if (msg.startsWith("PAY_AUCTION:")) {
+                if (parts.length >= 3) this.currentUserId = parts[2];
                 handlePayAuction(msg);
             }
             else if (msg.startsWith("TOPUP:")) {
+                if (parts.length >= 2) this.currentUserId = parts[1];
                 handleTopUp(msg);
+            }
+            else if (msg.startsWith("SET_AUTOBID:")) {
+                if (parts.length >= 3) this.currentUserId = parts[2];
+                handleSetAutoBid(msg);
+            }
+            else if (msg.startsWith("CANCEL_AUTOBID:")) {
+                if (parts.length >= 3) this.currentUserId = parts[2];
+                handleCancelAutoBid(msg);
+            }
+            else if (msg.startsWith("IDENTIFY:")) {
+                if (parts.length >= 2) {
+                    this.currentUserId = parts[1];
+                    System.out.println(">>> [SERVER] Connection tagged as user: " + currentUserId);
+                }
+            }
+            else if (msg.equals("REFRESH_DATA")) {
+                send(AuctionManager.getInstance().getAllAuctions());
+            }
+            else if (msg.startsWith("GET_MY_AUTOBID:")) {
+                handleGetMyAutoBid(msg);
+            }
+            else if (msg.startsWith("UPDATE_PROFILE:")) {
+                handleUpdateProfile(msg);
+            }
+            else if (msg.startsWith("CHANGE_PASSWORD:")) {
+                handleChangePassword(msg);
             }
             else if (msg.startsWith("RELOAD_AUCTION:")) {
                 handleReloadAuction(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Thiết lập Auto-Bid cho User.
+     * Format: "SET_AUTOBID:<auctionId>:<userId>:<maxBid>:<increment>"
+     */
+    private void handleSetAutoBid(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 5) {
+            send("AUTOBID_FAILED: Sai định dạng lệnh");
+            return;
+        }
+        String auctionId = parts[1];
+        String userId    = parts[2];
+        double maxBid, increment;
+        try {
+            maxBid    = Double.parseDouble(parts[3]);
+            increment = Double.parseDouble(parts[4]);
+        } catch (NumberFormatException e) {
+            send("AUTOBID_FAILED: Số tiền không hợp lệ");
+            return;
+        }
+
+        String result = model.manager.AutoBidManager.getInstance()
+                .registerAutoBid(userId, auctionId, maxBid, increment);
+        
+        if ("SUCCESS".equals(result)) {
+            send("AUTOBID_OK:" + auctionId + ":" + (new UserDAO().getBalance(userId)));
+            
+            // Push thêm Balance Update chi tiết
+            UserDAO userDao = new UserDAO();
+            double avail = userDao.getBalance(userId);
+            double locked = userDao.getLockedBalance(userId);
+            send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", avail, locked));
+
+            // Re-trigger auto-bids and BROADCAST (Crucial for real-time)
+            BidTransactionDAO bidDao = new BidTransactionDAO();
+            model.manager.AutoBidManager.getInstance().executeAutoBids(auctionId, bidDao);
+            
+            // Smart Broadcast: Chỉ gửi phiên vừa thay đổi
+            Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
+            if (updated != null) server.broadcast(updated);
+        } else {
+            send("AUTOBID_FAILED:" + result);
+        }
+    }
+
+    /**
+     * Hủy Auto-Bid cho User.
+     * Format: "CANCEL_AUTOBID:<auctionId>:<userId>"
+     */
+    private void handleCancelAutoBid(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) {
+            send("CANCEL_AUTOBID_FAILED: Sai định dạng lệnh");
+            return;
+        }
+        String auctionId = parts[1];
+        String userId    = parts[2];
+
+        boolean ok = model.manager.AutoBidManager.getInstance().cancelAutoBid(userId, auctionId);
+        if (ok) {
+            send("CANCEL_AUTOBID_OK:" + auctionId + ":" + (new UserDAO().getBalance(userId)));
+        } else {
+            send("CANCEL_AUTOBID_FAILED: Không tìm thấy Auto-Bid để hủy");
+        }
+    }
+
+    /**
+     * Lấy cấu hình Auto-Bid của User hiện tại cho 1 phiên.
+     * Format: "GET_MY_AUTOBID:<auctionId>:<userId>"
+     */
+    private void handleGetMyAutoBid(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) return;
+        String auctionId = parts[1];
+        String userId    = parts[2];
+
+        model.auction.AutoBid ab = new database.AutoBidDAO().findByUserAndAuction(userId, auctionId);
+        if (ab != null) {
+            send(String.format("MY_AUTOBID:%s:%.2f:%.2f", auctionId, ab.getMaxBid(), ab.getIncrement()));
+        } else {
+            send("MY_AUTOBID_NONE:" + auctionId);
         }
     }
 
@@ -146,12 +270,74 @@ public class ClientHandler implements Runnable {
         }
 
         if (ok) {
+            // GIẢI PHÓNG TIỀN cho người đang dẫn đầu (nếu có) khi xóa phiên
+            unlockHighestBidder(auction);
+
             AuctionManager.getInstance().removeAuction(auctionId);
             System.out.println(">>> Phiên " + auctionId + " đã bị xóa bởi " + requester.getUsername());
             send("DELETE_OK:" + auctionId);
             server.broadcast(AuctionManager.getInstance().getAllAuctions());
         } else {
             send("DELETE_FAILED: Lỗi cơ sở dữ liệu");
+        }
+    }
+
+    /**
+     * Cập nhật thông tin hồ sơ User.
+     * Format: "UPDATE_PROFILE:<userId>:<email>:<phone>:<dob>"
+     */
+    private void handleUpdateProfile(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 5) return;
+        
+        String userId = parts[1];
+        String email  = parts[2];
+        String phone  = parts[3];
+        String dobStr = parts[4];
+
+        database.UserDAO dao = new database.UserDAO();
+        boolean ok = dao.updateProfile(userId, email, phone, dobStr);
+        
+        if (ok) {
+            send("UPDATE_PROFILE_OK");
+        } else {
+            send("UPDATE_PROFILE_FAILED: Lỗi cơ sở dữ liệu");
+        }
+    }
+
+    /**
+     * Đổi mật khẩu User.
+     * Format: "CHANGE_PASSWORD:<userId>:<oldPass>:<newPass>"
+     */
+    private void handleChangePassword(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 4) return;
+
+        String userId  = parts[1];
+        String oldPass = parts[2];
+        String newPass = parts[3];
+
+        database.UserDAO dao = new database.UserDAO();
+        model.user.User user = dao.findById(userId);
+
+        if (user == null) {
+            send("CHANGE_PASSWORD_FAILED: User không tồn tại");
+            return;
+        }
+if (!utils.PasswordUtils.verify(oldPass, user.getPassword())) {
+    send("CHANGE_PASSWORD_FAILED: Mật khẩu cũ không chính xác");
+    return;
+}
+
+// Hash mật khẩu mới
+String hashedNew = utils.PasswordUtils.hash(newPass);
+
+        boolean ok = dao.updatePassword(userId, hashedNew);
+
+        if (ok) {
+            send("CHANGE_PASSWORD_OK");
+        } else {
+            send("CHANGE_PASSWORD_FAILED: Lỗi DB");
         }
     }
 
@@ -170,14 +356,6 @@ public class ClientHandler implements Runnable {
         server.broadcast(AuctionManager.getInstance().getAllAuctions());
     }
 
-    /**
-     * Hủy phiên đấu giá: chuyển status sang CANCELED.
-     * Format: "CANCEL_AUCTION:<auctionId>:<requesterId>"
-     *
-     * Quyền:
-     *  - Admin: hủy phiên ở mọi trạng thái (trừ CANCELED, PAID)
-     *  - Seller: chỉ hủy được phiên của mình ở trạng thái OPEN/RUNNING
-     */
     private void handleCancelAuction(String msg) {
         String[] parts = msg.split(":");
         if (parts.length < 3) {
@@ -199,6 +377,9 @@ public class ClientHandler implements Runnable {
             return;
         }
 
+        // GIẢI PHÓNG TIỀN cho người đang dẫn đầu (nếu có) trước khi hủy
+        unlockHighestBidder(auction);
+
         boolean isAdmin = (requester instanceof Admin);
         int result = new AuctionDAO().cancelAuction(auctionId, requesterId, isAdmin);
 
@@ -217,6 +398,25 @@ public class ClientHandler implements Runnable {
             case -1 -> send("CANCEL_FAILED: Trạng thái phiên không cho phép hủy "
                     + "(chỉ OPEN/RUNNING với seller, hoặc OPEN/RUNNING/FINISHED với admin)");
             default -> send("CANCEL_FAILED: Lỗi cơ sở dữ liệu");
+        }
+    }
+
+    private void unlockHighestBidder(Auction auction) {
+        if (auction.getHighestBid() != null) {
+            String winnerId = auction.getHighestBid().getBidder().getUserId();
+            double amount   = auction.getHighestBid().getBidAmount();
+            
+            // Nếu người này có AutoBid, nó sẽ được unlock bởi AutoBidManager.cleanup hoặc cancel
+            // Tuy nhiên để an toàn, ta check manual bid unlock tại đây
+            model.auction.AutoBid ab = new database.AutoBidDAO().findByUserAndAuction(winnerId, auction.getAuctionId());
+            if (ab == null) {
+                new UserDAO().unlockBalance(winnerId, amount);
+                System.out.printf(">>> [UNLOCK] Giải phóng $%.2f cho %s do hủy/xóa phiên %s%n",
+                        amount, winnerId, auction.getAuctionId());
+            } else {
+                // Nếu có AutoBid, ta nhờ AutoBidManager dọn dẹp (bao gồm unlock maxBid)
+                model.manager.AutoBidManager.getInstance().cancelAutoBid(winnerId, auction.getAuctionId());
+            }
         }
     }
 
@@ -267,27 +467,39 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // 3. Transfer atomic
+        // 3. Transfer atomic (từ locked_balance sang seller balance)
         UserDAO userDao = new UserDAO();
-        double currentBalance = userDao.getBalance(winnerId);
-        if (currentBalance < finalPrice) {
-            send(String.format("PAY_FAILED: Số dư không đủ (cần $%.2f, có $%.2f)",
-                    finalPrice, currentBalance));
+        double currentLocked = userDao.getLockedBalance(winnerId);
+        if (currentLocked < finalPrice) {
+            // Trường hợp hy hữu: locked_balance < giá thắng (có thể do Manual Bid đè lên AutoBid nhưng lock hụt)
+            // Ta thử dùng transferAtomic thường nếu user có đủ tiền ở balance chính
+            double currentBalance = userDao.getBalance(winnerId);
+            if (currentBalance >= finalPrice) {
+                if (userDao.transferAtomic(winnerId, sellerId, finalPrice)) {
+                    finalizePayment(auctionId, winnerId, sellerId, finalPrice, userDao);
+                    return;
+                }
+            }
+            send(String.format("PAY_FAILED: Số dư cam kết không đủ (cần $%.2f, bạn có $%.2f locked)",
+                    finalPrice, currentLocked));
             return;
         }
 
-        boolean transferOk = userDao.transferAtomic(winnerId, sellerId, finalPrice);
+        boolean transferOk = userDao.transferFromLockedAtomic(winnerId, sellerId, finalPrice);
         if (!transferOk) {
-            send("PAY_FAILED: Lỗi chuyển tiền (có thể do race condition, vui lòng thử lại)");
+            send("PAY_FAILED: Lỗi chuyển tiền từ quỹ cam kết");
             return;
         }
 
+        finalizePayment(auctionId, winnerId, sellerId, finalPrice, userDao);
+    }
+
+    private void finalizePayment(String auctionId, String winnerId, String sellerId, double finalPrice, UserDAO userDao) {
+        AuctionDAO auctionDao = new AuctionDAO();
         // 4. Cập nhật status PAID
         boolean paidOk = auctionDao.markAsPaid(auctionId);
         if (!paidOk) {
-            // Edge case: transfer rồi mà status không update — log để admin biết
-            System.err.println(">>> [PAY] DB inconsistent! Transfer OK nhưng PAID fail cho phiên "
-                    + auctionId);
+            System.err.println(">>> [PAY] DB inconsistent! Transfer OK nhưng PAID fail cho phiên " + auctionId);
             send("PAY_FAILED: Lỗi cập nhật trạng thái phiên");
             return;
         }
@@ -301,6 +513,11 @@ public class ClientHandler implements Runnable {
                 auctionId, winnerId, finalPrice, sellerId, newBalance);
 
         send("PAY_OK:" + auctionId + ":" + newBalance);
+        
+        // Push thêm Balance Update chi tiết (avail + locked) cho người thắng
+        double locked = userDao.getLockedBalance(winnerId);
+        send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
+
         server.broadcast(AuctionManager.getInstance().getAllAuctions());
     }
 
@@ -364,6 +581,10 @@ public class ClientHandler implements Runnable {
             System.out.printf(">>> [TOPUP] %s nạp $%.2f thành công | balance: $%.2f → $%.2f%n",
                     user.getUsername(), amount, current, newBalance);
             send("TOPUP_OK:" + newBalance);
+            
+            // Push thêm Balance Update chi tiết
+            double locked = userDao.getLockedBalance(userId);
+            send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
         } else {
             send("TOPUP_FAILED: Lỗi cập nhật số dư");
         }
@@ -396,6 +617,11 @@ public class ClientHandler implements Runnable {
             return;
         }
 
+        // Trước khi bid, lấy thông tin người đang dẫn đầu để notify nếu họ bị outbid
+        Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
+        String prevBidderId = (auction != null && auction.getHighestBid() != null) 
+                                ? auction.getHighestBid().getBidder().getUserId() : null;
+
         // Tích hợp luồng lưu DB Atomic của Hiếu
         BidTransactionDAO bidDao = new BidTransactionDAO();
         BidResult result = ConcurrentBidManager.getInstance()
@@ -408,9 +634,25 @@ public class ClientHandler implements Runnable {
         // Phản hồi riêng cho Client vừa đặt giá
         send(result);
 
-        // Nếu bid thành công, thông báo giá mới cho toàn bộ Client khác
+        // Nếu bid thành công, thông báo giá mới cho toàn bộ Client và cập nhật số dư các bên liên quan
         if (result.isSuccess()) {
-            server.broadcast(AuctionManager.getInstance().getAllAuctions());
+            UserDAO userDao = new UserDAO();
+            
+            // 1. Cập nhật số dư cho người vừa BID thành công (Current Bidder)
+            double availCurrent = userDao.getBalance(bidderId);
+            double lockedCurrent = userDao.getLockedBalance(bidderId);
+            send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availCurrent, lockedCurrent));
+
+            // 2. Cập nhật số dư cho người vừa bị OUTBID (nếu có và khác người hiện tại)
+            if (prevBidderId != null && !prevBidderId.equals(bidderId)) {
+                double availPrev = userDao.getBalance(prevBidderId);
+                double lockedPrev = userDao.getLockedBalance(prevBidderId);
+                server.sendToUser(prevBidderId, String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availPrev, lockedPrev));
+            }
+
+            // 3. Smart Broadcast: Chỉ gửi phiên vừa thay đổi
+            Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
+            if (updated != null) server.broadcast(updated);
         }
     }
 

@@ -26,15 +26,13 @@ import utils.PasswordUtils;
  */
 public class UserDAO {
 
-    private final Connection conn;
-
     public UserDAO() {
-        this.conn = DatabaseConnection.getInstance().getConnection();
     }
 
     public User findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -48,7 +46,8 @@ public class UserDAO {
 
     public User findById(String userId) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, userId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -62,7 +61,8 @@ public class UserDAO {
 
     public boolean existsByUsername(String username) {
         String sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -74,7 +74,8 @@ public class UserDAO {
 
     public boolean existsByEmail(String email) {
         String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
@@ -89,7 +90,8 @@ public class UserDAO {
      */
     public User login(String username, String plainPassword) {
         String sql = "SELECT * FROM users WHERE username = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -112,7 +114,8 @@ public class UserDAO {
         String sql = "INSERT INTO users " +
                      "(user_id, username, email, password, role, full_name, date_of_birth, phone_number) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.getUserId());
             stmt.setString(2, user.getUsername());
             stmt.setString(3, user.getEmail());
@@ -146,7 +149,8 @@ public class UserDAO {
      */
     public double getBalance(String userId) {
         String sql = "SELECT balance FROM users WHERE user_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, userId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) return rs.getDouble("balance");
@@ -157,11 +161,28 @@ public class UserDAO {
     }
 
     /**
+     * Lấy số dư bị khóa (đang dùng cho Auto-Bid).
+     */
+    public double getLockedBalance(String userId) {
+        String sql = "SELECT locked_balance FROM users WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getDouble("locked_balance");
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy số dư bị khóa: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
      * Đặt lại số dư (dùng cho admin / migration / nạp tiền sau này).
      */
     public boolean setBalance(String userId, double newBalance) {
         String sql = "UPDATE users SET balance = ? WHERE user_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDouble(1, newBalance);
             stmt.setString(2, userId);
             return stmt.executeUpdate() > 0;
@@ -172,81 +193,231 @@ public class UserDAO {
     }
 
     /**
+     * Cập nhật số dư bị khóa.
+     */
+    public boolean setLockedBalance(String userId, double lockedBalance) {
+        String sql = "UPDATE users SET locked_balance = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, lockedBalance);
+            stmt.setString(2, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật số dư bị khóa: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật thông tin hồ sơ (Email, SĐT, Ngày sinh).
+     */
+    public boolean updateProfile(String userId, String email, String phone, String dobStr) {
+        String sql = "UPDATE users SET email = ?, phone_number = ?, date_of_birth = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email);
+            stmt.setString(2, (phone != null && !phone.isBlank()) ? phone : null);
+            
+            if (dobStr == null || dobStr.equals("NULL") || dobStr.isBlank()) {
+                stmt.setNull(3, java.sql.Types.DATE);
+            } else {
+                stmt.setDate(3, java.sql.Date.valueOf(dobStr));
+            }
+            
+            stmt.setString(4, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật hồ sơ: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật mật khẩu mới (đã hash).
+     */
+    public boolean updatePassword(String userId, String hashedPassword) {
+        String sql = "UPDATE users SET password = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, hashedPassword);
+            stmt.setString(2, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật mật khẩu: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Khóa một khoản tiền từ balance sang locked_balance.
+     */
+    public boolean lockBalance(String userId, double amount) {
+        if (amount <= 0) return false;
+        String sql = "UPDATE users SET balance = balance - ?, locked_balance = locked_balance + ? " +
+                     "WHERE user_id = ? AND balance >= ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, amount);
+            stmt.setDouble(2, amount);
+            stmt.setString(3, userId);
+            stmt.setDouble(4, amount);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi khóa tiền: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Giải phóng một khoản tiền từ locked_balance về balance.
+     */
+    public boolean unlockBalance(String userId, double amount) {
+        if (amount <= 0) return false;
+        String sql = "UPDATE users SET balance = balance + ?, locked_balance = locked_balance - ? " +
+                     "WHERE user_id = ? AND locked_balance >= ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, amount);
+            stmt.setDouble(2, amount);
+            stmt.setString(3, userId);
+            stmt.setDouble(4, amount);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi giải phóng tiền: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Chuyển tiền ATOMIC giữa 2 tài khoản — TRANSACTION đảm bảo all-or-nothing.
-     *
-     * Quy trình:
-     *  1. SELECT FOR UPDATE balance của fromUser (lock row)
-     *  2. Nếu balance < amount → rollback, trả false
-     *  3. UPDATE trừ tiền fromUser
-     *  4. UPDATE cộng tiền toUser
-     *  5. COMMIT
-     *
-     * Nếu có lỗi ở bước nào → rollback toàn bộ → không bị "mất tiền".
-     *
-     * @return true nếu chuyển thành công, false nếu thiếu tiền hoặc lỗi
      */
     public boolean transferAtomic(String fromUserId, String toUserId, double amount) {
         if (amount <= 0) return false;
         if (fromUserId.equals(toUserId)) return false;
 
-        boolean originalAutoCommit = true;
-        try {
-            originalAutoCommit = conn.getAutoCommit();
+        try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
 
-            // 1. Khóa row của người gửi và đọc balance
-            double fromBalance = -1;
-            String selectForUpdate = "SELECT balance FROM users WHERE user_id = ? FOR UPDATE";
-            try (PreparedStatement stmt = conn.prepareStatement(selectForUpdate)) {
-                stmt.setString(1, fromUserId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) fromBalance = rs.getDouble("balance");
-                else {
+            try {
+                // 1. Khóa row của người gửi và đọc balance
+                double fromBalance = -1;
+                String selectForUpdate = "SELECT balance FROM users WHERE user_id = ? FOR UPDATE";
+                try (PreparedStatement stmt = conn.prepareStatement(selectForUpdate)) {
+                    stmt.setString(1, fromUserId);
+                    ResultSet rs = stmt.executeQuery();
+                    if (rs.next()) fromBalance = rs.getDouble("balance");
+                    else {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                if (fromBalance < amount) {
                     conn.rollback();
+                    System.err.println(">>> [TRANSFER] " + fromUserId + " không đủ số dư: "
+                            + fromBalance + " < " + amount);
                     return false;
                 }
-            }
 
-            if (fromBalance < amount) {
+                // 2. Trừ tiền người gửi
+                String deductSql = "UPDATE users SET balance = balance - ? WHERE user_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(deductSql)) {
+                    stmt.setDouble(1, amount);
+                    stmt.setString(2, fromUserId);
+                    if (stmt.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                // 3. Cộng tiền người nhận
+                String addSql = "UPDATE users SET balance = balance + ? WHERE user_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(addSql)) {
+                    stmt.setDouble(1, amount);
+                    stmt.setString(2, toUserId);
+                    if (stmt.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                conn.commit();
+                System.out.printf(">>> [TRANSFER] %s → %s: $%.2f thành công%n",
+                        fromUserId, toUserId, amount);
+                return true;
+            } catch (SQLException e) {
                 conn.rollback();
-                System.err.println(">>> [TRANSFER] " + fromUserId + " không đủ số dư: "
-                        + fromBalance + " < " + amount);
-                return false;
+                throw e;
             }
-
-            // 2. Trừ tiền người gửi
-            String deductSql = "UPDATE users SET balance = balance - ? WHERE user_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(deductSql)) {
-                stmt.setDouble(1, amount);
-                stmt.setString(2, fromUserId);
-                if (stmt.executeUpdate() != 1) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-
-            // 3. Cộng tiền người nhận
-            String addSql = "UPDATE users SET balance = balance + ? WHERE user_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(addSql)) {
-                stmt.setDouble(1, amount);
-                stmt.setString(2, toUserId);
-                if (stmt.executeUpdate() != 1) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-
-            conn.commit();
-            System.out.printf(">>> [TRANSFER] %s → %s: $%.2f thành công%n",
-                    fromUserId, toUserId, amount);
-            return true;
-
         } catch (SQLException e) {
-            try { conn.rollback(); } catch (SQLException ignore) {}
             System.err.println("Lỗi transfer atomic: " + e.getMessage());
             return false;
-        } finally {
-            try { conn.setAutoCommit(originalAutoCommit); } catch (SQLException ignore) {}
+        }
+    }
+
+    /**
+     * Chuyển tiền ATOMIC từ locked_balance của người gửi sang balance của người nhận.
+     */
+    public boolean transferFromLockedAtomic(String fromUserId, String toUserId, double amount) {
+        if (amount <= 0) return false;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                // 1. Khóa row của người gửi và đọc locked_balance
+                double fromLocked = -1;
+                String selectForUpdate = "SELECT locked_balance FROM users WHERE user_id = ? FOR UPDATE";
+                try (PreparedStatement stmt = conn.prepareStatement(selectForUpdate)) {
+                    stmt.setString(1, fromUserId);
+                    ResultSet rs = stmt.executeQuery();
+                    if (rs.next()) fromLocked = rs.getDouble("locked_balance");
+                    else {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                if (fromLocked < amount) {
+                    conn.rollback();
+                    System.err.println(">>> [TRANSFER_LOCKED] " + fromUserId + " không đủ tiền bị khóa: "
+                            + fromLocked + " < " + amount);
+                    return false;
+                }
+
+                // 2. Trừ tiền locked của người gửi
+                String deductSql = "UPDATE users SET locked_balance = locked_balance - ? WHERE user_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(deductSql)) {
+                    stmt.setDouble(1, amount);
+                    stmt.setString(2, fromUserId);
+                    if (stmt.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                // 3. Cộng tiền vào balance người nhận
+                String addSql = "UPDATE users SET balance = balance + ? WHERE user_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(addSql)) {
+                    stmt.setDouble(1, amount);
+                    stmt.setString(2, toUserId);
+                    if (stmt.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                conn.commit();
+                System.out.printf(">>> [TRANSFER_LOCKED] %s → %s: $%.2f (từ locked_balance) thành công%n",
+                        fromUserId, toUserId, amount);
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi transfer locked atomic: " + e.getMessage());
+            return false;
         }
     }
 
@@ -274,9 +445,10 @@ public class UserDAO {
             user.setPhoneNumber(phone);
         } catch (SQLException ignore) { }
 
-        // Balance — có thể chưa có cột nếu DB cũ
+        // Balance & Locked Balance — có thể chưa có cột nếu DB cũ
         try {
             user.setBalance(rs.getDouble("balance"));
+            user.setLockedBalance(rs.getDouble("locked_balance"));
         } catch (SQLException ignore) { }
 
         return user;
@@ -291,7 +463,8 @@ public class UserDAO {
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";
-        try (Statement stmt = conn.createStatement();
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 users.add(mapResultSetToUser(rs));

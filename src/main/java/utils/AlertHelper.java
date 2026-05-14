@@ -129,4 +129,76 @@ public class AlertHelper {
         stage.setScene(scene);
         stage.showAndWait();
     }
+
+    /**
+     * Hiện popup xác nhận (Confirm) trả về boolean.
+     */
+    private static boolean confirmResult;
+    public static boolean showConfirm(String title, String message) {
+        if (!Platform.isFxApplicationThread()) {
+            // Chế độ này hơi khó trả về boolean từ background thread, 
+            // nên ta ép buộc gọi trong luồng UI.
+            System.err.println(">>> AlertHelper.showConfirm must be called from FX Thread!");
+            return false;
+        }
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initStyle(StageStyle.UNDECORATED);
+
+        confirmResult = false;
+
+        // ── Icon tròn màu Blue ──
+        Label iconLabel = new Label("?");
+        iconLabel.setStyle(
+            "-fx-background-color: #3B82F6;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 24px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-min-width: 48px; -fx-min-height: 48px;" +
+            "-fx-background-radius: 50%;" +
+            "-fx-alignment: center;"
+        );
+
+        // ── Title & Message ──
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;");
+        Label messageLabel = new Label(message);
+        messageLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569; -fx-wrap-text: true;");
+        messageLabel.setMaxWidth(320);
+
+        VBox textBox = new VBox(6, titleLabel, messageLabel);
+        HBox contentBox = new HBox(16, iconLabel, textBox);
+        contentBox.setPadding(new Insets(20, 24, 16, 24));
+
+        // ── Nút Cancel ──
+        Button btnCancel = new Button("Hủy");
+        btnCancel.setPrefWidth(80);
+        btnCancel.setStyle("-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnCancel.setOnAction(e -> { confirmResult = false; stage.close(); });
+
+        // ── Nút Confirm ──
+        Button btnConfirm = new Button("Xác nhận");
+        btnConfirm.setPrefWidth(100);
+        btnConfirm.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnConfirm.setOnAction(e -> { confirmResult = true; stage.close(); });
+
+        HBox buttonBox = new HBox(12, btnCancel, btnConfirm);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        buttonBox.setPadding(new Insets(0, 24, 20, 24));
+
+        VBox root = new VBox(contentBox, buttonBox);
+        root.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-border-color: #E2E8F0; -fx-border-width: 1px; -fx-border-radius: 12px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 4);");
+
+        StackPane wrapper = new StackPane(root);
+        wrapper.setPadding(new Insets(10));
+        wrapper.setStyle("-fx-background-color: transparent;");
+
+        Scene scene = new Scene(wrapper);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        stage.setScene(scene);
+        stage.showAndWait();
+
+        return confirmResult;
+    }
 }

@@ -14,12 +14,6 @@ import database.DatabaseConnection;
 public class PasswordMigrationTool {
 
     public static void main(String[] args) {
-        Connection conn = DatabaseConnection.getInstance().getConnection();
-        if (conn == null) {
-            System.err.println("Không thể kết nối DB — kiểm tra DatabaseConnection");
-            return;
-        }
-
         int total      = 0;
         int migrated   = 0;
         int alreadyOk  = 0;
@@ -28,7 +22,8 @@ public class PasswordMigrationTool {
         String selectSql = "SELECT user_id, username, password FROM users";
         String updateSql = "UPDATE users SET password = ? WHERE user_id = ?";
 
-        try (Statement stmt = conn.createStatement();
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql);
              PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
 
@@ -61,6 +56,8 @@ public class PasswordMigrationTool {
 
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi migrate: " + e.getMessage());
+        } finally {
+            DatabaseConnection.closePool();
         }
 
         System.out.println();

@@ -98,43 +98,55 @@ public class ConcurrentBidManager {
                                 currentPrice, amount));
             }
 
-            // ===== 2b. Check balance: bidder phải có đủ tiền để cam kết bid =====
-            // Tính tổng các bid đang dẫn đầu của bidder ở các phiên RUNNING khác
-            // (không tính phiên hiện tại — bid mới ở phiên này sẽ thay thế bid cũ).
-            // Yêu cầu: balance >= other_commitment + amount.
-            //
-            // Note: chỉ check khi có bidDao thật (production). Trong unit test
-            // (ConcurrentBidStressTest), bidDao = null → bỏ qua check để test
-            // tập trung vào logic concurrency, không phụ thuộc DB.
+            // ===== 2b. Lock & Balance check =====
+            // Nếu có bidDao (production), thực hiện khóa tiền để cam kết thanh toán.
             if (bidDao != null) {
                 database.UserDAO userDao = new database.UserDAO();
-                double balance = userDao.getBalance(bidder.getUserId());
-                if (balance < 0) {
-                    failureCount.incrementAndGet();
-                    return BidResult.failure(auctionId, amount, "Không đọc được số dư của bạn!");
-                }
+                
+                // 1. Xác định người đang dẫn đầu HIỆN TẠI (trước khi ghi đè)
+                model.auction.BidTransaction prevBid = auction.getHighestBid();
+                String prevBidderId = (prevBid != null) ? prevBid.getBidder().getUserId() : null;
+                double prevAmount   = (prevBid != null) ? prevBid.getBidAmount() : 0;
 
-                double otherCommitment = bidDao.getTopBidCommitment(
-                        bidder.getUserId(), auctionId);
-                double required = otherCommitment + amount;
-
-                if (balance < required) {
-                    failureCount.incrementAndGet();
-                    String detail;
-                    if (otherCommitment > 0) {
-                        detail = String.format(
-                                "Bạn cần $%.2f (đang dẫn đầu $%.2f ở phiên khác + bid này $%.2f), " +
-                                        "nhưng số dư chỉ có $%.2f. Hãy nạp thêm tiền hoặc bid thấp hơn.",
-                                required, otherCommitment, amount, balance);
-                    } else {
-                        detail = String.format(
-                                "Số dư không đủ! Cần $%.2f, bạn có $%.2f. Hãy nạp thêm tiền.",
-                                amount, balance);
+                // 2. Kiểm tra nếu cùng 1 người nâng giá
+                if (bidder.getUserId().equals(prevBidderId)) {
+                    double diff = amount - prevAmount;
+                    if (diff > 0) {
+                        if (!userDao.lockBalance(bidder.getUserId(), diff)) {
+                            failureCount.incrementAndGet();
+                            return BidResult.failure(auctionId, amount, "Số dư không đủ để nâng giá!");
+                        }
                     }
-                    return BidResult.failure(auctionId, amount, detail);
+                } else {
+                    // Người mới nhảy vào bid
+                    if (!userDao.lockBalance(bidder.getUserId(), amount)) {
+                        failureCount.incrementAndGet();
+                        return BidResult.failure(auctionId, amount, "Số dư không đủ để cam kết bid!");
+                    }
+                    // Giải phóng tiền cho người vừa bị vượt mặt (nếu không phải là Auto-Bid - sẽ do AutoBidManager quản lý)
+                    // Tuy nhiên để an toàn và đơn giản, nếu người đó không có AutoBid đang chạy thì ta unlock.
+                    // ĐỂ ĐẢM BẢO NHẤT QUÁN: Ta luôn unlock tiền Bid cũ tại đây, 
+                    // còn tiền cọc AutoBid sẽ do AutoBidManager tự quản lý riêng.
+                    if (prevBidderId != null) {
+                        // Kiểm tra xem bid cũ có phải từ AutoBid không?
+                        // Nếu bid cũ là manual bid, ta unlock.
+                        // Nếu bid cũ là auto bid, AutoBidManager sẽ tự unlock khi nó 'exhausted'.
+                        // NHƯNG: Để đơn giản, ta quy ước: 
+                        // - Manual bid khóa đúng 'amount'.
+                        // - Auto-bid khóa đúng 'maxBid'.
+                        // Khi 1 manual bid bị outbid, unlock đúng 'amount'.
+                        // Khi 1 auto-bid bị outbid, NHƯNG maxBid vẫn > currentPrice -> KHÔNG unlock.
+                        // Khi 1 auto-bid bị outbid VÀ maxBid <= currentPrice -> Unlock 'maxBid'.
+                        
+                        // Lấy AutoBid của người cũ
+                        model.auction.AutoBid prevAB = new database.AutoBidDAO().findByUserAndAuction(prevBidderId, auctionId);
+                        if (prevAB == null) {
+                            userDao.unlockBalance(prevBidderId, prevAmount);
+                        }
+                        // Nếu có prevAB, AutoBidManager.executeAutoBids sẽ lo việc unlock nếu nó thua hoàn toàn.
+                    }
                 }
             }
-
 
             // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
             try {
@@ -152,6 +164,9 @@ public class ConcurrentBidManager {
                             "cho phiên " + auctionId);
                 }
             }
+
+            // ===== 5. Kích hoạt Auto-Bidding (Logic mới) =====
+            AutoBidManager.getInstance().executeAutoBids(auctionId, bidDao);
 
             successCount.incrementAndGet();
             long dt = System.nanoTime() - t0;

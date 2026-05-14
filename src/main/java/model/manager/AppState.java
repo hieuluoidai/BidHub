@@ -45,6 +45,10 @@ public class AppState {
     
     public void setCurrentUser(User user) {
         this.currentUser = user;
+        // Thông báo cho Server biết User nào đang ở connection này (để push real-time)
+        if (user != null && client != null) {
+            client.send("IDENTIFY:" + user.getUserId());
+        }
     }
 
     // Quản lí kết nối

@@ -21,6 +21,7 @@ public class BidController {
 
     @FXML private Label labelItemName;
     @FXML private Label labelCurrentPrice;
+    @FXML private Label labelUserBalance;
     @FXML private Label labelError;
     @FXML private TextField textBidAmount;
     @FXML private Button cancelButton;
@@ -43,8 +44,41 @@ public class BidController {
      */
     public void setAuctionData(Auction auction) {
         this.currentAuction = auction;
-        labelItemName.setText("Sản phẩm: " + auction.getItem().getItemName());
-        labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f", auction.getCurrentPrice()));
+        labelItemName.setText(auction.getItem().getItemName());
+        labelCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
+        
+        User user = AppState.getInstance().getCurrentUser();
+        if (user != null) {
+            labelUserBalance.setText(String.format("$%,.2f", user.getBalance()));
+        }
+        
+        // Gợi ý giá bid tiếp theo (giá hiện tại + 1 bước nhỏ hoặc 10%)
+        double suggestion = auction.getCurrentPrice() + Math.max(10.0, auction.getCurrentPrice() * 0.05);
+        textBidAmount.setText(String.format("%.2f", suggestion));
+    }
+
+    @FXML
+    void addBid10() { addToBid(10); }
+
+    @FXML
+    void addBid50() { addToBid(50); }
+
+    @FXML
+    void addBid100() { addToBid(100); }
+
+    private void addToBid(double amount) {
+        try {
+            double current = 0;
+            String text = textBidAmount.getText().trim();
+            if (!text.isEmpty()) {
+                current = Double.parseDouble(text);
+            } else {
+                current = currentAuction.getCurrentPrice();
+            }
+            textBidAmount.setText(String.format("%.2f", current + amount));
+        } catch (NumberFormatException e) {
+            textBidAmount.setText(String.format("%.2f", currentAuction.getCurrentPrice() + amount));
+        }
     }
 
     @FXML

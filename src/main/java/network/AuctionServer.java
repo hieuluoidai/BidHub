@@ -40,6 +40,19 @@ public class AuctionServer {
     }
 
     /**
+     * Gửi dữ liệu tới một người dùng cụ thể dựa trên ID.
+     */
+    public void sendToUser(String userId, Object data) {
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (userId.equals(client.getUserId()) && client.isAlive()) {
+                    client.send(data);
+                }
+            }
+        }
+    }
+
+    /**
      * Phát sóng dữ liệu tới tất cả Client đang kết nối (Real-time Update).
      */
     public void broadcast(Object data) {

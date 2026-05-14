@@ -29,7 +29,7 @@
 			<VBox alignment="CENTER" spacing="8.0">
                <children>
                   <Label styleClass="auth-title" text="Xác nhận hủy phiên" />
-                  <Label styleClass="auth-subtitle" text="Phiên sẽ chuyển sang trạng thái CANCELED&#10;nhưng vẫn được giữ lại trong lịch sử." textAlignment="CENTER" wrapText="true" />
+                  <Label styleClass="auth-subtitle" text="Phiên sẽ chuyển sang trạng thái CANCELED&#10;nhưng vẫn được giữ lại trong lịch sử." textAlignment="CENTER" wrapText="true" maxWidth="350.0" />
                </children>
             </VBox>
 

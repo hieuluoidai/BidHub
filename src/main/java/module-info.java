@@ -4,6 +4,7 @@ module online.auction.system {
     requires javafx.fxml;
     requires java.sql;
     requires mysql.connector.j;
+    requires com.zaxxer.hikari;
 
     // Thư viện băm mật khẩu BCrypt (Tính năng bảo mật của Hiếu)
     requires jbcrypt;

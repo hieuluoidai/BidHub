@@ -33,62 +33,151 @@ public class DashboardController {
 
     @FXML private Label titleLabel;
     @FXML private Label lblBalance;        // hiển thị số dư hiện tại
+    @FXML private Label lblLockedBalance;  // hiển thị số dư bị khóa
     @FXML private TextField textSearch;
     @FXML private ComboBox<String> comboFilter;
-    @FXML private TableView<Auction> auctionTable;
-    @FXML private TableColumn<Auction, String> colId;
-    @FXML private TableColumn<Auction, String> colItemName;
-    @FXML private TableColumn<Auction, Double> colCurrentPrice;
-    @FXML private TableColumn<Auction, String> colStatus;
-    @FXML private TableColumn<Auction, String> colCategory;
-    @FXML private Button bidButton;
+    @FXML private javafx.scene.layout.FlowPane flowPaneAuctions;
+    
     @FXML private Button createSessionButton;
     @FXML private Button btnTopUp;          // nút nạp tiền
     @FXML private Label sidebarUserLabel;
+    @FXML private Label lblSidebarAvatar;
+    @FXML private Label lblSidebarUsername;
+    @FXML private Label lblSidebarRole;
+    @FXML private javafx.scene.layout.VBox paneUserProfile;
+
+    private FilteredList<Auction> filteredData;
 
     /**
-     * Khởi tạo cấu hình bảng, bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
+     * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
      */
     public void initialize() {
-        // Cấu hình cách hiển thị dữ liệu cho từng cột trong TableView
-        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAuctionId()));
-        colItemName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemName()));
-        colCurrentPrice.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getCurrentPrice()));
-        colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus()));
-        colCategory.setCellValueFactory(data -> new SimpleStringProperty(
-            data.getValue().getItem() != null ? data.getValue().getItem().getItemType() : "N/A"
-        ));
-
         // Khởi tạo các giá trị cho bộ lọc danh mục
         comboFilter.setItems(FXCollections.observableArrayList("All", "Electronics", "Art", "Vehicle"));
         comboFilter.setValue("All");
 
-        // Lấy danh sách từ AppState để hiển thị lên Table
+        // Lấy danh sách từ AppState để hiển thị
         ObservableList<Auction> masterData = AppState.getInstance().getAuctionList();
-        FilteredList<Auction> filteredData = new FilteredList<>(masterData, p -> true);
+        filteredData = new FilteredList<>(masterData, p -> true);
 
-        // Thêm ListChangeListener để FORCE REFRESH TableView mỗi khi
+        // Thêm ListChangeListener để cập nhật giao diện thông minh
         masterData.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
-            auctionTable.refresh();
+            javafx.application.Platform.runLater(() -> {
+                while (c.next()) {
+                    if (c.wasUpdated() || c.wasReplaced()) {
+                        // Cập nhật từng thẻ bị thay đổi thay vì vẽ lại toàn bộ
+                        for (int i = c.getFrom(); i < c.getTo(); i++) {
+                            updateSpecificCard(masterData.get(i));
+                        }
+                    } else {
+                        // Nếu là thêm/xóa/reset thì vẽ lại toàn bộ cho chắc chắn
+                        renderAuctions();
+                    }
+                }
+                updateOpenDetailWindow();
+            });
         });
 
         // Khi tìm kiếm or đổi loại hàng, bảng sẽ tự động update
-        textSearch.textProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
-        comboFilter.valueProperty().addListener((obs, old, newVal) -> updatePredicate(filteredData));
+        textSearch.textProperty().addListener((obs, old, newVal) -> {
+            updatePredicate();
+            renderAuctions();
+        });
+        comboFilter.valueProperty().addListener((obs, old, newVal) -> {
+            updatePredicate();
+            renderAuctions();
+        });
 
-        auctionTable.setItems(filteredData);
+        // Đăng ký nhận thông báo thay đổi số dư real-time từ Server
+        AppState.getInstance().getClient().addStringMessageListener(msg -> {
+            if (msg.startsWith("TOPUP_OK:") || msg.startsWith("PAY_OK:") || 
+                msg.startsWith("AUTOBID_OK:") || msg.startsWith("CANCEL_AUTOBID_OK:") ||
+                msg.startsWith("BALANCE_UPDATE:")) {
+                
+                // Trích xuất số dư mới nếu có trong message (thường là part cuối)
+                String[] parts = msg.split(":");
+                if (parts.length >= 2) {
+                    try {
+                        // Giả sử server gửi BALANCE_UPDATE:available:locked
+                        if (msg.startsWith("BALANCE_UPDATE:")) {
+                            double avail = Double.parseDouble(parts[1]);
+                            double locked = Double.parseDouble(parts[2]);
+                            User u = AppState.getInstance().getCurrentUser();
+                            if (u != null) {
+                                u.setBalance(avail);
+                                u.setLockedBalance(locked);
+                            }
+                        } else {
+                            // Các message cũ chỉ gửi 1 số dư (available)
+                            double newAvail = Double.parseDouble(parts[parts.length - 1]);
+                            User u = AppState.getInstance().getCurrentUser();
+                            if (u != null) u.setBalance(newAvail);
+                        }
+                        javafx.application.Platform.runLater(this::refreshBalanceLabel);
+                    } catch (Exception ignore) {}
+                }
+            }
+        });
 
         // Kích hoạt các thiết lập bổ trợ cho giao diện
         setupPermissions();
-        setupTableEvents();
-        setupBidButtonLogic();
         loadAuctionData();
+        
+        // Render lần đầu
+        renderAuctions();
+    }
+
+    /**
+     * Cập nhật một thẻ sản phẩm cụ thể mà không vẽ lại toàn bộ.
+     */
+    private void updateSpecificCard(Auction auction) {
+        if (flowPaneAuctions == null || auction == null) return;
+
+        for (javafx.scene.Node node : flowPaneAuctions.getChildren()) {
+            // Lấy controller từ thuộc tính của node (nếu có) hoặc tìm cách định danh
+            Object userData = node.getUserData();
+            if (userData instanceof ItemCardController cardController) {
+                if (cardController.getAuctionId().equals(auction.getAuctionId())) {
+                    cardController.setData(auction, this::handleViewDetailsOf, this::handleQuickBidOf);
+                    return;
+                }
+            }
+        }
+        // Nếu không tìm thấy thẻ để update (ví dụ mới thêm), ta render lại toàn bộ cho an toàn
+        renderAuctions();
+    }
+
+    /**
+     * Vẽ lại danh sách thẻ sản phẩm dựa trên dữ liệu đã lọc.
+     */
+    private void renderAuctions() {
+        if (flowPaneAuctions == null) return;
+        flowPaneAuctions.getChildren().clear();
+
+        for (Auction auction : filteredData) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_card.fxml"));
+                javafx.scene.Node card = loader.load();
+                
+                ItemCardController cardController = loader.getController();
+                cardController.setData(auction, 
+                    this::handleViewDetailsOf, 
+                    this::handleQuickBidOf);
+                
+                // Lưu controller vào node để phục vụ updateSpecificCard
+                card.setUserData(cardController);
+                
+                flowPaneAuctions.getChildren().add(card);
+            } catch (IOException e) {
+                System.err.println("Lỗi load item card: " + e.getMessage());
+            }
+        }
     }
 
     /**
      * Xác định hiển thị món hàng nào
      */
-    private void updatePredicate(FilteredList<Auction> filteredData) {
+    private void updatePredicate() {
         filteredData.setPredicate(auction -> {
             if (auction == null || auction.getItem() == null) return false;
 
@@ -118,9 +207,21 @@ public class DashboardController {
         User user = AppState.getInstance().getCurrentUser();
         if (user != null) {
             titleLabel.setText("Welcome, " + user.getUsername());
-            if (sidebarUserLabel != null) {
-                sidebarUserLabel.setText("👤  " + user.getUsername() + "\n" + user.getClass().getSimpleName());
+            
+            // Cập nhật Widget Profile Sidebar (Giao diện mới)
+            if (lblSidebarUsername != null) lblSidebarUsername.setText(user.getUsername());
+            if (lblSidebarRole != null) lblSidebarRole.setText(user.getClass().getSimpleName().toUpperCase());
+            if (lblSidebarAvatar != null) {
+                String firstChar = user.getUsername().isEmpty() ? "?" : user.getUsername().substring(0, 1).toUpperCase();
+                lblSidebarAvatar.setText(firstChar);
             }
+
+            // Mọi user đều được xem số dư và nạp tiền
+            if (btnTopUp != null) {
+                btnTopUp.setVisible(true);
+                btnTopUp.setManaged(true);
+            }
+
             boolean canCreate = (user instanceof Admin || user instanceof Seller);
             createSessionButton.setVisible(canCreate);
             createSessionButton.setManaged(canCreate);
@@ -129,14 +230,19 @@ public class DashboardController {
     }
 
     /**
-     * Cập nhật label hiển thị số dư hiện tại.
-     * Gọi sau khi nạp tiền hoặc thanh toán xong để UI khớp với DB.
+     * Cập nhật label hiển thị số dư khả dụng và số dư bị khóa.
+     * Gọi sau khi nạp tiền, bid hoặc thanh toán xong để UI khớp với DB.
      */
     public void refreshBalanceLabel() {
-        if (lblBalance == null) return;
         User user = AppState.getInstance().getCurrentUser();
         if (user == null) return;
-        lblBalance.setText(String.format("$%,.2f", user.getBalance()));
+        
+        if (lblBalance != null) {
+            lblBalance.setText(String.format("$%,.2f", user.getBalance()));
+        }
+        if (lblLockedBalance != null) {
+            lblLockedBalance.setText(String.format("$%,.2f", user.getLockedBalance()));
+        }
     }
 
     /**
@@ -164,32 +270,6 @@ public class DashboardController {
         }
     }
 
-    /**
-     * Nhấn đúp chuột vào 1 dòng để viewDetails
-     */
-    private void setupTableEvents() {
-        auctionTable.setOnMouseClicked(e -> {
-           if (e.getClickCount() == 2 && auctionTable.getSelectionModel().getSelectedItem() != null) {
-                handleViewDetails();
-            }
-        });
-    }
-
-    /**
-     * Điều chỉnh trạng thái nút Bid dựa trên dòng được chọn và quyền hạn người dùng.
-     */
-    private void setupBidButtonLogic() {
-        boolean isBidder = (AppState.getInstance().getCurrentUser() instanceof Bidder);
-        auctionTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
-            boolean active = (newVal != null && isBidder);
-            bidButton.setDisable(!active);
-            bidButton.setStyle(active ? "-fx-background-color: #4CAF50; -fx-text-fill: white;" : "-fx-background-color: #CCC;");
-        });
-    }
-
-    /**
-     * Xóa trạng thái đăng nhập và sử dụng SceneManager để quay lại Login.
-     */
     @FXML
     void handleLogout() {
         AppState.getInstance().setCurrentUser(null);
@@ -206,35 +286,98 @@ public class DashboardController {
     }
 
     /**
-     * Mở hộp thoại bid phiên đấu giá đang được chọn trong bảng.
+     * Mở hộp thoại bid cho một phiên đấu giá cụ thể (gọi từ ItemCard).
      */
-    @FXML
-    void handleBid() {
-        Auction selected = auctionTable.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
+    private void handleQuickBidOf(Auction auction) {
+        if (auction == null) return;
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/bid_dialog.fxml"));
             Parent root = loader.load();
-            ((BidController)loader.getController()).setAuctionData(selected);
-            showStage(root, "Place Your Bid");
-        } catch (IOException e) { e.printStackTrace(); }
+            ((BidController)loader.getController()).setAuctionData(auction);
+            
+            Stage stage = new Stage();
+            stage.setTitle("Place Your Bid");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (IOException e) { 
+            e.printStackTrace(); 
+        }
     }
 
+    private ItemDetailsController currentDetailController;
+    private Stage currentDetailStage;
+
     /**
-     * Hiển thị màn hình chi tiết sản phẩm.
+     * Hiển thị màn hình chi tiết cho một phiên cụ thể (gọi từ ItemCard).
      */
-    @FXML
-    void handleViewDetails() {
-        Auction selected = auctionTable.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
+    private void handleViewDetailsOf(Auction auction) {
+        if (auction == null) return;
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_details.fxml"));
             Parent root = loader.load();
-            ((ItemDetailsController)loader.getController()).setItemData(selected);
-            showStage(root, "Item Details");
+
+            currentDetailController = loader.getController();
+            currentDetailController.setItemData(auction);
+
+            currentDetailStage = new Stage();
+            currentDetailStage.setTitle("Item Details");
+            currentDetailStage.setScene(new Scene(root));
+            currentDetailStage.initModality(Modality.APPLICATION_MODAL);
+
+            currentDetailStage.setOnHidden(e -> {
+                currentDetailController = null;
+                currentDetailStage = null;
+            });
+
+            currentDetailStage.show();
         } catch (IOException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * Mở dialog xem thông tin cá nhân của chính mình.
+     */
+    @FXML
+    void handleViewProfile() {
+        try {
+            System.out.println(">>> Attempting to open profile for user: " + AppState.getInstance().getCurrentUser().getUsername());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/user_details.fxml"));
+            Parent root = loader.load();
+            
+            UserDetailsController controller = loader.getController();
+            controller.setUserData(AppState.getInstance().getCurrentUser());
+            
+            Stage stage = new Stage();
+            stage.setTitle("Thông tin cá nhân");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.show();
+        } catch (Exception e) {
+            System.err.println("Lỗi mở profile: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Cập nhật dữ liệu cho cửa sổ chi tiết đang mở nếu có thay đổi từ Server.
+     */
+    private void updateOpenDetailWindow() {
+        if (currentDetailController != null && currentDetailStage != null && currentDetailStage.isShowing()) {
+            Auction current = currentDetailController.getAuction();
+            if (current != null) {
+                // Tìm auction mới nhất trong list dựa trên ID
+                for (Auction a : AppState.getInstance().getAuctionList()) {
+                    if (a.getAuctionId().equals(current.getAuctionId())) {
+                        javafx.application.Platform.runLater(() -> {
+                            currentDetailController.setItemData(a);
+                        });
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -256,6 +399,6 @@ public class DashboardController {
         stage.setScene(new Scene(root));
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
-        auctionTable.refresh();
+        renderAuctions();
     }
 }

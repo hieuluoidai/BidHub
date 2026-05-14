@@ -19,6 +19,7 @@ public class Auction extends Entity implements Serializable, Subject {
     private List<BidTransaction> bidHistory;
     private BidTransaction highestBid;
     private String status;
+    private String sellerId; // ID của chủ sở hữu phiên
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
@@ -115,6 +116,8 @@ public class Auction extends Entity implements Serializable, Subject {
     public Item getItem()               { return item; }
     public String getItemName()         { return item != null ? item.getItemName() : "N/A"; }
     public String getStatus()           { return status; }
+    public String getSellerId()         { return sellerId; }
+    public void setSellerId(String id)  { this.sellerId = id; }
     public LocalDateTime getEndTime()   { return endTime; }
     public LocalDateTime getStartTime() { return startTime; }
     public List<BidTransaction> getBidHistory() { return new ArrayList<>(bidHistory); }

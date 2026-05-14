@@ -6,65 +6,72 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
 
-<VBox prefHeight="380.0" prefWidth="400.0" spacing="20.0" styleClass="card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
+<VBox prefWidth="450.0" spacing="20.0" styleClass="card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.BidController">
    <padding>
-      <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+      <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
    </padding>
    <children>
-
+      <!-- Header -->
       <VBox spacing="5.0">
          <children>
-            <Label styleClass="label-header" text="Place Your Bid">
+            <Label styleClass="label-header" text="ĐẶT GIÁ CỦA BẠN">
                <font>
                   <Font name="System Bold" size="24.0" />
                </font>
             </Label>
-            <Label styleClass="decrement-button" text="Enter an amount higher than the current price" textFill="#666666" />
+            <Label style="-fx-text-fill: #64748B;" text="Nhập số tiền cao hơn giá hiện tại để tham gia" />
          </children>
-         <VBox.margin>
-            <Insets bottom="5.0" />
-         </VBox.margin>
       </VBox>
 
-      <VBox spacing="8.0" style="-fx-background-color: #f8f9fa; -fx-background-radius: 5; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-radius: 5;">
+      <!-- Item and Price Info Card -->
+      <VBox spacing="12.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 12; -fx-padding: 15; -fx-border-color: #E2E8F0; -fx-border-radius: 12;">
          <children>
-            <Label fx:id="labelItemName" text="Item Name" wrapText="true">
-               <font>
-                  <Font name="System Bold" size="16.0" />
-               </font>
-            </Label>
-            <Label fx:id="labelCurrentPrice" styleClass="label-price" text="Current Price: $0.00" textFill="#e65100">
-               <font>
-                  <Font name="System Bold" size="15.0" />
-               </font>
-            </Label>
+            <Label fx:id="labelItemName" style="-fx-font-weight: 800; -fx-font-size: 16; -fx-text-fill: #1E293B;" text="Tên sản phẩm" wrapText="true" />
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+               <children>
+                  <Label styleClass="form-label" text="Giá hiện tại:" />
+                  <Label fx:id="labelCurrentPrice" style="-fx-text-fill: #10B981; -fx-font-weight: 900; -fx-font-size: 18;" text="\$0.00" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+               <children>
+                  <Label styleClass="form-label" text="Số dư khả dụng:" />
+                  <Label fx:id="labelUserBalance" style="-fx-text-fill: #3B82F6; -fx-font-weight: 700;" text="\$0.00" />
+               </children>
+            </HBox>
          </children>
       </VBox>
 
-      <VBox spacing="5.0">
-         <Label text="Your Bid Amount ($)">
-            <font><Font name="System Bold" size="12.0" /></font>
-         </Label>
-         <TextField fx:id="textBidAmount" prefHeight="45.0" promptText="e.g. 250.0" style="-fx-background-radius: 5; -fx-font-size: 15px;" />
+      <!-- Input Section -->
+      <VBox spacing="10.0">
+         <children>
+            <Label styleClass="form-label" text="Số tiền bạn muốn đặt ($)" />
+            <TextField fx:id="textBidAmount" prefHeight="50.0" promptText="VD: 250.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 10;" />
+            
+            <!-- Quick Bid Buttons -->
+            <HBox spacing="10.0">
+               <children>
+                  <Button onAction="#addBid10" styleClass="button-secondary" text="+10" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                  <Button onAction="#addBid50" styleClass="button-secondary" text="+50" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                  <Button onAction="#addBid100" styleClass="button-secondary" text="+100" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+               </children>
+            </HBox>
+         </children>
       </VBox>
 
-      <Label fx:id="labelError" textFill="#ff3333" wrapText="true">
-         <font>
-            <Font size="13.0" />
-         </font>
-      </Label>
+      <Label fx:id="labelError" style="-fx-text-fill: #EF4444; -fx-font-size: 13; -fx-font-weight: bold;" wrapText="true" />
 
+      <!-- Action Buttons -->
       <HBox alignment="CENTER_RIGHT" spacing="15.0">
          <children>
-            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" styleClass="button-secondary" text="Cancel" />
-            <Button fx:id="confirmButton" defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="40.0" prefWidth="130.0" styleClass="button-primary" text="Confirm Bid" />
+            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" prefHeight="45.0" prefWidth="100.0" styleClass="button-secondary" text="Hủy" />
+            <Button fx:id="confirmButton" defaultButton="true" mnemonicParsing="false" onAction="#handleConfirm" prefHeight="45.0" styleClass="button-primary" text="XÁC NHẬN ĐẶT GIÁ" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
          </children>
-         <VBox.margin>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-         </VBox.margin>
       </HBox>
-
    </children>
 </VBox>

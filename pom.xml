@@ -47,6 +47,14 @@
             <version>0.4</version>
         </dependency>
 
+        <!-- ==================== CONNECTION POOLING ==================== -->
+        <!-- HikariCP: Hồ chứa kết nối tốc độ cao, ổn định nhất hiện nay -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
         <!-- ==================== UNIT TEST ==================== -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -50,7 +50,18 @@ public class ItemDetailsController {
     @FXML private Button btnCancel;     // Hủy phiên (chuyển sang CANCELED)
     @FXML private Button btnPay;        // Thanh toán phiên FINISHED (cho winner)
 
+    // UI cho Auto-Bid (Logic mới của Hiếu)
+    @FXML private javafx.scene.layout.VBox paneAutoBid;
+    @FXML private javafx.scene.control.TextField txtAutoMaxBid;
+    @FXML private javafx.scene.control.TextField txtAutoIncrement;
+    @FXML private Button btnSetAutoBid;
+    @FXML private Button btnCancelAutoBid;
+
     private Auction auction;
+
+    public Auction getAuction() {
+        return auction;
+    }
 
     /**
      * Khởi tạo dữ liệu cho màn hình.
@@ -59,6 +70,21 @@ public class ItemDetailsController {
         this.auction = auction;
         refreshUI();
         setupPermissions();
+        checkExistingAutoBid();
+    }
+
+    /**
+     * Kiểm tra xem user hiện tại đã có auto-bid cho phiên này chưa.
+     */
+    private void checkExistingAutoBid() {
+        if (!(AppState.getInstance().getCurrentUser() instanceof Bidder)) return;
+        if (!"RUNNING".equals(auction.getStatus())) return;
+
+        var user = AppState.getInstance().getCurrentUser();
+        String cmd = "GET_MY_AUTOBID:" + auction.getAuctionId() + ":" + user.getUserId();
+        
+        AppState.getInstance().getClient().setStringMessageCallback(this::handleAutoBidResponse);
+        AppState.getInstance().getClient().send(cmd);
     }
 
     /**
@@ -122,6 +148,12 @@ public class ItemDetailsController {
         boolean canDelete = SessionPermission.canDelete(auction);
         boolean canCancel = SessionPermission.canCancel(auction);
 
+        // Hiển thị pane Auto-Bid cho Bidder khi phiên đang RUNNING
+        if (paneAutoBid != null) {
+            paneAutoBid.setVisible(canBid);
+            paneAutoBid.setManaged(canBid);
+        }
+
         // Nút Thanh toán: chỉ winner của phiên FINISHED chưa PAID mới thấy
         String winnerId = (auction.getHighestBid() != null
                 && auction.getHighestBid().getBidder() != null)
@@ -149,6 +181,132 @@ public class ItemDetailsController {
             btnPay.setVisible(canPay);
             btnPay.setManaged(canPay);
         }
+    }
+
+    /**
+     * Xử lý Thiết lập Auto-Bid.
+     */
+    @FXML
+    public void handleSetAutoBid() {
+        String maxStr = txtAutoMaxBid.getText().trim();
+        String incStr = txtAutoIncrement.getText().trim();
+
+        if (maxStr.isEmpty() || incStr.isEmpty()) {
+            AlertHelper.show(AlertHelper.Type.ERROR, "Thiếu thông tin", "Vui lòng nhập giá tối đa và bước giá.");
+            return;
+        }
+
+        try {
+            double maxBid = Double.parseDouble(maxStr);
+            double increment = Double.parseDouble(incStr);
+            double currentPrice = auction.getCurrentPrice();
+
+            if (maxBid <= currentPrice) {
+                AlertHelper.show(AlertHelper.Type.ERROR, "Giá không hợp lệ", "Giá tối đa phải lớn hơn giá hiện tại.");
+                return;
+            }
+            if (increment <= 0) {
+                AlertHelper.show(AlertHelper.Type.ERROR, "Bước giá không hợp lệ", "Bước giá phải lớn hơn 0.");
+                return;
+            }
+
+            var user = AppState.getInstance().getCurrentUser();
+            String cmd = String.format("SET_AUTOBID:%s:%s:%.2f:%.2f", 
+                auction.getAuctionId(), user.getUserId(), maxBid, increment);
+            
+            AppState.getInstance().getClient().setStringMessageCallback(this::handleAutoBidResponse);
+            AppState.getInstance().getClient().send(cmd);
+            
+            btnSetAutoBid.setDisable(true);
+            btnSetAutoBid.setText("Đang xử lý...");
+
+        } catch (NumberFormatException e) {
+            AlertHelper.show(AlertHelper.Type.ERROR, "Lỗi định dạng", "Vui lòng nhập số hợp lệ.");
+        }
+    }
+
+    /**
+     * Xử lý Hủy Auto-Bid.
+     */
+    @FXML
+    public void handleCancelAutoBid() {
+        boolean confirm = AlertHelper.showConfirm("Xác nhận hủy", 
+            "Bạn có chắc chắn muốn hủy đấu giá tự động không? \nSố tiền đang bị khóa sẽ được hoàn trả vào ví của bạn.");
+        
+        if (!confirm) return;
+
+        var user = AppState.getInstance().getCurrentUser();
+        String cmd = "CANCEL_AUTOBID:" + auction.getAuctionId() + ":" + user.getUserId();
+        
+        AppState.getInstance().getClient().setStringMessageCallback(this::handleAutoBidResponse);
+        AppState.getInstance().getClient().send(cmd);
+        
+        btnCancelAutoBid.setDisable(true);
+    }
+
+    private void handleAutoBidResponse(String msg) {
+        javafx.application.Platform.runLater(() -> {
+            // Kiểm tra nếu thông báo không dành cho auction hiện tại thì bỏ qua (nếu format có auctionId)
+            if (msg.contains(":") && !msg.startsWith("AUTOBID_FAILED")) {
+                String[] parts = msg.split(":");
+                if (parts.length > 1 && !parts[1].equals(auction.getAuctionId())) return;
+            }
+
+            if (msg.startsWith("AUTOBID_OK")) {
+                String[] parts = msg.split(":");
+                if (parts.length >= 3) {
+                    try {
+                        double balance = Double.parseDouble(parts[2]);
+                        AppState.getInstance().getCurrentUser().setBalance(balance);
+                    } catch (NumberFormatException ignore) {}
+                }
+                AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", "Đã thiết lập đấu giá tự động!");
+                updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText());
+
+            } else if (msg.startsWith("MY_AUTOBID:")) {
+                // Format: MY_AUTOBID:<auctionId>:<maxBid>:<increment>
+                String[] parts = msg.split(":");
+                if (parts.length >= 4) {
+                    updateAutoBidUI(true, parts[2], parts[3]);
+                }
+
+            } else if (msg.startsWith("MY_AUTOBID_NONE")) {
+                updateAutoBidUI(false, "", "");
+
+            } else if (msg.startsWith("CANCEL_AUTOBID_OK")) {
+                String[] parts = msg.split(":");
+                if (parts.length >= 3) {
+                    try {
+                        double balance = Double.parseDouble(parts[2]);
+                        AppState.getInstance().getCurrentUser().setBalance(balance);
+                    } catch (NumberFormatException ignore) {}
+                }
+                AlertHelper.show(AlertHelper.Type.INFO, "Đã hủy", "Đã hủy đấu giá tự động và hoàn lại tiền khóa.");
+                updateAutoBidUI(false, "", "");
+
+            } else if (msg.startsWith("AUTOBID_FAILED")) {
+                String reason = msg.substring("AUTOBID_FAILED:".length());
+                AlertHelper.show(AlertHelper.Type.ERROR, "Thất bại", "Không thể thiết lập Auto-Bid: " + reason);
+                btnSetAutoBid.setDisable(false);
+                btnSetAutoBid.setText("Thiết lập Auto-Bid");
+            }
+        });
+    }
+
+    private void updateAutoBidUI(boolean active, String max, String inc) {
+        btnSetAutoBid.setVisible(!active);
+        btnSetAutoBid.setManaged(!active);
+        btnSetAutoBid.setDisable(false);
+        btnSetAutoBid.setText("Thiết lập Auto-Bid");
+
+        btnCancelAutoBid.setVisible(active);
+        btnCancelAutoBid.setManaged(active);
+        btnCancelAutoBid.setDisable(false);
+
+        txtAutoMaxBid.setText(max);
+        txtAutoIncrement.setText(inc);
+        txtAutoMaxBid.setEditable(!active);
+        txtAutoIncrement.setEditable(!active);
     }
 
     /**
@@ -226,14 +384,22 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
+            stage.initOwner(lblItemName.getScene().getWindow());
 
             Scene scene = new Scene(root);
             scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
-            // Thêm kích thước Stage để không bị cắt bóng đổ
-            stage.setWidth(500);
-            stage.setHeight(420);
+            // Tự động căn giữa stage so với Owner
+            stage.setOnShown(event -> {
+                Stage owner = (Stage) stage.getOwner();
+                if (owner != null) {
+                    double x = owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0;
+                    double y = owner.getY() + (owner.getHeight() - stage.getHeight()) / 2.0;
+                    stage.setX(x);
+                    stage.setY(y);
+                }
+            });
 
             stage.showAndWait();
 
@@ -286,14 +452,22 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
+            stage.initOwner(lblItemName.getScene().getWindow());
 
             Scene scene = new Scene(root);
             scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
-            // Kích thước chuẩn để không bị cắt bóng đổ
-            stage.setWidth(500);
-            stage.setHeight(420);
+            // Tự động căn giữa stage so với Owner
+            stage.setOnShown(event -> {
+                Stage owner = (Stage) stage.getOwner();
+                if (owner != null) {
+                    double x = owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0;
+                    double y = owner.getY() + (owner.getHeight() - stage.getHeight()) / 2.0;
+                    stage.setX(x);
+                    stage.setY(y);
+                }
+            });
 
             stage.showAndWait();
 
@@ -345,13 +519,22 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
+            stage.initOwner(lblItemName.getScene().getWindow());
 
             Scene scene = new Scene(root);
             scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
 
-            stage.setWidth(500);
-            stage.setHeight(460); // Cao hơn một chút để chứa danh sách biên lai
+            // Tự động căn giữa stage so với Owner
+            stage.setOnShown(event -> {
+                Stage owner = (Stage) stage.getOwner();
+                if (owner != null) {
+                    double x = owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0;
+                    double y = owner.getY() + (owner.getHeight() - stage.getHeight()) / 2.0;
+                    stage.setX(x);
+                    stage.setY(y);
+                }
+            });
 
             stage.showAndWait();
 

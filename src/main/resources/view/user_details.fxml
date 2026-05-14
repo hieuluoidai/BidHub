@@ -3,101 +3,96 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
-<VBox prefHeight="480.0" prefWidth="460.0"
-      styleClass="card"
-      stylesheets="@style.css"
-      xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="controller.UserDetailsController"
-      spacing="16.0">
-
-   <padding><Insets bottom="25.0" left="25.0" right="25.0" top="25.0"/></padding>
+<VBox prefHeight="620.0" prefWidth="480.0" spacing="16.0" styleClass="card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.UserDetailsController">
+   <padding>
+      <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+   </padding>
 
    <HBox alignment="CENTER_LEFT" spacing="15.0">
-      <Label fx:id="lblAvatar" text="?"
-             style="-fx-background-color: #3B82F6;
-                    -fx-text-fill: white;
-                    -fx-font-size: 28px;
-                    -fx-font-weight: bold;
-                    -fx-min-width: 64px; -fx-min-height: 64px;
-                    -fx-max-width: 64px; -fx-max-height: 64px;
-                    -fx-background-radius: 50%;
-                    -fx-alignment: center;"/>
+      <Label fx:id="lblAvatar" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold; -fx-min-width: 64px; -fx-min-height: 64px; -fx-max-width: 64px; -fx-max-height: 64px; -fx-background-radius: 50%; -fx-alignment: center;" text="?" />
 
       <VBox spacing="3.0">
-         <Label fx:id="lblUsername" text="username"
-                style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
-         <Label fx:id="lblRoleBadge" text="ROLE"
-                style="-fx-background-color: #EFF6FF; -fx-text-fill: #1D4ED8;
-                       -fx-padding: 3 10 3 10; -fx-background-radius: 4;
-                       -fx-font-weight: bold; -fx-font-size: 11px;"/>
+         <Label fx:id="lblUsername" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="username" />
+         <Label fx:id="lblRoleBadge" style="-fx-background-color: #EFF6FF; -fx-text-fill: #1D4ED8; -fx-padding: 3 10 3 10; -fx-background-radius: 4; -fx-font-weight: bold; -fx-font-size: 11px;" text="ROLE" />
       </VBox>
    </HBox>
 
-   <Separator/>
+   <Separator />
 
    <VBox spacing="12.0">
-      <Label text="Thông tin tài khoản"
-             style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
+      <HBox alignment="CENTER_LEFT">
+         <children>
+            <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;" text="Thông tin tài khoản" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnEditProfile" onAction="#handleEditProfile" style="-fx-font-size: 11px; -fx-padding: 4 12;" styleClass="button-secondary" text="Sửa hồ sơ" />
+         </children>
+      </HBox>
 
-      <GridPane hgap="10" vgap="10">
+      <GridPane hgap="10" vgap="12">
          <columnConstraints>
-            <ColumnConstraints minWidth="110" prefWidth="110"/>
-            <ColumnConstraints hgrow="ALWAYS"/>
+            <ColumnConstraints minWidth="120" prefWidth="120" />
+            <ColumnConstraints hgrow="ALWAYS" />
          </columnConstraints>
 
-         <Label text="User ID:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-         <Label fx:id="lblUserId" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+         <Label style="-fx-text-fill: #64748B;" text="User ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+         <Label fx:id="lblUserId" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-         <Label text="Email:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-         <Label fx:id="lblEmail" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+         <Label style="-fx-text-fill: #64748B;" text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+         <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <Label fx:id="lblEmail" style="-fx-font-weight: bold;" text="email@example.com" />
+            <TextField fx:id="txtEmail" visible="false" />
+         </StackPane>
 
-         <Label text="Vai trò:" style="-fx-text-fill: #64748B;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-         <Label fx:id="lblRole" style="-fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+         <Label style="-fx-text-fill: #64748B;" text="Số điện thoại:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+         <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <Label fx:id="lblPhone" style="-fx-font-weight: bold;" text="0123456789" />
+            <TextField fx:id="txtPhone" visible="false" />
+         </StackPane>
+
+         <Label style="-fx-text-fill: #64748B;" text="Ngày sinh:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+         <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <Label fx:id="lblDOB" style="-fx-font-weight: bold;" text="01/01/2000" />
+            <DatePicker fx:id="dpDOB" visible="false" maxWidth="Infinity" />
+         </StackPane>
+
+         <Label style="-fx-text-fill: #64748B;" text="Số dư khả dụng:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+         <Label fx:id="lblBalance" style="-fx-font-weight: bold; -fx-text-fill: #15803D;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+         <Label style="-fx-text-fill: #64748B;" text="Số dư bị khóa:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+         <Label fx:id="lblLockedBalance" style="-fx-font-weight: bold; -fx-text-fill: #B91C1C;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
       </GridPane>
+      
+      <Button fx:id="btnChangePassword" onAction="#handleChangePassword" maxWidth="Infinity" styleClass="button-change-password" text="🛡 Thay đổi mật khẩu" />
    </VBox>
 
-   <Separator/>
+   <Separator />
 
    <VBox spacing="12.0">
-      <Label text="Hoạt động trên hệ thống"
-             style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
+      <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #64748B;" text="Hoạt động trên hệ thống" />
 
       <HBox spacing="10.0">
-         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
-               style="-fx-background-color: #EFF6FF; -fx-padding: 14; -fx-background-radius: 8;">
-            <Label fx:id="lblStat1Value" text="0"
-                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1D4ED8;"/>
-            <Label fx:id="lblStat1Label" text="Phiên đã tạo"
-                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         <VBox alignment="CENTER" spacing="4.0" style="-fx-background-color: #EFF6FF; -fx-padding: 14; -fx-background-radius: 8;" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblStat1Value" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1D4ED8;" text="0" />
+            <Label fx:id="lblStat1Label" style="-fx-font-size: 11px; -fx-text-fill: #64748B;" text="Phiên đã tạo" />
          </VBox>
 
-         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
-               style="-fx-background-color: #F0FDF4; -fx-padding: 14; -fx-background-radius: 8;">
-            <Label fx:id="lblStat2Value" text="0"
-                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #15803D;"/>
-            <Label fx:id="lblStat2Label" text="Lượt bid"
-                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         <VBox alignment="CENTER" spacing="4.0" style="-fx-background-color: #F0FDF4; -fx-padding: 14; -fx-background-radius: 8;" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblStat2Value" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #15803D;" text="0" />
+            <Label fx:id="lblStat2Label" style="-fx-font-size: 11px; -fx-text-fill: #64748B;" text="Lượt bid" />
          </VBox>
 
-         <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4.0"
-               style="-fx-background-color: #FDF4FF; -fx-padding: 14; -fx-background-radius: 8;">
-            <Label fx:id="lblStat3Value" text="0"
-                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #7E22CE;"/>
-            <Label fx:id="lblStat3Label" text="Phiên thắng"
-                   style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+         <VBox alignment="CENTER" spacing="4.0" style="-fx-background-color: #FDF4FF; -fx-padding: 14; -fx-background-radius: 8;" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblStat3Value" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #7E22CE;" text="0" />
+            <Label fx:id="lblStat3Label" style="-fx-font-size: 11px; -fx-text-fill: #64748B;" text="Phiên thắng" />
          </VBox>
       </HBox>
    </VBox>
 
-   <Region VBox.vgrow="ALWAYS"/>
+   <Region VBox.vgrow="ALWAYS" />
 
    <HBox alignment="CENTER_RIGHT">
-      <Button text="Đóng" onAction="#handleClose"
-              styleClass="button-primary"
-              prefHeight="36.0" prefWidth="100.0"/>
+      <Button onAction="#handleClose" prefHeight="36.0" prefWidth="100.0" styleClass="button-primary" text="Đóng" />
    </HBox>
 
 </VBox>

@@ -14,7 +14,7 @@ import java.time.Period;
  *   - Tương lai: nạp tiền, hold/refund khi cancel
  */
 public abstract class User extends Entity implements Serializable {
-    private static final long serialVersionUID = 3L;     // bumped vì thêm field
+    private static final long serialVersionUID = 4L;     // bumped vì thêm field
 
     private String username;
     private String email;
@@ -28,6 +28,9 @@ public abstract class User extends Entity implements Serializable {
     /** Số dư ví (đơn vị USD ảo). Mặc định 0 — DB sẽ điền giá trị thật khi load. */
     private double balance;
 
+    /** Số dư bị khóa cho Auto-Bidding (Logic mới của Hiếu) */
+    private double lockedBalance;
+
     /**
      * Constructor cũ — giữ tương thích với code hiện hành.
      * Balance mặc định 0; UserDAO sẽ load giá trị thật từ DB.
@@ -38,6 +41,7 @@ public abstract class User extends Entity implements Serializable {
         this.email = email;
         this.password = password;
         this.balance = 0.0;
+        this.lockedBalance = 0.0;
     }
 
     /** Abstract method để hiển thị role */
@@ -58,6 +62,7 @@ public abstract class User extends Entity implements Serializable {
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public void setPhoneNumber(String phoneNumber)    { this.phoneNumber = phoneNumber; }
     public void setBalance(double balance)            { this.balance = balance; }
+    public void setLockedBalance(double lockedBalance) { this.lockedBalance = lockedBalance; }
 
     // Getters
     public String    getUserId()      { return super.getId(); }
@@ -68,4 +73,5 @@ public abstract class User extends Entity implements Serializable {
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public String    getPhoneNumber() { return phoneNumber; }
     public double    getBalance()     { return balance; }
+    public double    getLockedBalance() { return lockedBalance; }
 }

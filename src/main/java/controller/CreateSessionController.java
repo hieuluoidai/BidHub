@@ -162,6 +162,7 @@ public class CreateSessionController {
             String auctionId = "AUC_" + System.currentTimeMillis();
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
             String sellerId = AppState.getInstance().getCurrentUser().getUserId();
+            newAuction.setSellerId(sellerId);
 
             // 5. Lưu DB
             new database.ItemDAO().save(newItem, sellerId);

@@ -2,7 +2,9 @@ package network;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import model.auction.Auction;
@@ -10,16 +12,10 @@ import model.auction.BidResult;
 
 /**
  * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
- *
- * Hỗ trợ 2 callback cơ chế:
- *  - {@link #setBidResultCallback}: nhận BidResult sau khi bid (riêng cho BidController)
- *  - {@link #setStringMessageCallback}: nhận String response (TOPUP_OK, PAY_OK, ...)
- *    cho TopUpController và ItemDetailsController.
  */
 public class AuctionClient {
-    // volatile vì listener thread và UI thread cùng truy cập
-    private volatile Consumer<BidResult> bidResultCallback;
-    private volatile Consumer<String>    stringMessageCallback;
+    private final List<Consumer<BidResult>> bidResultListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<String>> stringMessageListeners = new CopyOnWriteArrayList<>();
 
     private Socket socket;
     private ObjectOutputStream out;
@@ -27,18 +23,41 @@ public class AuctionClient {
     private boolean isRunning = false;
 
     /**
-     * Đăng ký callback nhận BidResult.
+     * Thêm listener nhận BidResult.
      */
-    public void setBidResultCallback(Consumer<BidResult> callback) {
-        this.bidResultCallback = callback;
+    public void addBidResultListener(Consumer<BidResult> listener) {
+        if (listener != null) bidResultListeners.add(listener);
+    }
+
+    public void removeBidResultListener(Consumer<BidResult> listener) {
+        bidResultListeners.remove(listener);
     }
 
     /**
-     * Đăng ký callback nhận String message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...).
-     * Truyền null để hủy đăng ký.
+     * Thêm listener nhận String message từ server.
      */
+    public void addStringMessageListener(Consumer<String> listener) {
+        if (listener != null) stringMessageListeners.add(listener);
+    }
+
+    public void removeStringMessageListener(Consumer<String> listener) {
+        stringMessageListeners.remove(listener);
+    }
+
+    /** Legacy support - overwrites/sets a primary listener if needed, 
+     * but we'll adapt existing code to use the new add/remove pattern. */
+    private Consumer<BidResult> legacyBidResultCallback;
+    public void setBidResultCallback(Consumer<BidResult> callback) {
+        if (this.legacyBidResultCallback != null) removeBidResultListener(this.legacyBidResultCallback);
+        this.legacyBidResultCallback = callback;
+        if (callback != null) addBidResultListener(callback);
+    }
+
+    private Consumer<String> legacyStringMessageCallback;
     public void setStringMessageCallback(Consumer<String> callback) {
-        this.stringMessageCallback = callback;
+        if (this.legacyStringMessageCallback != null) removeStringMessageListener(this.legacyStringMessageCallback);
+        this.legacyStringMessageCallback = callback;
+        if (callback != null) addStringMessageListener(callback);
     }
 
     public void connect(String host, int port) throws IOException {
@@ -78,10 +97,12 @@ public class AuctionClient {
             // 1. BidResult — kết quả đặt giá
             if (data instanceof BidResult result) {
                 System.out.println(">>> [CLIENT] BidResult nhận được: " + result);
-                if (bidResultCallback != null) {
-                    bidResultCallback.accept(result);
-                } else {
+                if (bidResultListeners.isEmpty()) {
                     showBidResultAlert(result);
+                } else {
+                    for (Consumer<BidResult> listener : bidResultListeners) {
+                        listener.accept(result);
+                    }
                 }
 
             // 2. List<Auction> — toàn bộ danh sách phiên
@@ -98,12 +119,9 @@ public class AuctionClient {
             // 4. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {
                 System.out.println(">>> [CLIENT] Server message: " + msg);
-                Consumer<String> handler = this.stringMessageCallback;
-                if (handler != null) {
-                    handler.accept(msg);
+                for (Consumer<String> listener : stringMessageListeners) {
+                    listener.accept(msg);
                 }
-                // Nếu không có handler đăng ký, tin nhắn sẽ bị bỏ qua —
-                // hợp lý vì các response như DELETE_OK đã được broadcast danh sách kèm theo.
             }
         });
     }
@@ -147,7 +165,13 @@ public class AuctionClient {
         var list = model.manager.AppState.getInstance().getAuctionList();
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
-                list.set(i, updated);
+                // Chỉ set nếu có sự thay đổi thực sự (giá hoặc trạng thái) để giảm tải UI
+                Auction existing = list.get(i);
+                if (existing.getCurrentPrice() != updated.getCurrentPrice() || 
+                    !existing.getStatus().equals(updated.getStatus()) ||
+                    (existing.getHighestBid() == null && updated.getHighestBid() != null)) {
+                    list.set(i, updated);
+                }
                 return;
             }
         }

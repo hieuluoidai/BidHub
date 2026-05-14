@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="cardRoot" alignment="TOP_CENTER" onMouseClicked="#handleCardClick" prefWidth="280.0" spacing="0.0" styleClass="item-card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemCardController">
+   <children>
+      <StackPane prefHeight="200.0" prefWidth="280.0" styleClass="card-image-container">
+         <children>
+            <ImageView fx:id="imgItem" fitHeight="180.0" fitWidth="240.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </StackPane>
+      
+      <VBox spacing="12.0" VBox.vgrow="ALWAYS">
+         <children>
+            <VBox spacing="6.0">
+               <children>
+                  <Label fx:id="lblCategory" styleClass="card-category" text="CATEGORY" />
+                  <Label fx:id="lblName" styleClass="card-title" text="Product Name" wrapText="true" />
+               </children>
+            </VBox>
+            
+            <HBox alignment="BOTTOM_LEFT" spacing="10.0">
+               <children>
+                  <VBox spacing="2.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label styleClass="card-price-label" text="GIÁ HIỆN TẠI" />
+                        <Label fx:id="lblPrice" minWidth="150.0" styleClass="card-price" text="\$0.00" />
+                     </children>
+                  </VBox>
+                  <StackPane>
+                     <padding>
+                        <Insets bottom="4.0" />
+                     </padding>
+                     <children>
+                        <Label fx:id="lblStatus" minWidth="65.0" alignment="CENTER" styleClass="stat-chip" text="LIVE" />
+                     </children>
+                  </StackPane>
+               </children>
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="18.0" left="18.0" right="18.0" top="12.0" />
+         </padding>
+      </VBox>
+      
+      <Button fx:id="btnQuickBid" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleQuickBid" prefHeight="50.0" styleClass="button-quick-bid" text="🚀 Quick Bid" />
+   </children>
+</VBox>

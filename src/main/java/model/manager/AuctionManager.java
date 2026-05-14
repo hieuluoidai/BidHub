@@ -84,43 +84,50 @@ public class AuctionManager {
         database.AuctionDAO auctionDao = new database.AuctionDAO();
 
         scheduler.scheduleAtFixedRate(() -> {
-            boolean hasChange = false;
+            try {
+                List<Auction> changedAuctions = new java.util.ArrayList<>();
 
-            synchronized (auctions) {
-                LocalDateTime now = LocalDateTime.now();
-                for (Auction auction : auctions) {
+                // Đồng bộ trên chính instance này để khớp với các phương thức synchronized khác
+                synchronized (this) {
+                    LocalDateTime now = LocalDateTime.now();
+                    for (Auction auction : auctions) {
 
-                    // 1. Tự động set trạng thái RUNNING khi đến giờ bắt đầu
-                    if ("OPEN".equals(auction.getStatus()) && now.isAfter(auction.getStartTime())) {
-                        auction.setStatus("RUNNING");
-                        auctionDao.updateStatus(auction.getAuctionId(), "RUNNING");
-                        System.out.println(">>> [BẮT ĐẦU] Phiên " + auction.getAuctionId());
-                        hasChange = true;
-                    }
+                        // 1. Tự động set trạng thái RUNNING khi đến giờ bắt đầu
+                        if ("OPEN".equals(auction.getStatus()) && now.isAfter(auction.getStartTime())) {
+                            auction.setStatus("RUNNING");
+                            auctionDao.updateStatus(auction.getAuctionId(), "RUNNING");
+                            System.out.println(">>> [BẮT ĐẦU] Phiên " + auction.getAuctionId());
+                            changedAuctions.add(auction);
+                        }
 
-                    // 2. Tự động kết thúc phiên khi hết thời gian
-                    if ("RUNNING".equals(auction.getStatus()) && now.isAfter(auction.getEndTime())) {
-                        auction.setStatus("FINISHED");
-                        auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
+                        // 2. Tự động kết thúc phiên khi hết thời gian
+                        if ("RUNNING".equals(auction.getStatus()) && now.isAfter(auction.getEndTime())) {
+                            auction.setStatus("FINISHED");
+                            auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
 
-                        // Giải phóng lock của phiên đã đóng để không giữ tài nguyên (Logic của Hiếu)
-                        ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
+                            // Giải phóng lock của phiên đã đóng để không giữ tài nguyên (Logic của Hiếu)
+                            ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
 
-                        String winner = (auction.getHighestBid() != null)
-                                ? auction.getHighestBid().getBidder().getUsername()
-                                : "Không có";
-                        System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
-                                + " - Người thắng: " + winner);
-                        hasChange = true;
+                            // Dọn dẹp Auto-Bidding (Logic mới: giải phóng tiền bị khóa của những người thua)
+                            AutoBidManager.getInstance().cleanup(auction.getAuctionId());
 
-                        // Note: KHÔNG còn auto-pay. Winner phải tự bấm nút Thanh toán
-                        // trong Item Details để chuyển FINISHED → PAID.
+                            String winner = (auction.getHighestBid() != null)
+                                    ? auction.getHighestBid().getBidder().getUsername()
+                                    : "Không có";
+                            System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
+                                    + " - Người thắng: " + winner);
+                            changedAuctions.add(auction);
+                        }
                     }
                 }
-            }
 
-            if (hasChange) {
-                server.broadcast(getAllAuctions());
+                // Smart Broadcast: Gửi từng phiên bị thay đổi thay vì gửi toàn bộ danh sách
+                for (Auction updated : changedAuctions) {
+                    server.broadcast(updated);
+                }
+            } catch (Exception e) {
+                System.err.println(">>> Lỗi trong AutoClosureService: " + e.getMessage());
+                e.printStackTrace();
             }
 
         }, 0, 1, TimeUnit.SECONDS);
