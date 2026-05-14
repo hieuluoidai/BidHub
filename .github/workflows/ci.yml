@@ -9,7 +9,17 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: auction_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -18,12 +28,24 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '24'
-          distribution: 'zulu'   # ← Zulu hỗ trợ đầy đủ các version hơn Temurin
+          distribution: 'zulu'
           cache: maven
-      
-      - name: Display Java version
-        run: java -version
-      
+
+      - name: Wait for MySQL to be ready
+        run: |
+          until mysqladmin ping -h"127.0.0.1" -P3306 -u"root" -p"password" --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Initialize Database
+        run: |
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/schema.sql
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_users.sql
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_balance_and_states.sql
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_item_image.sql
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_autobid.sql
+
       - name: Build and run tests
         run: mvn --batch-mode --no-transfer-progress test
       
