@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/sql/migration_balance_and_states.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/migration_item_image.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/migration_users.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/schema.sql" dialect="GenericSQL" />
+  </component>
+</project>

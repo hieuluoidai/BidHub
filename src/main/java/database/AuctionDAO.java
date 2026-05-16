@@ -37,6 +37,31 @@ public class AuctionDAO {
         }
     }
 
+    /**
+     * Cập nhật riêng end_time cho phiên đang RUNNING.
+     * Dùng cho Anti-sniping: khi bid phút cuối kéo dài phiên, ghi
+     * end_time mới xuống DB để server restart / client reload không
+     * mất thời gian gia hạn. Điều kiện status='RUNNING' tránh vô tình
+     * hồi sinh phiên đã FINISHED/CANCELED/PAID.
+     */
+    public boolean updateEndTime(String auctionId, LocalDateTime endTime) {
+        String sql = """
+                UPDATE auctions
+                   SET end_time = ?
+                 WHERE auction_id = ?
+                   AND status     = 'RUNNING'
+                """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setTimestamp(1, Timestamp.valueOf(endTime));
+            stmt.setString(2, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi gia hạn end_time phiên: " + e.getMessage());
+            return false;
+        }
+    }
+
     public boolean delete(String auctionId) {
         String itemId = null;
         String sqlFindItem = "SELECT item_id FROM auctions WHERE auction_id = ?";

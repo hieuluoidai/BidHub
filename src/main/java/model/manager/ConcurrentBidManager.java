@@ -144,6 +144,7 @@ public class ConcurrentBidManager {
             }
 
             // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
+            java.time.LocalDateTime endTimeBefore = auction.getEndTime();
             try {
                 auction.placeBid(bidder, amount);
             } catch (Exception e) {
@@ -152,6 +153,22 @@ public class ConcurrentBidManager {
                 }
                 failureCount.incrementAndGet();
                 return BidResult.failure(auctionId, amount, e.getMessage());
+            }
+
+            // ===== 3b. ANTI-SNIPING: nếu phiên vừa được gia hạn → ghi DB =====
+            java.time.LocalDateTime endTimeAfter = auction.getEndTime();
+            boolean wasExtended = endTimeBefore != null
+                    && endTimeAfter != null
+                    && endTimeAfter.isAfter(endTimeBefore);
+            if (wasExtended && bidDao != null) {
+                boolean tetUpdated = new database.AuctionDAO()
+                        .updateEndTime(auctionId, endTimeAfter);
+                if (!tetUpdated) {
+                    System.err.println(">>> [WARN] Anti-snipe: gia hạn memory OK nhưng "
+                            + "ghi end_time xuống DB thất bại cho phiên " + auctionId);
+                }
+                System.out.printf(">>> [ANTI-SNIPE] Phiên %s gia hạn: %s → %s (lần %d)%n",
+                        auctionId, endTimeBefore, endTimeAfter, auction.getExtensionCount());
             }
 
             // ===== 4. Lưu vào DB (Đảm bảo tính nhất quán) =====
