@@ -4,13 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/test/java/model/AntiSnipingTest.java" afterDir="false" />
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="add picture">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/schema.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/AdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/AdminController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/BidController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/BidController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/ItemDetailsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/ItemDetailsController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/database/AuctionDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/database/AuctionDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/database/BidTransactionDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/database/BidTransactionDAO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/auction/BidTransaction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/auction/BidTransaction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AutoBidManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AutoBidManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/ConcurrentBidManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/ConcurrentBidManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/network/AuctionServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/AuctionServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/view/item_details.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/item_details.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/view/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/style.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,7 +32,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="105" />
+    <option name="cachedIndexableFilesCount" value="145" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -41,15 +55,74 @@
     &quot;assignee&quot;: &quot;kduy221107&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/hieuluoidai/online-auction-system.git",
-    "accountId": "8657b623-f528-4eee-9f13-0bba891e3462"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/hieuluoidai/online-auction-system.git&quot;,
+    &quot;accountId&quot;: &quot;ba34a41c-4e90-4219-8cf6-4c66738df629&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.6829281086805676" />
+      <entry key="MS500" value="4.43588385809956" />
+      <entry key="S2" value="11.983734067485319" />
+      <entry key="S5" value="17.55709492896405" />
+      <entry key="S10" value="20.406849400007516" />
+      <entry key="S30" value="25.568405375417303" />
+      <entry key="S60" value="40.16393858149031" />
+      <entry key="M2" value="76.4239069376031" />
+      <entry key="M5" value="193.1249605851198" />
+      <entry key="M10" value="414.29751156005574" />
+      <entry key="M15" value="633.6287673421745" />
+      <entry key="M30" value="1184.0425007957497" />
+      <entry key="H1" value="1845.6257336807457" />
+      <entry key="H2" value="2414.2877869415297" />
+      <entry key="H4" value="2798.3330743961037" />
+      <entry key="D1" value="3187.335165403062" />
+      <entry key="W1" value="3261.423176540011" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.6019519329387542" />
+      <entry key="MS500" value="4.398348805133493" />
+      <entry key="S2" value="11.96070338794049" />
+      <entry key="S5" value="17.543919936728795" />
+      <entry key="S10" value="20.39925094880747" />
+      <entry key="S30" value="25.565257794962243" />
+      <entry key="S60" value="40.161497990702046" />
+      <entry key="M2" value="76.42161367888241" />
+      <entry key="M5" value="193.12265156557197" />
+      <entry key="M10" value="414.2950219192508" />
+      <entry key="M15" value="633.6262066919346" />
+      <entry key="M30" value="1184.0400430647696" />
+      <entry key="H1" value="1845.6237607315013" />
+      <entry key="H2" value="2414.286469734274" />
+      <entry key="H4" value="2798.3323020198095" />
+      <entry key="D1" value="3187.3350172367286" />
+      <entry key="W1" value="3261.4231548412517" />
+    </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -62,50 +135,58 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.AuctionServer.executor": "Run",
-    "Application.Main.executor": "Run",
-    "Application.PasswordMigrationTool.executor": "Run",
-    "JUnit.AntiSnipingTest.executor": "Run",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "dev",
-    "ignore.virus.scanning.warn.message": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/Laptrinhnangcao/online-auction-system/sql",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "ml.llm.AcpAgentsConfigurable",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.AuctionServer.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.PasswordMigrationTool.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/online-auction-system&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.AcpAgentsConfigurable&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\Laptrinhnangcao\online-auction-system\sql" />
       <recent name="E:\Laptrinhnangcao\online-auction-system" />
     </key>
   </component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="online-auction-system" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.24374.151" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.24374.151" />
       </set>
     </attachedChunks>
   </component>
@@ -117,6 +198,11 @@
       <option name="presentableId" value="Default" />
       <updated>1776517627508</updated>
       <workItem from="1778262206325" duration="7000" />
+      <workItem from="1778974691857" duration="34000" />
+      <workItem from="1778974738640" duration="11000" />
+      <workItem from="1778974760589" duration="14000" />
+      <workItem from="1778975470696" duration="874000" />
+      <workItem from="1778986164631" duration="12346000" />
     </task>
     <task id="LOCAL-00001" summary="add picture">
       <option name="closed" value="true" />
@@ -135,6 +221,16 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add picture" />
     <option name="LAST_COMMIT_MESSAGE" value="add picture" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.IllegalArgumentException" package="java.lang" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

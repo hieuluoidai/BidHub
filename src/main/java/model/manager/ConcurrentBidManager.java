@@ -2,9 +2,11 @@ package model.manager;
 
 import database.BidTransactionDAO;
 import model.auction.Auction;
+import model.auction.BidTransaction;
 import model.auction.BidResult;
 import model.user.User;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -59,6 +61,11 @@ public class ConcurrentBidManager {
             return BidResult.failure(auctionId, amount, "Phiên đấu giá không tồn tại!");
         }
 
+        // Sau khi server restart, state trong RAM có thể vừa được dựng lại nhưng chưa
+        // mang lịch sử đầy đủ. Trước khi kiểm tra giá mới, tự đồng bộ lại từ DB để
+        // không bao giờ cho phép một bid thấp hơn giá cao nhất cũ "mở vòng mới".
+        restorePersistedHistoryIfNeeded(auctionId, auction, bidDao);
+
         // ===== 1. Optimistic pre-check (NGOÀI lock để lọc nhanh) =====
         if (!"RUNNING".equals(auction.getStatus())) {
             failureCount.incrementAndGet();
@@ -85,6 +92,10 @@ public class ConcurrentBidManager {
                 failureCount.incrementAndGet();
                 return BidResult.failure(auctionId, amount, "Phiên đấu giá không tồn tại!");
             }
+
+            // Double-check cả history vì đây mới là điểm quyết định giá cuối cùng.
+            restorePersistedHistoryIfNeeded(auctionId, auction, bidDao);
+
             if (!"RUNNING".equals(auction.getStatus())) {
                 failureCount.incrementAndGet();
                 return BidResult.failure(auctionId, amount, "Phiên đã kết thúc trong lúc bạn chờ!");
@@ -192,6 +203,24 @@ public class ConcurrentBidManager {
 
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Tự vá state sau restart nếu phiên trong RAM đang thiếu history nhưng DB đã có bid.
+     * Không ghi đè khi RAM đã có dữ liệu để tránh query thừa trong đường nóng bình thường.
+     */
+    private void restorePersistedHistoryIfNeeded(String auctionId, Auction auction,
+                                                 BidTransactionDAO bidDao) {
+        if (auction == null || bidDao == null || !auction.getBidHistory().isEmpty()) {
+            return;
+        }
+
+        List<BidTransaction> persistedHistory = bidDao.findTransactionsByAuctionId(auctionId);
+        if (!persistedHistory.isEmpty()) {
+            auction.restoreBidHistory(persistedHistory);
+            System.out.printf(">>> [HISTORY RESTORE] Phiên %s nạp lại %d bid từ DB, giá cao nhất $%.2f%n",
+                    auctionId, persistedHistory.size(), auction.getCurrentPrice());
         }
     }
 

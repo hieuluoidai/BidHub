@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="bidhub" />
-        <module name="online-auction-system" />
       </profile>
     </annotationProcessing>
   </component>

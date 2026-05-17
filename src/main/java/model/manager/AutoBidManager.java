@@ -217,11 +217,12 @@ public class AutoBidManager {
 
         try {
             // 1. Memory update
-            auction.placeBid(bidder, amount);
+            auction.placeBid(bidder, amount, model.auction.BidTransaction.BidType.AUTO_BID);
             
             // 2. DB update
             if (bidDAO != null) {
-                bidDAO.save(auction.getAuctionId(), bidder.getUserId(), amount);
+                bidDAO.save(auction.getAuctionId(), bidder.getUserId(), amount,
+                        model.auction.BidTransaction.BidType.AUTO_BID);
             }
 
             // 3. Giải phóng tiền cho người bị outbid (nếu người đó chỉ dùng manual bid)

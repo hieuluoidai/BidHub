@@ -141,6 +141,16 @@ public class AuctionManager {
 
         for (int i = 0; i < auctions.size(); i++) {
             if (auctions.get(i).getAuctionId().equals(updatedAuction.getAuctionId())) {
+                Auction existing = auctions.get(i);
+
+                // Giá của một phiên đang chạy chỉ được phép đi lên. Nếu một payload cũ
+                // từ client mang ít history hơn và kéo giá xuống, giữ lại history giàu
+                // hơn trong RAM thay vì cho state bị "quay về đầu".
+                if ("RUNNING".equals(existing.getStatus())
+                        && updatedAuction.getCurrentPrice() < existing.getCurrentPrice()) {
+                    updatedAuction.restoreBidHistory(existing.getBidHistory());
+                }
+
                 auctions.set(i, updatedAuction);
                 System.out.println(">>> Đã đồng bộ giá phiên " + updatedAuction.getAuctionId()
                         + " ($" + updatedAuction.getCurrentPrice() + ")");

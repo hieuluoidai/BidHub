@@ -275,16 +275,7 @@ public class AuctionDAO {
         auction.setStatus(status);
 
         database.BidTransactionDAO bidDAO = new database.BidTransactionDAO();
-        String[] winnerData = bidDAO.findWinner(auctionId);
-        if (winnerData != null) {
-            String bidderId = winnerData[0];
-            double amount = Double.parseDouble(winnerData[1]);
-            database.UserDAO userDAO = new database.UserDAO();
-            model.user.User highestBidder = userDAO.findById(bidderId);
-            if (highestBidder != null) {
-                auction.setHighestBid(new model.auction.BidTransaction(highestBidder, amount));
-            }
-        }
+        auction.restoreBidHistory(bidDAO.findTransactionsByAuctionId(auctionId));
         return auction;
     }
 }

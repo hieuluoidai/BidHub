@@ -114,6 +114,9 @@ public class AdminController {
     }
 
     private void handleQuickBidOf(Auction auction) {
+        auction = getLatestAuction(auction);
+        if (auction == null) return;
+
         // Admin thường không bid, nhưng nếu cần:
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/bid_dialog.fxml"));
@@ -175,6 +178,7 @@ public class AdminController {
 
     /** Mở cửa sổ chi tiết phiên đấu giá */
     private void openItemDetails(Auction auction) {
+        auction = getLatestAuction(auction);
         if (auction == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_details.fxml"));
@@ -298,5 +302,16 @@ public class AdminController {
             return;
         }
         openUserDetails(selected);
+    }
+
+    private Auction getLatestAuction(Auction fallback) {
+        if (fallback == null) return null;
+
+        for (Auction candidate : AppState.getInstance().getAuctionList()) {
+            if (candidate.getAuctionId().equals(fallback.getAuctionId())) {
+                return candidate;
+            }
+        }
+        return fallback;
     }
 }

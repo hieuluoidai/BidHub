@@ -1,6 +1,7 @@
 package model.auction;
 
 import model.user.User;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -8,27 +9,63 @@ import java.time.LocalDateTime;
  * Class cho 1 lần bid trong hệ thống.
  */
 public class BidTransaction implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
-    private User bidder;
-    private double bidAmount;
-    private LocalDateTime timestamp;
+    public enum BidType {
+        MANUAL("Đặt thủ công"),
+        AUTO_BID("Đặt tự động/Auto-bid");
 
-    public BidTransaction(User bidder, double bidAmount) {
-        this.bidder = bidder;
-        this.bidAmount = bidAmount;
-        this.timestamp = LocalDateTime.now(); // Lấy thời gian lúc bid
+        private final String displayName;
+
+        BidType(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 
-    // --- Getters ---
-    public User getBidder()             { return bidder; }
-    public double getBidAmount()        { return bidAmount; }
-    public LocalDateTime getTimestamp() { return timestamp; }
+    private final User bidder;
+    private final double bidAmount;
+    private final LocalDateTime timestamp;
+    private final BidType bidType;
 
-    // Override lại để hiển thị đầy đủ thông tin dễ nhìn hơn
+    public BidTransaction(User bidder, double bidAmount) {
+        this(bidder, bidAmount, LocalDateTime.now(), BidType.MANUAL);
+    }
+
+    public BidTransaction(User bidder, double bidAmount, BidType bidType) {
+        this(bidder, bidAmount, LocalDateTime.now(), bidType);
+    }
+
+    public BidTransaction(User bidder, double bidAmount, LocalDateTime timestamp, BidType bidType) {
+        this.bidder = bidder;
+        this.bidAmount = bidAmount;
+        this.timestamp = timestamp != null ? timestamp : LocalDateTime.now();
+        this.bidType = bidType != null ? bidType : BidType.MANUAL;
+    }
+
+    public User getBidder() {
+        return bidder;
+    }
+
+    public double getBidAmount() {
+        return bidAmount;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public BidType getBidType() {
+        return bidType;
+    }
+
     @Override
     public String toString() {
         String name = (bidder != null) ? bidder.getUsername() : "Ẩn danh";
-        return String.format("[%s] %s đã trả giá $%.2f", timestamp, name, bidAmount);
+        return String.format("[%s] %s đã trả giá $%.2f (%s)",
+                timestamp, name, bidAmount, bidType.getDisplayName());
     }
 }

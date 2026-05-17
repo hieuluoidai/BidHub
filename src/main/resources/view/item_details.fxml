@@ -1,160 +1,198 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
-<StackPane styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
+<StackPane styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
     <children>
-        <VBox maxHeight="720.0" maxWidth="850.0" prefWidth="820.0" styleClass="card" spacing="0">
+        <VBox maxHeight="860.0" maxWidth="1180.0" prefWidth="1140.0" spacing="0" styleClass="card item-details-card">
             <children>
-                <!-- FIXED Header: Title and Category -->
-                <VBox spacing="5.0" style="-fx-padding: 25 30 15 30;">
+                <VBox spacing="6.0" styleClass="item-details-header">
                     <children>
                         <HBox alignment="CENTER_LEFT" spacing="15.0">
                             <children>
-                                <Label fx:id="lblItemName" styleClass="label-header" text="Tên sản phẩm" wrapText="true" maxWidth="600.0" HBox.hgrow="ALWAYS" />
+                                <Label fx:id="lblItemName" maxWidth="760.0" styleClass="label-header" text="Tên sản phẩm" wrapText="true" HBox.hgrow="ALWAYS" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Label fx:id="lblCategory" minWidth="80.0" alignment="CENTER" style="-fx-background-color: #EFF6FF; -fx-text-fill: #3B82F6; -fx-padding: 5 15; -fx-background-radius: 15; -fx-font-weight: bold; -fx-font-size: 13;" text="Item" />
+                                <Label fx:id="lblCategory" alignment="CENTER" minWidth="96.0" styleClass="details-category-chip" text="Item" />
                             </children>
                         </HBox>
-                        <Label fx:id="lblExtraInfo" style="-fx-text-fill: #64748B; -fx-font-style: italic; -fx-font-size: 14;" text="Thông tin thêm sẽ hiện ở đây" wrapText="true" />
+                        <Label fx:id="lblExtraInfo" styleClass="details-muted-text" text="Thông tin thêm sẽ hiện ở đây" wrapText="true" />
                     </children>
                 </VBox>
 
                 <Separator />
 
-                <!-- SCROLLABLE Content Area -->
-                <javafx.scene.control.ScrollPane fitToWidth="true" styleClass="auction-scroll-pane" VBox.vgrow="ALWAYS">
+                <ScrollPane fx:id="detailsScrollPane" fitToWidth="true" styleClass="auction-scroll-pane" VBox.vgrow="ALWAYS">
                     <content>
-                        <VBox spacing="20.0" style="-fx-background-color: white; -fx-padding: 10 30 20 30;">
+                        <VBox spacing="22.0" styleClass="item-details-content">
                             <children>
-                                <!-- Main Content: Image (Left) and Bidding Info (Right) -->
-                                <HBox spacing="35.0">
+                                <GridPane hgap="22.0" vgap="22.0">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="37.0" />
+                                        <ColumnConstraints percentWidth="63.0" />
+                                    </columnConstraints>
                                     <children>
-                                        <VBox alignment="TOP_CENTER" spacing="15.0">
+                                        <VBox spacing="14.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
                                             <children>
-                                                <StackPane style="-fx-background-color: #F8FAFC; -fx-background-radius: 12; -fx-padding: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 12;">
+                                                <StackPane styleClass="details-image-shell">
                                                     <children>
-                                                        <ImageView fx:id="itemImageView" fitHeight="240.0" fitWidth="320.0" pickOnBounds="true" preserveRatio="true" />
+                                                        <ImageView fx:id="itemImageView" fitHeight="292.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true" />
                                                     </children>
                                                 </StackPane>
-                                                <VBox spacing="8.0">
-                                                    <children>
-                                                        <Label styleClass="form-label" text="Mô tả sản phẩm:" />
-                                                        <TextArea fx:id="txtDescription" editable="false" prefHeight="120.0" prefWidth="320.0" styleClass="text-area" wrapText="true" />
-                                                    </children>
-                                                </VBox>
                                             </children>
                                         </VBox>
 
-                                        <VBox spacing="15.0" HBox.hgrow="ALWAYS">
+                                        <VBox spacing="14.0" styleClass="details-panel" GridPane.columnIndex="0" GridPane.rowIndex="1">
                                             <children>
-                                                <!-- Price Card -->
-                                                <VBox spacing="15.0" style="-fx-background-color: #F8FAFC; -fx-padding: 20; -fx-background-radius: 15; -fx-border-color: #E2E8F0; -fx-border-radius: 15;" HBox.hgrow="ALWAYS">
+                                                <Label styleClass="details-section-title" text="Mô tả sản phẩm" />
+                                                <TextArea fx:id="txtDescription" editable="false" prefHeight="191.0" prefWidth="350.0" styleClass="text-area details-description" wrapText="true" />
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="14.0" styleClass="details-panel chart-panel" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <VBox spacing="2.0">
+                                                        <Label styleClass="details-section-title" text="↗ Diễn biến giá trực tuyến" />
+                                                        <Region HBox.hgrow="ALWAYS" />
+                                                        <Label fx:id="lblHighestBidder" styleClass="details-muted-text" text="Chưa có ai dẫn đầu" />
+                                                    </children>
+                                                </HBox>
+
+                                                <LineChart fx:id="bidChart" animated="false" createSymbols="true" legendVisible="false" prefHeight="270.0" styleClass="bid-chart">
+                                                    <xAxis>
+                                                        <NumberAxis fx:id="bidXAxis" forceZeroInRange="false" minorTickVisible="false" tickLabelsVisible="false" tickMarkVisible="false" />
+                                                    </xAxis>
+                                                    <yAxis>
+                                                        <NumberAxis fx:id="bidYAxis" forceZeroInRange="false" minorTickVisible="false" />
+                                                    </yAxis>
+                                                </LineChart>
+
+                                                <GridPane hgap="12.0" styleClass="bid-stat-grid">
+                                                    <columnConstraints>
+                                                        <ColumnConstraints percentWidth="23.0" />
+                                                        <ColumnConstraints percentWidth="23.0" />
+                                                        <ColumnConstraints percentWidth="14.0" />
+                                                        <ColumnConstraints percentWidth="40.0" />
+                                                    </columnConstraints>
+                                                    <children>
+                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="0">
                                                             <children>
-                                                                <Label style="-fx-text-fill: #64748B; -fx-font-size: 13; -fx-font-weight: bold;" text="GIÁ HIỆN TẠI" />
-                                                                <Label fx:id="lblCurrentPrice" style="-fx-font-size: 32; -fx-font-weight: 900; -fx-text-fill: #10B981;" text="\$0.00" wrapText="true" />
+                                                                <Label styleClass="bid-stat-label" text="Giá khởi điểm" wrapText="false" />
+                                                                <Label fx:id="lblStartingPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
                                                             </children>
                                                         </VBox>
-
-                                                        <Separator style="-fx-opacity: 0.5;" />
-
-                                                        <VBox spacing="10.0">
+                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card-current" GridPane.columnIndex="1">
                                                             <children>
-                                                                <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                                                    <children>
-                                                                        <Label minWidth="80.0" styleClass="form-label" text="Dẫn đầu:" />
-                                                                        <Label fx:id="lblHighestBidder" minWidth="200.0" style="-fx-text-fill: #1E293B; -fx-font-weight: 800; -fx-font-size: 15;" text="Chưa có ai" wrapText="true" />
-                                                                    </children>
-                                                                </HBox>
-                                                                <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                                                    <children>
-                                                                        <Label minWidth="80.0" styleClass="form-label" text="Thời gian:" />
-                                                                        <Label fx:id="lblBidTime" minWidth="200.0" style="-fx-text-fill: #64748B; -fx-font-size: 14;" text="-" />
-                                                                    </children>
-                                                                </HBox>
+                                                                <Label styleClass="bid-stat-label" text="Giá hiện tại" wrapText="false" />
+                                                                <Label fx:id="lblCurrentPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="2">
+                                                            <children>
+                                                                <Label styleClass="bid-stat-label" text="Số lần đặt" wrapText="false" />
+                                                                <Label fx:id="lblBidCount" styleClass="bid-stat-value" text="0" wrapText="false" />
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card, bid-stat-card-end" GridPane.columnIndex="3">
+                                                            <children>
+                                                                <Label styleClass="bid-stat-label" text="Kết thúc lúc" wrapText="false" />
+                                                                <Label fx:id="lblEndTime" maxWidth="Infinity" style="-fx-font-size: 24px; -fx-font-weight: 900;" styleClass="bid-stat-value, bid-stat-end-time" text="--/--/-- --:--" wrapText="false" />
                                                             </children>
                                                         </VBox>
                                                     </children>
-                                                </VBox>
+                                       <rowConstraints>
+                                          <RowConstraints />
+                                       </rowConstraints>
+                                                </GridPane>
+                                            </children>
+                                        </VBox>
 
-                                                <!-- Status and Countdown -->
-                                                <VBox spacing="10.0">
+                                        <VBox spacing="14.0" styleClass="details-panel bidding-panel" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                                    <children>
+                                                        <Label styleClass="details-section-title" text="Khu đấu giá" />
+                                                        <Region HBox.hgrow="ALWAYS" />
+                                                        <Label styleClass="details-muted-text" text="Bid gần nhất:" />
+                                                        <Label fx:id="lblBidTime" styleClass="details-strong-text" text="-" />
+                                                    </children>
+                                                </HBox>
+
+                                                <HBox spacing="12.0">
+                                                    <children>
+                                                        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="48.0" styleClass="button-primary" text="ĐẶT GIÁ NGAY" HBox.hgrow="ALWAYS" />
+                                                        <Button fx:id="btnPay" managed="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#handlePay" prefHeight="48.0" style="-fx-background-color: #F59E0B;" styleClass="button-primary" text="THANH TOÁN NGAY" visible="false" HBox.hgrow="ALWAYS" />
+                                                    </children>
+                                                </HBox>
+
+                                                <VBox fx:id="paneAutoBid" managed="false" spacing="12.0" styleClass="autobid-panel" visible="false">
                                                     <children>
                                                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                                                             <children>
-                                                                <Label minWidth="100.0" styleClass="form-label" text="Kết thúc lúc:" />
-                                                                <Label fx:id="lblEndTime" minWidth="180.0" alignment="CENTER" styleClass="badge-urgent" text="--/--/-- --:--:--" />
+                                                                <Label styleClass="details-section-title" text="Đấu giá tự động (Auto-bid)" />
+                                                                <Region HBox.hgrow="ALWAYS" />
+                                                                <Label styleClass="details-muted-text" text="Hệ thống sẽ tự bid giúp bạn" />
+                                                            </children>
+                                                        </HBox>
+
+                                                        <HBox spacing="12.0">
+                                                            <children>
+                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                                                    <children>
+                                                                        <Label styleClass="form-label" text="Giá tối đa bạn sẵn sàng trả" />
+                                                                        <TextField fx:id="txtAutoMaxBid" promptText="VD: 500.00" styleClass="text-field" />
+                                                                    </children>
+                                                                </VBox>
+                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                                                    <children>
+                                                                        <Label styleClass="form-label" text="Mỗi bước tăng thêm" />
+                                                                        <TextField fx:id="txtAutoIncrement" promptText="VD: 10.00" styleClass="text-field" />
+                                                                    </children>
+                                                                </VBox>
+                                                            </children>
+                                                        </HBox>
+
+                                                        <HBox spacing="10.0">
+                                                            <children>
+                                                                <Button fx:id="btnSetAutoBid" maxWidth="Infinity" onAction="#handleSetAutoBid" prefHeight="40.0" style="-fx-background-color: #6366F1;" styleClass="button-primary" text="Kích hoạt Auto-Bid" HBox.hgrow="ALWAYS" />
+                                                                <Button fx:id="btnCancelAutoBid" managed="false" onAction="#handleCancelAutoBid" prefHeight="40.0" styleClass="button-danger" text="Hủy Auto-Bid" visible="false" />
                                                             </children>
                                                         </HBox>
                                                     </children>
                                                 </VBox>
-
-                                                <!-- Action Button for Normal Bid -->
-                                                <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="50.0" styleClass="button-primary" text="🚀 ĐẶT GIÁ NGAY" />
-                                                <Button fx:id="btnPay" managed="false" mnemonicParsing="false" onAction="#handlePay" prefHeight="50.0" styleClass="button-primary" style="-fx-background-color: #F59E0B;" text="💰 THANH TOÁN NGAY" visible="false" maxWidth="Infinity" />
                                             </children>
                                         </VBox>
                                     </children>
-                                </HBox>
+                                    <rowConstraints>
+                                        <RowConstraints />
+                                        <RowConstraints />
+                                    </rowConstraints>
+                                </GridPane>
 
-                                <!-- Auto-Bidding Section -->
-                                <VBox fx:id="paneAutoBid" managed="false" spacing="12.0" style="-fx-background-color: #F1F5F9; -fx-background-radius: 15; -fx-padding: 20; -fx-border-color: #CBD5E1; -fx-border-radius: 15;" visible="false">
+                                <VBox spacing="12.0" styleClass="details-panel history-panel">
                                     <children>
-                                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                            <children>
-                                                <Label style="-fx-font-weight: 900; -fx-text-fill: #334155; -fx-font-size: 15;" text="🤖 ĐẤU GIÁ TỰ ĐỘNG (AUTO-BID)" />
-                                                <Region HBox.hgrow="ALWAYS" />
-                                                <Label style="-fx-font-size: 11; -fx-text-fill: #64748B;" text="Hệ thống sẽ tự bid giúp bạn" />
-                                            </children>
-                                        </HBox>
-
-                                        <HBox spacing="15.0">
-                                            <children>
-                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                                    <children>
-                                                        <Label styleClass="form-label" text="Giá tối đa bạn sẵn sàng trả" />
-                                                        <TextField fx:id="txtAutoMaxBid" promptText="VD: 500.00" styleClass="text-field" />
-                                                    </children>
-                                                </VBox>
-                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                                    <children>
-                                                        <Label styleClass="form-label" text="Mỗi bước tăng thêm" />
-                                                        <TextField fx:id="txtAutoIncrement" promptText="VD: 10.00" styleClass="text-field" />
-                                                    </children>
-                                                </VBox>
-                                            </children>
-                                        </HBox>
-
-                                        <HBox spacing="10.0">
-                                            <children>
-                                                <Button fx:id="btnSetAutoBid" maxWidth="Infinity" onAction="#handleSetAutoBid" prefHeight="40.0" styleClass="button-primary" style="-fx-background-color: #6366F1;" text="Kích hoạt Auto-Bid" HBox.hgrow="ALWAYS" />
-                                                <Button fx:id="btnCancelAutoBid" managed="false" onAction="#handleCancelAutoBid" prefHeight="40.0" styleClass="button-danger" text="Hủy Auto-Bid" visible="false" />
-                                            </children>
-                                        </HBox>
+                                        <Label styleClass="details-section-title" text="Lịch sử đấu giá" />
+                                        <TableView fx:id="bidHistoryTable" prefHeight="220.0">
+                                            <columns>
+                                                <TableColumn fx:id="colBidder" prefWidth="250.0" text="Người đặt giá" />
+                                                <TableColumn fx:id="colAmount" prefWidth="180.0" text="Số tiền" />
+                                                <TableColumn fx:id="colTimestamp" prefWidth="260.0" text="Thời gian thực" />
+                                                <TableColumn fx:id="colBidType" prefWidth="250.0" text="Kiểu đặt giá" />
+                                            </columns>
+                                        </TableView>
                                     </children>
                                 </VBox>
                             </children>
                         </VBox>
                     </content>
-                </javafx.scene.control.ScrollPane>
+                </ScrollPane>
 
                 <Separator />
 
-                <!-- FIXED Footer: Action Buttons -->
-                <HBox alignment="CENTER_RIGHT" spacing="12.0" style="-fx-padding: 20 30 25 30;">
+                <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="item-details-footer">
                     <children>
                         <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="40.0" prefWidth="100.0" styleClass="button-secondary" text="Đóng" />
                         <Region HBox.hgrow="ALWAYS" />

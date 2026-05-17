@@ -52,9 +52,8 @@ public class BidController {
             labelUserBalance.setText(String.format("$%,.2f", user.getBalance()));
         }
         
-        // Gợi ý giá bid tiếp theo (giá hiện tại + 1 bước nhỏ hoặc 10%)
-        double suggestion = auction.getCurrentPrice() + Math.max(10.0, auction.getCurrentPrice() * 0.05);
-        textBidAmount.setText(String.format("%.2f", suggestion));
+        // Không tự gợi ý sẵn giá đặt; để người dùng chủ động nhập mức muốn bid.
+        textBidAmount.clear();
     }
 
     @FXML

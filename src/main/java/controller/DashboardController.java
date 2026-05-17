@@ -62,20 +62,20 @@ public class DashboardController {
 
         // Thêm ListChangeListener để cập nhật giao diện thông minh
         masterData.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
-            javafx.application.Platform.runLater(() -> {
-                while (c.next()) {
-                    if (c.wasUpdated() || c.wasReplaced()) {
-                        // Cập nhật từng thẻ bị thay đổi thay vì vẽ lại toàn bộ
-                        for (int i = c.getFrom(); i < c.getTo(); i++) {
-                            updateSpecificCard(masterData.get(i));
-                        }
-                    } else {
-                        // Nếu là thêm/xóa/reset thì vẽ lại toàn bộ cho chắc chắn
-                        renderAuctions();
+            // Change chỉ hợp lệ trong chính callback này; nếu đẩy sang runLater,
+            // các card có thể giữ reference cũ dù list đã có Auction mới.
+            while (c.next()) {
+                if (c.wasUpdated() || c.wasReplaced()) {
+                    // Cập nhật từng thẻ bị thay đổi thay vì vẽ lại toàn bộ.
+                    for (int i = c.getFrom(); i < c.getTo(); i++) {
+                        updateSpecificCard(masterData.get(i));
                     }
+                } else {
+                    // Nếu là thêm/xóa/reset thì vẽ lại toàn bộ cho chắc chắn.
+                    renderAuctions();
                 }
-                updateOpenDetailWindow();
-            });
+            }
+            updateOpenDetailWindow();
         });
 
         // Khi tìm kiếm or đổi loại hàng, bảng sẽ tự động update
@@ -289,6 +289,7 @@ public class DashboardController {
      * Mở hộp thoại bid cho một phiên đấu giá cụ thể (gọi từ ItemCard).
      */
     private void handleQuickBidOf(Auction auction) {
+        auction = getLatestAuction(auction);
         if (auction == null) return;
 
         try {
@@ -313,6 +314,7 @@ public class DashboardController {
      * Hiển thị màn hình chi tiết cho một phiên cụ thể (gọi từ ItemCard).
      */
     private void handleViewDetailsOf(Auction auction) {
+        auction = getLatestAuction(auction);
         if (auction == null) return;
 
         try {
@@ -400,5 +402,19 @@ public class DashboardController {
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
         renderAuctions();
+    }
+
+    /**
+     * Luôn mở từ bản Auction mới nhất trong AppState, tránh card cũ giữ reference cũ.
+     */
+    private Auction getLatestAuction(Auction fallback) {
+        if (fallback == null) return null;
+
+        for (Auction candidate : AppState.getInstance().getAuctionList()) {
+            if (candidate.getAuctionId().equals(fallback.getAuctionId())) {
+                return candidate;
+            }
+        }
+        return fallback;
     }
 }

@@ -93,6 +93,11 @@ public class Auction extends Entity implements Serializable, Subject {
 
     public synchronized void placeBid(User bidder, double amount)
             throws IllegalStateException, IllegalArgumentException {
+        placeBid(bidder, amount, BidTransaction.BidType.MANUAL);
+    }
+
+    public synchronized void placeBid(User bidder, double amount, BidTransaction.BidType bidType)
+            throws IllegalStateException, IllegalArgumentException {
 
         if (!"RUNNING".equals(this.status)) {
             throw new AuctionClosedException(getAuctionId(), this.status);
@@ -103,7 +108,7 @@ public class Auction extends Entity implements Serializable, Subject {
             throw new InvalidBidException(amount, currentPrice);
         }
 
-        BidTransaction newBid = new BidTransaction(bidder, amount);
+        BidTransaction newBid = new BidTransaction(bidder, amount, bidType);
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
 
@@ -212,6 +217,31 @@ public class Auction extends Entity implements Serializable, Subject {
     public static void setAntiSnipeEnabled(boolean enabled) { antiSnipeEnabled = enabled; }
     public List<BidTransaction> getBidHistory() { return new ArrayList<>(bidHistory); }
     public BidTransaction getHighestBid()       { return highestBid; }
+
+    /**
+     * Khôi phục lịch sử bid từ DB khi server/client reload dữ liệu.
+     *
+     * Trong điều kiện bình thường, bid mới luôn cao hơn bid cũ nên phần tử cuối
+     * cũng là bid cao nhất. Tuy nhiên nếu server từng restart với state thiếu và
+     * lỡ chấp nhận một bid thấp hơn về sau, chỉ lấy phần tử cuối sẽ làm giá hiện
+     * tại "tụt về đầu" thêm lần nữa ở lần restart kế tiếp. Vì vậy highestBid luôn
+     * phải được dựng lại theo số tiền lớn nhất đã từng lưu trong DB.
+     */
+    public void restoreBidHistory(List<BidTransaction> transactions) {
+        this.bidHistory = new ArrayList<>();
+        this.highestBid = null;
+
+        if (transactions == null || transactions.isEmpty()) return;
+
+        this.bidHistory.addAll(transactions);
+        for (BidTransaction transaction : transactions) {
+            if (transaction == null) continue;
+            if (this.highestBid == null
+                    || transaction.getBidAmount() > this.highestBid.getBidAmount()) {
+                this.highestBid = transaction;
+            }
+        }
+    }
     public String getDuration() {
         return "Từ " + startTime.toLocalDate() + " đến " + endTime.toLocalDate();
     }

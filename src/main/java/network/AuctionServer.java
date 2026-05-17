@@ -78,12 +78,7 @@ public class AuctionServer {
         System.out.println(">>> Đang khởi động hệ thống...");
 
         List<Auction> savedAuctions = new database.AuctionDAO().findAll();
-        database.BidTransactionDAO bidDao = new database.BidTransactionDAO();
         for (Auction a : savedAuctions) {
-            String[] winnerData = bidDao.findWinner(a.getAuctionId());
-            if (winnerData != null) {
-                a.getItem().setStartingPrice(Double.parseDouble(winnerData[1]));
-            }
             AuctionManager.getInstance().addAuction(a);
         }
         System.out.println(">>> Đã nạp " + savedAuctions.size() + " phiên đấu giá.");

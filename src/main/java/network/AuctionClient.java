@@ -165,11 +165,14 @@ public class AuctionClient {
         var list = model.manager.AppState.getInstance().getAuctionList();
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
-                // Chỉ set nếu có sự thay đổi thực sự (giá hoặc trạng thái) để giảm tải UI
                 Auction existing = list.get(i);
-                if (existing.getCurrentPrice() != updated.getCurrentPrice() || 
-                    !existing.getStatus().equals(updated.getStatus()) ||
-                    (existing.getHighestBid() == null && updated.getHighestBid() != null)) {
+                boolean priceChanged = existing.getCurrentPrice() != updated.getCurrentPrice();
+                boolean statusChanged = !existing.getStatus().equals(updated.getStatus());
+                boolean bidHistoryChanged = existing.getBidHistory().size() != updated.getBidHistory().size();
+                boolean highestBidAppeared = existing.getHighestBid() == null && updated.getHighestBid() != null;
+
+                // Lịch sử là dữ liệu điều khiển chart/table, nên cũng phải coi là thay đổi thật.
+                if (priceChanged || statusChanged || bidHistoryChanged || highestBidAppeared) {
                     list.set(i, updated);
                 }
                 return;
