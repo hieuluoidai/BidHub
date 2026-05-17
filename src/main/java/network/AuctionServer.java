@@ -77,6 +77,12 @@ public class AuctionServer {
     public static void main(String[] args) {
         System.out.println(">>> Đang khởi động hệ thống...");
 
+        // Graceful shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println(">>> Đang tắt Server...");
+            database.DatabaseConnection.closePool();
+        }));
+
         List<Auction> savedAuctions = new database.AuctionDAO().findAll();
         for (Auction a : savedAuctions) {
             AuctionManager.getInstance().addAuction(a);

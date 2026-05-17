@@ -53,10 +53,14 @@ public class ItemDAO {
                 stmt.setString(8, v.getBrand());
             }
 
-            stmt.executeUpdate();
-            return true;
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println(">>> [DB] Đã lưu sản phẩm: " + item.getItemId());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
-            System.err.println("Lỗi khi lưu sản phẩm: " + e.getMessage());
+            System.err.println(">>> [DB ERROR] Lỗi lưu sản phẩm " + item.getItemId() + ": " + e.getMessage());
             return false;
         }
     }

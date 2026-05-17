@@ -5,207 +5,226 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
+<VBox fx:id="mainContainer" maxHeight="Infinity" maxWidth="Infinity" minWidth="800.0" spacing="0" styleClass="card, item-details-card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ItemDetailsController">
     <children>
-        <VBox maxHeight="860.0" maxWidth="1180.0" prefWidth="1140.0" spacing="0" styleClass="card item-details-card">
+        <VBox spacing="6.0" styleClass="item-details-header">
             <children>
-                <VBox spacing="6.0" styleClass="item-details-header">
+                <HBox alignment="CENTER_LEFT" spacing="15.0">
                     <children>
-                        <HBox alignment="CENTER_LEFT" spacing="15.0">
-                            <children>
-                                <Label fx:id="lblItemName" maxWidth="760.0" styleClass="label-header" text="Tên sản phẩm" wrapText="true" HBox.hgrow="ALWAYS" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Label fx:id="lblCategory" alignment="CENTER" minWidth="96.0" styleClass="details-category-chip" text="Item" />
-                            </children>
-                        </HBox>
-                        <Label fx:id="lblExtraInfo" styleClass="details-muted-text" text="Thông tin thêm sẽ hiện ở đây" wrapText="true" />
+                        <Label fx:id="lblItemName" maxWidth="Infinity" styleClass="label-header" text="Tên sản phẩm" wrapText="true" HBox.hgrow="ALWAYS" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblCategory" alignment="CENTER" minWidth="96.0" styleClass="details-category-chip" text="Item" />
                     </children>
-                </VBox>
+                </HBox>
+                <HBox fx:id="extraInfoContainer" spacing="10.0" alignment="CENTER_LEFT" />
+            </children>
+        </VBox>
 
-                <Separator />
+        <Separator />
 
-                <ScrollPane fx:id="detailsScrollPane" fitToWidth="true" styleClass="auction-scroll-pane" VBox.vgrow="ALWAYS">
-                    <content>
-                        <VBox spacing="22.0" styleClass="item-details-content">
+        <ScrollPane fx:id="detailsScrollPane" fitToWidth="true" styleClass="auction-scroll-pane" VBox.vgrow="ALWAYS">
+            <content>
+                <VBox spacing="22.0" styleClass="item-details-content">
+                    <children>
+                        <GridPane hgap="22.0" vgap="22.0">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="37.0" />
+                                <ColumnConstraints percentWidth="63.0" />
+                            </columnConstraints>
                             <children>
-                                <GridPane hgap="22.0" vgap="22.0">
-                                    <columnConstraints>
-                                        <ColumnConstraints percentWidth="37.0" />
-                                        <ColumnConstraints percentWidth="63.0" />
-                                    </columnConstraints>
+                                <VBox spacing="14.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
                                     <children>
-                                        <VBox spacing="14.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                        <StackPane styleClass="details-image-shell">
                                             <children>
-                                                <StackPane styleClass="details-image-shell">
+                                                <VBox fx:id="noImagePlaceholder" alignment="CENTER" spacing="12.0" styleClass="no-image-placeholder">
                                                     <children>
-                                                        <ImageView fx:id="itemImageView" fitHeight="292.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true" />
+                                                        <javafx.scene.shape.SVGPath content="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V9M21 15L15.9142 9.91421C15.1332 9.13317 13.8668 9.13317 13.0858 9.91421L11.5 11.5M21 15L19.4142 13.4142C18.6332 12.6332 17.3668 12.6332 16.5858 13.4142L11.5 18.5M11.5 11.5L6.41421 16.5858C5.63316 17.3668 4.36683 17.3668 3.58579 16.5858L3 16M15 6.5C15 7.32843 14.3284 8 13.5 8C12.6716 8 12 7.32843 12 6.5C12 5.67157 12.6716 5 13.5 5C14.3284 5 15 5.67157 15 6.5Z" fill="TRANSPARENT" stroke="#94A3B8" strokeWidth="2.0" strokeLineCap="ROUND" strokeLineJoin="ROUND" scaleX="2.0" scaleY="2.0"/>
+                                                        <Label text="Chưa có hình ảnh" styleClass="no-image-text" />
                                                     </children>
-                                                </StackPane>
+                                                </VBox>
+                                                <ImageView fx:id="itemImageView" fitHeight="292.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true" />
                                             </children>
-                                        </VBox>
+                                        </StackPane>
+                                    </children>
+                                </VBox>
 
-                                        <VBox spacing="14.0" styleClass="details-panel" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                <VBox spacing="14.0" styleClass="details-panel" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                    <children>
+                                        <Label styleClass="details-section-title" text="Mô tả sản phẩm" />
+                                        <TextArea fx:id="txtDescription" editable="false" prefHeight="191.0" prefWidth="350.0" styleClass="text-area details-description" wrapText="true" />
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="14.0" styleClass="details-panel chart-panel" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="10.0">
                                             <children>
-                                                <Label styleClass="details-section-title" text="Mô tả sản phẩm" />
-                                                <TextArea fx:id="txtDescription" editable="false" prefHeight="191.0" prefWidth="350.0" styleClass="text-area details-description" wrapText="true" />
+                                                <Label styleClass="details-section-title" text="↗ Diễn biến giá trực tuyến" />
+                                                <Label text="LIVE" styleClass="live-badge">
+                                                    <graphic>
+                                                        <javafx.scene.shape.Circle radius="3" fill="#EF4444" styleClass="live-dot" />
+                                                    </graphic>
+                                                </Label>
+                                                <Region HBox.hgrow="ALWAYS" />
+                                                <Label fx:id="lblHighestBidder" styleClass="details-muted-text" text="Chưa có ai dẫn đầu" />
                                             </children>
-                                        </VBox>
+                                        </HBox>
 
-                                        <VBox spacing="14.0" styleClass="details-panel chart-panel" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                        <AreaChart fx:id="bidChart" animated="false" createSymbols="true" legendVisible="false" prefHeight="270.0" styleClass="bid-chart">
+                                            <xAxis>
+                                                <NumberAxis fx:id="bidXAxis" forceZeroInRange="false" minorTickVisible="false" tickLabelsVisible="false" tickMarkVisible="false" />
+                                            </xAxis>
+                                            <yAxis>
+                                                <NumberAxis fx:id="bidYAxis" forceZeroInRange="false" minorTickVisible="false" />
+                                            </yAxis>
+                                        </AreaChart>
+
+                                        <GridPane hgap="12.0" styleClass="bid-stat-grid">
+                                            <columnConstraints>
+                                                <ColumnConstraints percentWidth="23.0" />
+                                                <ColumnConstraints percentWidth="23.0" />
+                                                <ColumnConstraints percentWidth="14.0" />
+                                                <ColumnConstraints percentWidth="40.0" />
+                                            </columnConstraints>
                                             <children>
-                                                <HBox alignment="CENTER_LEFT">
+                                                <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="0">
                                                     <children>
-                                                        <Label styleClass="details-section-title" text="↗ Diễn biến giá trực tuyến" />
-                                                        <Region HBox.hgrow="ALWAYS" />
-                                                        <Label fx:id="lblHighestBidder" styleClass="details-muted-text" text="Chưa có ai dẫn đầu" />
+                                                        <Label styleClass="bid-stat-label" text="Giá khởi điểm" wrapText="false" />
+                                                        <Label fx:id="lblStartingPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
                                                     </children>
-                                                </HBox>
-
-                                                <LineChart fx:id="bidChart" animated="false" createSymbols="true" legendVisible="false" prefHeight="270.0" styleClass="bid-chart">
-                                                    <xAxis>
-                                                        <NumberAxis fx:id="bidXAxis" forceZeroInRange="false" minorTickVisible="false" tickLabelsVisible="false" tickMarkVisible="false" />
-                                                    </xAxis>
-                                                    <yAxis>
-                                                        <NumberAxis fx:id="bidYAxis" forceZeroInRange="false" minorTickVisible="false" />
-                                                    </yAxis>
-                                                </LineChart>
-
-                                                <GridPane hgap="12.0" styleClass="bid-stat-grid">
-                                                    <columnConstraints>
-                                                        <ColumnConstraints percentWidth="23.0" />
-                                                        <ColumnConstraints percentWidth="23.0" />
-                                                        <ColumnConstraints percentWidth="14.0" />
-                                                        <ColumnConstraints percentWidth="40.0" />
-                                                    </columnConstraints>
+                                                </VBox>
+                                                <VBox maxWidth="Infinity" styleClass="bid-stat-card-current" GridPane.columnIndex="1">
                                                     <children>
-                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="0">
-                                                            <children>
-                                                                <Label styleClass="bid-stat-label" text="Giá khởi điểm" wrapText="false" />
-                                                                <Label fx:id="lblStartingPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
-                                                            </children>
-                                                        </VBox>
-                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card-current" GridPane.columnIndex="1">
-                                                            <children>
-                                                                <Label styleClass="bid-stat-label" text="Giá hiện tại" wrapText="false" />
-                                                                <Label fx:id="lblCurrentPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
-                                                            </children>
-                                                        </VBox>
-                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="2">
-                                                            <children>
-                                                                <Label styleClass="bid-stat-label" text="Số lần đặt" wrapText="false" />
-                                                                <Label fx:id="lblBidCount" styleClass="bid-stat-value" text="0" wrapText="false" />
-                                                            </children>
-                                                        </VBox>
-                                                        <VBox maxWidth="Infinity" styleClass="bid-stat-card, bid-stat-card-end" GridPane.columnIndex="3">
-                                                            <children>
-                                                                <Label styleClass="bid-stat-label" text="Kết thúc lúc" wrapText="false" />
-                                                                <Label fx:id="lblEndTime" maxWidth="Infinity" style="-fx-font-size: 24px; -fx-font-weight: 900;" styleClass="bid-stat-value, bid-stat-end-time" text="--/--/-- --:--" wrapText="false" />
-                                                            </children>
-                                                        </VBox>
+                                                        <Label styleClass="bid-stat-label" text="Giá hiện tại" wrapText="false" />
+                                                        <Label fx:id="lblCurrentPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
                                                     </children>
-                                       <rowConstraints>
-                                          <RowConstraints />
-                                       </rowConstraints>
-                                                </GridPane>
-                                            </children>
-                                        </VBox>
-
-                                        <VBox spacing="14.0" styleClass="details-panel bidding-panel" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                            <children>
-                                                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                                </VBox>
+                                                <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="2">
                                                     <children>
-                                                        <Label styleClass="details-section-title" text="Khu đấu giá" />
-                                                        <Region HBox.hgrow="ALWAYS" />
-                                                        <Label styleClass="details-muted-text" text="Bid gần nhất:" />
-                                                        <Label fx:id="lblBidTime" styleClass="details-strong-text" text="-" />
+                                                        <Label styleClass="bid-stat-label" text="Số lần đặt" wrapText="false" />
+                                                        <Label fx:id="lblBidCount" styleClass="bid-stat-value" text="0" wrapText="false" />
                                                     </children>
-                                                </HBox>
-
-                                                <HBox spacing="12.0">
+                                                </VBox>
+                                                <VBox maxWidth="Infinity" styleClass="bid-stat-card, bid-stat-card-end" GridPane.columnIndex="3">
                                                     <children>
-                                                        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="48.0" styleClass="button-primary" text="ĐẶT GIÁ NGAY" HBox.hgrow="ALWAYS" />
-                                                        <Button fx:id="btnPay" managed="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#handlePay" prefHeight="48.0" style="-fx-background-color: #F59E0B;" styleClass="button-primary" text="THANH TOÁN NGAY" visible="false" HBox.hgrow="ALWAYS" />
-                                                    </children>
-                                                </HBox>
-
-                                                <VBox fx:id="paneAutoBid" managed="false" spacing="12.0" styleClass="autobid-panel" visible="false">
-                                                    <children>
-                                                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                                            <children>
-                                                                <Label styleClass="details-section-title" text="Đấu giá tự động (Auto-bid)" />
-                                                                <Region HBox.hgrow="ALWAYS" />
-                                                                <Label styleClass="details-muted-text" text="Hệ thống sẽ tự bid giúp bạn" />
-                                                            </children>
-                                                        </HBox>
-
-                                                        <HBox spacing="12.0">
-                                                            <children>
-                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                                                    <children>
-                                                                        <Label styleClass="form-label" text="Giá tối đa bạn sẵn sàng trả" />
-                                                                        <TextField fx:id="txtAutoMaxBid" promptText="VD: 500.00" styleClass="text-field" />
-                                                                    </children>
-                                                                </VBox>
-                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                                                    <children>
-                                                                        <Label styleClass="form-label" text="Mỗi bước tăng thêm" />
-                                                                        <TextField fx:id="txtAutoIncrement" promptText="VD: 10.00" styleClass="text-field" />
-                                                                    </children>
-                                                                </VBox>
-                                                            </children>
-                                                        </HBox>
-
-                                                        <HBox spacing="10.0">
-                                                            <children>
-                                                                <Button fx:id="btnSetAutoBid" maxWidth="Infinity" onAction="#handleSetAutoBid" prefHeight="40.0" style="-fx-background-color: #6366F1;" styleClass="button-primary" text="Kích hoạt Auto-Bid" HBox.hgrow="ALWAYS" />
-                                                                <Button fx:id="btnCancelAutoBid" managed="false" onAction="#handleCancelAutoBid" prefHeight="40.0" styleClass="button-danger" text="Hủy Auto-Bid" visible="false" />
-                                                            </children>
-                                                        </HBox>
+                                                        <Label styleClass="bid-stat-label" text="Thời gian còn lại" wrapText="false" />
+                                                        <Label fx:id="lblCountdown" maxWidth="Infinity" styleClass="bid-stat-value, bid-stat-countdown" text="--:--:--" wrapText="false" />
                                                     </children>
                                                 </VBox>
                                             </children>
-                                        </VBox>
+                                        </GridPane>
                                     </children>
-                                    <rowConstraints>
-                                        <RowConstraints />
-                                        <RowConstraints />
-                                    </rowConstraints>
-                                </GridPane>
+                                </VBox>
 
-                                <VBox spacing="12.0" styleClass="details-panel history-panel">
+                                <VBox spacing="14.0" styleClass="details-panel bidding-panel" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                     <children>
-                                        <Label styleClass="details-section-title" text="Lịch sử đấu giá" />
-                                        <TableView fx:id="bidHistoryTable" prefHeight="220.0">
-                                            <columns>
-                                                <TableColumn fx:id="colBidder" prefWidth="250.0" text="Người đặt giá" />
-                                                <TableColumn fx:id="colAmount" prefWidth="180.0" text="Số tiền" />
-                                                <TableColumn fx:id="colTimestamp" prefWidth="260.0" text="Thời gian thực" />
-                                                <TableColumn fx:id="colBidType" prefWidth="250.0" text="Kiểu đặt giá" />
-                                            </columns>
-                                        </TableView>
+                                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                            <children>
+                                                <Label styleClass="details-section-title" text="Khu đấu giá" />
+                                                <Region HBox.hgrow="ALWAYS" />
+                                                <Label styleClass="details-muted-text" text="Bid gần nhất:" />
+                                                <Label fx:id="lblBidTime" styleClass="details-strong-text" text="-" />
+                                            </children>
+                                        </HBox>
+
+                                        <StackPane VBox.vgrow="ALWAYS">
+                                            <children>
+                                                <VBox fx:id="biddingContent" spacing="14.0">
+                                                    <children>
+                                                        <HBox alignment="CENTER" styleClass="segmented-control">
+                                                            <fx:define>
+                                                                <ToggleGroup fx:id="bidTypeGroup" />
+                                                            </fx:define>
+                                                            <children>
+                                                                <ToggleButton fx:id="tglManualBid" selected="true" styleClass="segment-button, segment-left" text="Đấu giá thủ công" toggleGroup="$bidTypeGroup" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                                                                <ToggleButton fx:id="tglAutoBid" styleClass="segment-button, segment-right" text="Đấu giá tự động" toggleGroup="$bidTypeGroup" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                                                            </children>
+                                                        </HBox>
+
+                                                        <StackPane>
+                                                            <children>
+                                                                <VBox fx:id="paneManualBid" spacing="12.0">
+                                                                    <children>
+                                                                        <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="48.0" styleClass="button-primary" text="ĐẶT GIÁ NGAY" />
+                                                                        <Button fx:id="btnPay" managed="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#handlePay" prefHeight="48.0" style="-fx-background-color: #F59E0B;" styleClass="button-primary" text="THANH TOÁN NGAY" visible="false" />
+                                                                    </children>
+                                                                </VBox>
+
+                                                                <VBox fx:id="paneAutoBid" managed="false" spacing="12.0" styleClass="autobid-panel" visible="false">
+                                                                    <children>
+                                                                        <HBox spacing="12.0">
+                                                                            <children>
+                                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                                                                    <children>
+                                                                                        <Label styleClass="form-label" text="Giá tối đa bạn sẵn sàng trả" />
+                                                                                        <TextField fx:id="txtAutoMaxBid" promptText="VD: 500.00" styleClass="text-field" />
+                                                                                    </children>
+                                                                                </VBox>
+                                                                                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                                                                    <children>
+                                                                                        <Label styleClass="form-label" text="Mỗi bước tăng thêm" />
+                                                                                        <TextField fx:id="txtAutoIncrement" promptText="VD: 10.00" styleClass="text-field" />
+                                                                                    </children>
+                                                                                </VBox>
+                                                                            </children>
+                                                                        </HBox>
+
+                                                                        <HBox spacing="10.0">
+                                                                            <children>
+                                                                                <Button fx:id="btnSetAutoBid" maxWidth="Infinity" onAction="#handleSetAutoBid" prefHeight="40.0" style="-fx-background-color: #6366F1;" styleClass="button-primary" text="Kích hoạt Auto-Bid" HBox.hgrow="ALWAYS" />
+                                                                                <Button fx:id="btnCancelAutoBid" managed="false" onAction="#handleCancelAutoBid" prefHeight="40.0" styleClass="button-danger" text="Hủy Auto-Bid" visible="false" />
+                                                                            </children>
+                                                                        </HBox>
+                                                                    </children>
+                                                                </VBox>
+                                                            </children>
+                                                        </StackPane>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox fx:id="paneNoPermission" alignment="CENTER" managed="false" spacing="12.0" styleClass="no-permission-pane" visible="false">
+                                                    <children>
+                                                        <Label fx:id="lblNoPermission" styleClass="no-permission-text" text="Chỉ người mua (Bidder) mới có quyền tham gia đấu giá tại phiên này." wrapText="true" />
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox fx:id="paneStatusMessage" alignment="CENTER" managed="false" spacing="12.0" styleClass="no-permission-pane" visible="false">
+                                                    <children>
+                                                        <Label fx:id="lblStatusMessage" styleClass="no-permission-text" text="Phiên đấu giá chưa bắt đầu hoặc đã kết thúc." wrapText="true" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </StackPane>
                                     </children>
                                 </VBox>
                             </children>
-                        </VBox>
-                    </content>
-                </ScrollPane>
+                        </GridPane>
 
-                <Separator />
-
-                <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="item-details-footer">
-                    <children>
-                        <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="40.0" prefWidth="100.0" styleClass="button-secondary" text="Đóng" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <HBox spacing="10.0">
+                        <VBox spacing="12.0" styleClass="details-panel history-panel">
                             <children>
-                                <Button fx:id="btnEdit" managed="false" mnemonicParsing="false" onAction="#handleEdit" prefHeight="40.0" styleClass="button-secondary" text="Sửa" visible="false" />
-                                <Button fx:id="btnCancel" managed="false" mnemonicParsing="false" onAction="#handleCancelAuction" prefHeight="40.0" styleClass="button-danger" text="Hủy phiên" visible="false" />
-                                <Button fx:id="btnDelete" managed="false" mnemonicParsing="false" onAction="#handleOpenDelete" prefHeight="40.0" styleClass="button-danger-confirm" text="Xóa" visible="false" />
+                                <Label styleClass="details-section-title" text="Lịch sử đấu giá" />
+                                <ListView fx:id="bidHistoryList" prefHeight="300.0" styleClass="modern-bid-list" />
                             </children>
-                        </HBox>
+                        </VBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+
+        <Separator />
+
+        <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="item-details-footer">
+            <children>
+                <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="40.0" prefWidth="100.0" styleClass="button-secondary" text="Đóng" />
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox spacing="10.0">
+                    <children>
+                        <Button fx:id="btnEdit" managed="false" mnemonicParsing="false" onAction="#handleEdit" prefHeight="40.0" styleClass="button-secondary" text="Sửa" visible="false" />
+                        <Button fx:id="btnCancel" managed="false" mnemonicParsing="false" onAction="#handleCancelAuction" prefHeight="40.0" styleClass="button-danger" text="Hủy phiên" visible="false" />
+                        <Button fx:id="btnDelete" managed="false" mnemonicParsing="false" onAction="#handleOpenDelete" prefHeight="40.0" styleClass="button-danger-confirm" text="Xóa" visible="false" />
                     </children>
                 </HBox>
             </children>
-        </VBox>
+        </HBox>
     </children>
-</StackPane>
+</VBox>

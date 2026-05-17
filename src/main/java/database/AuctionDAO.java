@@ -27,8 +27,8 @@ public class AuctionDAO {
                 """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setTimestamp(1, Timestamp.valueOf(startTime));
-            stmt.setTimestamp(2, Timestamp.valueOf(endTime));
+            stmt.setObject(1, startTime);
+            stmt.setObject(2, endTime);
             stmt.setString(3, auctionId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -53,7 +53,7 @@ public class AuctionDAO {
                 """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setTimestamp(1, Timestamp.valueOf(endTime));
+            stmt.setObject(1, endTime);
             stmt.setString(2, auctionId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -112,12 +112,16 @@ public class AuctionDAO {
             stmt.setString(1, auction.getAuctionId());
             stmt.setString(2, auction.getItem().getItemId());
             stmt.setString(3, auction.getStatus());
-            stmt.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
-            stmt.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
-            stmt.executeUpdate();
-            return true;
+            stmt.setObject(4, auction.getStartTime());
+            stmt.setObject(5, auction.getEndTime());
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println(">>> [DB] Đã lưu phiên đấu giá: " + auction.getAuctionId());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
-            System.err.println("Lỗi lưu phiên đấu giá: " + e.getMessage());
+            System.err.println(">>> [DB ERROR] Lỗi lưu phiên " + auction.getAuctionId() + ": " + e.getMessage());
             return false;
         }
     }
@@ -265,17 +269,35 @@ public class AuctionDAO {
         String auctionId = rs.getString("auction_id");
         String itemId    = rs.getString("item_id");
         String status    = rs.getString("status");
-        LocalDateTime startTime = rs.getTimestamp("start_time").toLocalDateTime();
-        LocalDateTime endTime   = rs.getTimestamp("end_time").toLocalDateTime();
+        
+        // JDBC 4.2 khuyên dùng getObject(..., LocalDateTime.class) để tránh các lỗi
+        // chuyển đổi timezone phức tạp của lớp Timestamp cũ.
+        LocalDateTime startTime = rs.getObject("start_time", LocalDateTime.class);
+        LocalDateTime endTime   = rs.getObject("end_time", LocalDateTime.class);
 
         var item = itemDAO.findById(itemId);
-        if (item == null) return null;
+        if (item == null) {
+            System.err.println(">>> [WARN] Bỏ qua phiên " + auctionId + " do không tìm thấy Item " + itemId);
+            return null;
+        }
 
         Auction auction = new Auction(auctionId, item, startTime, endTime);
         auction.setStatus(status);
+        
+        // Cần thiết lập sellerId để hiển thị và kiểm tra quyền
+        auction.setSellerId(itemDAO.findSellerIdByItemId(itemId));
 
         database.BidTransactionDAO bidDAO = new database.BidTransactionDAO();
-        auction.restoreBidHistory(bidDAO.findTransactionsByAuctionId(auctionId));
+        List<model.auction.BidTransaction> history = bidDAO.findTransactionsByAuctionId(auctionId);
+        
+        // QUAN TRỌNG: Khôi phục lịch sử để UI hiển thị biểu đồ
+        auction.restoreBidHistory(history);
+        
+        if (!history.isEmpty()) {
+            System.out.printf(">>> [LOAD] Phiên %s: nạp thành công %d bid, giá hiện tại $%.2f%n",
+                    auctionId, history.size(), auction.getCurrentPrice());
+        }
+        
         return auction;
     }
 }

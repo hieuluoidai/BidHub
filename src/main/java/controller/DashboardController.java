@@ -329,6 +329,15 @@ public class DashboardController {
             currentDetailStage.setScene(new Scene(root));
             currentDetailStage.initModality(Modality.APPLICATION_MODAL);
 
+            // Tự động điều chỉnh kích thước ban đầu để không vượt quá màn hình (Anti-overflow)
+            // nhưng không dùng setMaxWidth để tránh lỗi khi người dùng nhấn Maximize cửa sổ.
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            double initialWidth = Math.min(1120, screenBounds.getWidth() * 0.96);
+            double initialHeight = Math.min(880, screenBounds.getHeight() * 0.96);
+            
+            currentDetailStage.setWidth(initialWidth);
+            currentDetailStage.setHeight(initialHeight);
+
             currentDetailStage.setOnHidden(e -> {
                 currentDetailController = null;
                 currentDetailStage = null;

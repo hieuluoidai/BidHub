@@ -717,7 +717,72 @@
 .stat-purple { -fx-background-color: #FDF4FF; -fx-text-fill: #7E22CE; -fx-border-color: #FAE8FF; -fx-border-radius: 20px; -fx-border-width: 1px; }
 .stat-red    { -fx-background-color: #FEF2F2; -fx-text-fill: #DC2626; -fx-border-color: #FEE2E2; -fx-border-radius: 20px; -fx-border-width: 1px; }
 
-/* 12. SPECIAL BUTTONS */
+/* --- SEGMENTED CONTROL --- */
+.segmented-control {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 12px;
+    -fx-padding: 4px;
+}
+
+.segment-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-padding: 10px 18px; /* Tăng padding ngang để các nút không dính nhau */
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+.segment-left { -fx-background-radius: 10px 0 0 10px; }
+.segment-right { -fx-background-radius: 0 10px 10px 0; }
+
+.segment-button:selected {
+    -fx-background-color: white;
+    -fx-text-fill: #1D4ED8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-background-radius: 10px;
+}
+
+/* --- PROPERTY CHIPS --- */
+.property-chip {
+    -fx-background-color: #F8FAFC;
+    -fx-text-fill: #475569;
+    -fx-padding: 6px 12px;
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+/* --- LIVE BADGE --- */
+.live-badge {
+    -fx-background-color: #FEF2F2;
+    -fx-text-fill: #DC2626;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-padding: 4px 8px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #FECACA;
+    -fx-border-radius: 6px;
+    -fx-spacing: 5px;
+}
+
+.live-dot {
+    /* Using CSS animation pseudo-classes isn't native to standard JavaFX 17 without extra code, 
+       but we can simulate a bright dot to indicate 'Live' */
+    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.6), 6, 0.5, 0, 0);
+}
+
+/* --- COUNTDOWN --- */
+.countdown-urgent {
+    -fx-text-fill: #DC2626 !important; /* Đỏ rực */
+}
+
+/* --- AREA CHART --- */
+.bid-chart .chart-series-area-fill {
+    -fx-fill: linear-gradient(to bottom, rgba(124, 58, 237, 0.3), rgba(124, 58, 237, 0.02));
+}
 .button-change-password {
     -fx-background-color: #F1F5F9;
     -fx-text-fill: #475569;
@@ -938,6 +1003,21 @@
     -fx-padding: 12px;
 }
 
+.no-image-placeholder {
+    -fx-background-color: transparent;
+    -fx-border-color: #CBD5E1;
+    -fx-border-style: dashed;
+    -fx-border-radius: 12px;
+    -fx-border-width: 2px;
+    -fx-padding: 20px;
+}
+
+.no-image-text {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+}
+
 .details-description {
     -fx-pref-height: 180px;
 }
@@ -1048,4 +1128,249 @@
 
 .history-panel .table-view {
     -fx-padding: 0;
+}
+
+/* Bid Activity Feed Styles */
+.modern-bid-list {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.modern-bid-list .list-cell {
+    -fx-background-color: transparent;
+}
+.modern-bid-list .list-cell:filled:hover {
+    -fx-background-color: #F8FAFC;
+}
+
+.bid-feed-item {
+    -fx-padding: 10 15 10 15;
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-border-color: #F1F5F9;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+}
+
+.bid-avatar {
+    -fx-min-width: 40px;
+    -fx-min-height: 40px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
+    -fx-background-radius: 20px;
+    -fx-alignment: center;
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-size: 16px;
+}
+
+/* Avatar Colors */
+.avatar-color-0 { -fx-background-color: #3B82F6; }
+.avatar-color-1 { -fx-background-color: #10B981; }
+.avatar-color-2 { -fx-background-color: #F59E0B; }
+.avatar-color-3 { -fx-background-color: #EC4899; }
+.avatar-color-4 { -fx-background-color: #8B5CF6; }
+
+.bid-user-name {
+    -fx-text-fill: #1E293B;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+}
+
+.bid-action-text {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+}
+
+.bid-feed-amount {
+    -fx-text-fill: #10B981;
+    -fx-font-weight: 900;
+    -fx-font-size: 16px;
+}
+
+.bid-feed-time {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 11px;
+}
+
+/* Bid Type Badges REFINED */
+.bid-type-badge {
+    -fx-padding: 2 10 2 10;
+    -fx-background-radius: 6px;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-transform: uppercase;
+}
+
+.badge-manual {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #475569;
+    -fx-border-color: #CBD5E1;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+}
+
+.badge-auto {
+    -fx-background-color: #EEF2FF;
+    -fx-text-fill: #4F46E5;
+    -fx-border-color: #C7D2FE;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+}
+
+/* --- EMPTY STATE --- */
+.empty-state-pane {
+    -fx-padding: 60 0 60 0;
+}
+
+.empty-state-title {
+    -fx-text-fill: #1E293B;
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+}
+
+.empty-state-subtitle {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 14px;
+}
+
+/* --- THEME TOGGLE --- */
+.theme-switch {
+    -fx-background-color: #334155;
+    -fx-text-fill: white;
+    -fx-font-weight: 900;
+    -fx-font-size: 10px;
+    -fx-background-radius: 20px;
+    -fx-padding: 4 12 4 12;
+    -fx-cursor: hand;
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-radius: 20px;
+}
+
+.theme-switch:selected {
+    -fx-background-color: #FACC15;
+    -fx-text-fill: #0F172A;
+}
+
+/* ===================================================================
+   ADMIN DASHBOARD — STAT CARDS & TABLES
+   =================================================================== */
+
+.admin-stat-card {
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    -fx-padding: 15 25 15 25;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
+    -fx-border-width: 0 0 0 5;
+    -fx-min-height: 90px;
+}
+
+.stat-card-blue   { -fx-border-color: #3B82F6; }
+.stat-card-green  { -fx-border-color: #10B981; }
+.stat-card-purple { -fx-border-color: #8B5CF6; }
+
+.admin-stat-label {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-letter-spacing: 0.8px;
+    -fx-text-transform: uppercase;
+}
+
+.admin-stat-value {
+    -fx-text-fill: #1E293B;
+    -fx-font-size: 32px;
+    -fx-font-weight: 900;
+}
+
+.admin-stat-unit {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 0 5 0;
+}
+
+.admin-table-actions {
+    -fx-background-color: transparent;
+    -fx-padding: 5 0 5 0;
+}
+
+/* Modern TableView styling */
+.modern-table {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.modern-table .column-header-background {
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 12 12 0 0;
+    -fx-padding: 0;
+}
+
+.modern-table .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 48px;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.modern-table .column-header .label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 15 0 15; /* Đồng bộ padding với table-cell */
+}
+
+/* Ép buộc căn lề cho Tiêu đề (Header) thông qua Style Class */
+.modern-table .centered-column .label {
+    -fx-alignment: CENTER;
+    -fx-text-alignment: CENTER;
+}
+
+.modern-table .right-column .label {
+    -fx-alignment: CENTER_RIGHT;
+    -fx-text-alignment: RIGHT;
+    -fx-padding: 0 15 0 0;
+}
+
+.modern-table .table-row-cell {
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0;
+    -fx-cell-size: 58px;
+}
+
+.modern-table .table-cell {
+    -fx-text-fill: #1E293B;
+    -fx-font-size: 14px;
+    -fx-padding: 0 15 0 15;
+    -fx-alignment: CENTER_LEFT;
+    -fx-border-color: #F1F5F9;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* User Role Badges in Table */
+.role-badge {
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 8px;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-text-fill: white;
+}
+
+.role-admin  { -fx-background-color: #EF4444; } /* Red */
+.role-seller { -fx-background-color: #8B5CF6; } /* Purple */
+.role-bidder { -fx-background-color: #10B981; } /* Emerald */
+
+.balance-cell-positive {
+    -fx-text-fill: #059669;
+    -fx-font-weight: 700;
+}
+
+.admin-table-container {
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    -fx-padding: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 15, 0, 0, 6);
 }

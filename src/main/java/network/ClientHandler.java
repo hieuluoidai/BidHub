@@ -76,8 +76,13 @@ public class ClientHandler implements Runnable {
                     saveBidToDatabase(incomingAuction);
                 }
             } else {
+                // SERVER SIDE PERSISTENCE: Khi client gửi 1 phiên mới, server phải lưu nó
+                // để đảm bảo restart không mất dữ liệu.
+                new database.ItemDAO().save(incomingAuction.getItem(), incomingAuction.getSellerId());
+                new database.AuctionDAO().save(incomingAuction);
+                
                 AuctionManager.getInstance().addAuction(incomingAuction);
-                System.out.println(">>> Đã tạo phiên mới: " + incomingAuction.getAuctionId());
+                System.out.println(">>> [SERVER] Đã tiếp nhận và lưu phiên mới: " + incomingAuction.getAuctionId());
             }
             // Smart Broadcast: Chỉ gửi phiên vừa thay đổi/tạo mới
             server.broadcast(incomingAuction);
@@ -270,8 +275,8 @@ public class ClientHandler implements Runnable {
         }
 
         if (ok) {
-            // GIẢI PHÓNG TIỀN cho người đang dẫn đầu (nếu có) khi xóa phiên
-            unlockHighestBidder(auction);
+            // GIẢI PHÓNG TIỀN cho TOÀN BỘ mọi người đã tham gia khi xóa phiên
+            unlockAllBidders(auction);
 
             AuctionManager.getInstance().removeAuction(auctionId);
             System.out.println(">>> Phiên " + auctionId + " đã bị xóa bởi " + requester.getUsername());
@@ -356,6 +361,33 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         server.broadcast(AuctionManager.getInstance().getAllAuctions());
     }
 
+    /**
+     * GIẢI PHÓNG TIỀN cho TẤT CẢ mọi người đã tham gia đấu giá trong phiên này
+     * (bao gồm cả người thắng hiện tại và những người dùng Auto-Bid).
+     */
+    private void unlockAllBidders(Auction auction) {
+        String auctionId = auction.getAuctionId();
+        
+        // 1. Giải phóng tiền cho TẤT CẢ những người dùng AutoBid trong phiên này (và xóa AutoBid)
+        java.util.Set<String> autoBidderIds = model.manager.AutoBidManager.getInstance()
+                .cleanupForCancellation(auctionId);
+
+        // 2. Kiểm tra nếu người đang dẫn đầu là Manual Bid (không có AutoBid)
+        // thì phải giải phóng thủ công số tiền họ đang cam kết.
+        if (auction.getHighestBid() != null) {
+            String bidderId = auction.getHighestBid().getBidder().getUserId();
+            double amount   = auction.getHighestBid().getBidAmount();
+            
+            // Nếu người này không nằm trong danh sách Auto-Bid vừa được giải phóng
+            // (vì nếu có Auto-Bid, tiền maxBid của họ đã được giải phóng ở bước 1)
+            if (!autoBidderIds.contains(bidderId)) {
+                new UserDAO().unlockBalance(bidderId, amount);
+                System.out.printf(">>> [UNLOCK] Giải phóng Manual Bid $%.2f cho %s do phiên %s bị hủy/xóa%n",
+                        amount, bidderId, auctionId);
+            }
+        }
+    }
+
     private void handleCancelAuction(String msg) {
         String[] parts = msg.split(":");
         if (parts.length < 3) {
@@ -377,8 +409,8 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
-        // GIẢI PHÓNG TIỀN cho người đang dẫn đầu (nếu có) trước khi hủy
-        unlockHighestBidder(auction);
+        // GIẢI PHÓNG TIỀN cho TOÀN BỘ mọi người trước khi hủy
+        unlockAllBidders(auction);
 
         boolean isAdmin = (requester instanceof Admin);
         int result = new AuctionDAO().cancelAuction(auctionId, requesterId, isAdmin);
@@ -662,10 +694,16 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     private void saveBidToDatabase(Auction auction) {
         BidTransactionDAO bidDao = new BidTransactionDAO();
         String auctionId = auction.getAuctionId();
-        String bidderId = auction.getHighestBid().getBidder().getUserId();
-        double amount = auction.getCurrentPrice();
+        model.auction.BidTransaction highest = auction.getHighestBid();
+        
+        if (highest == null) return;
+        
+        String bidderId = highest.getBidder().getUserId();
+        double amount = highest.getBidAmount();
+        java.time.LocalDateTime time = highest.getTimestamp();
+        model.auction.BidTransaction.BidType type = highest.getBidType();
 
-        if (bidDao.save(auctionId, bidderId, amount)) {
+        if (bidDao.save(auctionId, bidderId, amount, type, time)) {
             System.out.println(">>> Backup thành công giá $" + amount + " cho phiên " + auctionId);
         }
     }

@@ -18,14 +18,18 @@ public class BidTransactionDAO {
     }
 
     public boolean save(String auctionId, String bidderId, double amount) {
-        return save(auctionId, bidderId, amount, BidTransaction.BidType.MANUAL);
+        return save(auctionId, bidderId, amount, BidTransaction.BidType.MANUAL, LocalDateTime.now());
     }
 
     public boolean save(String auctionId, String bidderId, double amount, BidTransaction.BidType bidType) {
+        return save(auctionId, bidderId, amount, bidType, LocalDateTime.now());
+    }
+
+    public boolean save(String auctionId, String bidderId, double amount, BidTransaction.BidType bidType, LocalDateTime bidTime) {
         String sql = """
                 INSERT INTO bid_transactions
                     (transaction_id, auction_id, bidder_id, bid_amount, bid_time, bid_type)
-                VALUES (?, ?, ?, ?, NOW(), ?)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -33,7 +37,8 @@ public class BidTransactionDAO {
             stmt.setString(2, auctionId);
             stmt.setString(3, bidderId);
             stmt.setDouble(4, amount);
-            stmt.setString(5, (bidType != null ? bidType : BidTransaction.BidType.MANUAL).name());
+            stmt.setObject(5, bidTime != null ? bidTime : LocalDateTime.now());
+            stmt.setString(6, (bidType != null ? bidType : BidTransaction.BidType.MANUAL).name());
             stmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -42,9 +47,6 @@ public class BidTransactionDAO {
         }
     }
 
-    /**
-     * Lấy lịch sử đầy đủ để UI có thể dựng lại chart + bảng sau khi reload.
-     */
     public List<BidTransaction> findTransactionsByAuctionId(String auctionId) {
         List<BidTransaction> history = new ArrayList<>();
         String sql = """
@@ -64,11 +66,11 @@ public class BidTransactionDAO {
                 String bidderId = rs.getString("bidder_id");
                 User bidder = userDAO.findById(bidderId);
                 double amount = rs.getDouble("bid_amount");
-                // `bid_time` là DATETIME không mang timezone. Nếu dùng getTimestamp()
-                // trong khi JDBC URL đang khai báo serverTimezone=UTC, MySQL Connector
-                // sẽ hiểu giờ lưu trong DB là UTC rồi cộng thêm +7 khi trả về cho JVM
-                // Asia/Saigon. Đọc thẳng LocalDateTime để giữ nguyên giờ địa phương.
+
+                // JDBC 4.2: Đọc trực tiếp LocalDateTime để tránh driver tự ý convert qua lại UTC
                 LocalDateTime timestamp = rs.getObject("bid_time", LocalDateTime.class);
+                if (timestamp == null) timestamp = LocalDateTime.now();
+
                 BidTransaction.BidType bidType = parseBidType(rs.getString("bid_type"));
 
                 history.add(new BidTransaction(
@@ -79,22 +81,31 @@ public class BidTransactionDAO {
                 ));
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi khi tải lịch sử giá: " + e.getMessage());
+            System.err.println("Lỗi khi tải lịch sử giá cho phiên " + auctionId + ": " + e.getMessage());
         }
 
         return history;
     }
 
-    /**
-     * Giữ lại API cũ cho các màn hình/đoạn mã khác nếu còn dùng.
-     */
+
     public List<double[]> findBidHistoryByAuctionId(String auctionId) {
         List<double[]> history = new ArrayList<>();
-        for (BidTransaction bid : findTransactionsByAuctionId(auctionId)) {
-            history.add(new double[]{
-                    bid.getBidAmount(),
-                    bid.getTimestamp().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-            });
+        String sql = "SELECT bid_amount, bid_time FROM bid_transactions WHERE auction_id = ? ORDER BY bid_time ASC";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                LocalDateTime ts = rs.getObject("bid_time", LocalDateTime.class);
+                if (ts != null) {
+                    history.add(new double[]{
+                            rs.getDouble("bid_amount"),
+                            ts.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    });
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tải lịch sử bid rút gọn: " + e.getMessage());
         }
         return history;
     }

@@ -3,6 +3,7 @@ package controller;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -28,6 +29,17 @@ public class AdminController {
     @FXML private TableColumn<User, String> colEmail;
     @FXML private TableColumn<User, String> colRole;
     @FXML private TableColumn<User, String> colBalance;
+    @FXML private TextField txtUserSearch;
+    @FXML private TextField txtAuctionSearch;
+
+    @FXML private ToggleGroup auctionStatusGroup;
+
+    @FXML private javafx.scene.layout.VBox paneEmptyAuctions;
+    @FXML private javafx.scene.layout.VBox paneEmptyUsers;
+
+    private FilteredList<User> filteredUsers;
+    private FilteredList<Auction> filteredAuctions;
+    private final ObservableList<User> masterUsers = FXCollections.observableArrayList();
 
     @FXML private Label lblSidebarAvatar;
     @FXML private Label lblSidebarUsername;
@@ -59,6 +71,7 @@ public class AdminController {
         }
 
         setupUserTable();
+        setupAuctionFiltering();
 
         // Bind vào ObservableList từ AppState — tự động cập nhật theo socket
         ObservableList<Auction> auctions = AppState.getInstance().getAuctionList();
@@ -66,13 +79,13 @@ public class AdminController {
         auctions.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
             javafx.application.Platform.runLater(() -> {
                 updateAuctionStats();
-                renderAuctions();
+                // Không cần gọi renderAuctions() ở đây nữa vì FilteredList sẽ lo việc đó
             });
         });
 
         loadUserData();
         updateAuctionStats();
-        renderAuctions();
+        // renderAuctions(); // Sẽ được gọi thông qua listener của filteredAuctions
 
         userTable.setRowFactory(tv -> {
             TableRow<User> row = new TableRow<>();
@@ -92,25 +105,78 @@ public class AdminController {
         }
     }
 
+    private void setupAuctionFiltering() {
+        filteredAuctions = new FilteredList<>(AppState.getInstance().getAuctionList(), p -> true);
+        
+        // Listener khi danh sách đã lọc thay đổi -> render lại UI
+        filteredAuctions.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
+            javafx.application.Platform.runLater(this::renderAuctions);
+        });
+
+        // Listener cho Search Box
+        txtAuctionSearch.textProperty().addListener((obs, old, newValue) -> updateAuctionPredicate());
+
+        // Listener cho Toggle Group (Bộ lọc trạng thái)
+        auctionStatusGroup.selectedToggleProperty().addListener((obs, old, newValue) -> updateAuctionPredicate());
+
+        renderAuctions(); // Lần đầu tiên
+    }
+
+    private void updateAuctionPredicate() {
+        String searchText = txtAuctionSearch.getText() == null ? "" : txtAuctionSearch.getText().toLowerCase().trim();
+        ToggleButton selectedTgl = (ToggleButton) auctionStatusGroup.getSelectedToggle();
+        String statusFilter = selectedTgl == null ? "TẤT CẢ" : selectedTgl.getText().toUpperCase();
+
+        filteredAuctions.setPredicate(auction -> {
+            // 1. Kiểm tra search text
+            boolean matchesSearch = searchText.isEmpty() || 
+                                   auction.getItem().getItemName().toLowerCase().contains(searchText) ||
+                                   auction.getAuctionId().toLowerCase().contains(searchText);
+
+            if (!matchesSearch) return false;
+
+            // 2. Kiểm tra status filter
+            if (statusFilter.equals("TẤT CẢ")) return true;
+            if (statusFilter.equals("SẮP DIỄN RA")) return "OPEN".equals(auction.getStatus());
+            if (statusFilter.equals("ĐANG DIỄN RA")) return "RUNNING".equals(auction.getStatus());
+            if (statusFilter.equals("ĐÃ KẾT THÚC")) return !"OPEN".equals(auction.getStatus()) && !"RUNNING".equals(auction.getStatus());
+
+            return true;
+        });
+    }
+
     private void renderAuctions() {
         if (flowPaneAuctions == null) return;
         flowPaneAuctions.getChildren().clear();
 
-        for (Auction auction : AppState.getInstance().getAuctionList()) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_card.fxml"));
-                javafx.scene.Node card = loader.load();
-                
-                ItemCardController cardController = loader.getController();
-                cardController.setData(auction, 
-                    this::openItemDetails, 
-                    this::handleQuickBidOf);
-                
-                flowPaneAuctions.getChildren().add(card);
-            } catch (IOException e) {
-                System.err.println("Lỗi load item card (Admin): " + e.getMessage());
+        if (filteredAuctions.isEmpty()) {
+            paneEmptyAuctions.setVisible(true);
+            paneEmptyAuctions.setManaged(true);
+        } else {
+            paneEmptyAuctions.setVisible(false);
+            paneEmptyAuctions.setManaged(false);
+
+            for (Auction auction : filteredAuctions) {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_card.fxml"));
+                    javafx.scene.Node card = loader.load();
+                    
+                    ItemCardController cardController = loader.getController();
+                    cardController.setData(auction, 
+                        this::openItemDetails, 
+                        this::handleQuickBidOf);
+                    
+                    flowPaneAuctions.getChildren().add(card);
+                } catch (IOException e) {
+                    System.err.println("Lỗi load item card (Admin): " + e.getMessage());
+                }
             }
         }
+    }
+
+    @FXML
+    void handleViewProfile() {
+        openUserDetails(AppState.getInstance().getCurrentUser());
     }
 
     private void handleQuickBidOf(Auction auction) {
@@ -130,20 +196,85 @@ public class AdminController {
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    @FXML
-    void handleViewProfile() {
-        openUserDetails(AppState.getInstance().getCurrentUser());
-    }
-
     private void setupUserTable() {
+        // Cấu hình lọc dữ liệu
+        filteredUsers = new FilteredList<>(masterUsers, p -> true);
+        userTable.setItems(filteredUsers);
+        userTable.setPlaceholder(new Label("")); // Xóa dòng "No content in table" mặc định
+
+        // Listener để cập nhật Empty State khi danh sách thay đổi
+        filteredUsers.addListener((javafx.collections.ListChangeListener<User>) c -> {
+            boolean isEmpty = filteredUsers.isEmpty();
+            if (paneEmptyUsers != null) {
+                paneEmptyUsers.setVisible(isEmpty);
+                paneEmptyUsers.setManaged(isEmpty);
+            }
+        });
+
+        if (txtUserSearch != null) {
+            txtUserSearch.textProperty().addListener((obs, old, newValue) -> {
+                filteredUsers.setPredicate(user -> {
+                    if (newValue == null || newValue.isEmpty()) return true;
+                    String lowerCaseFilter = newValue.toLowerCase().trim();
+                    if (user.getUsername().toLowerCase().contains(lowerCaseFilter)) return true;
+                    if (user.getEmail().toLowerCase().contains(lowerCaseFilter)) return true;
+                    if (user.getUserId().toLowerCase().contains(lowerCaseFilter)) return true;
+                    return false;
+                });
+            });
+        }
+
         colUserId  .setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUserId()));
         colUsername.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
         colEmail   .setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getEmail()));
-        colRole    .setCellValueFactory(d -> new SimpleStringProperty(
-            d.getValue().getClass().getSimpleName().toUpperCase()));
+
+        // Gán Style Class để căn lề Header (đồng bộ với CSS)
+        colRole.getStyleClass().add("centered-column");
+        colBalance.getStyleClass().add("right-column");
+
+        // Role Column với Badge màu sắc
+        colRole.setCellValueFactory(d -> new SimpleStringProperty(
+                d.getValue().getClass().getSimpleName().toUpperCase()));
+        colRole.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String role, boolean empty) {
+                super.updateItem(role, empty);
+                if (empty || role == null) {
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(role);
+                    badge.getStyleClass().add("role-badge");
+                    switch (role) {
+                        case "ADMIN" -> badge.getStyleClass().add("role-admin");
+                        case "SELLER" -> badge.getStyleClass().add("role-seller");
+                        case "BIDDER" -> badge.getStyleClass().add("role-bidder");
+                    }
+                    setGraphic(badge);
+                }
+            }
+        });
+
+        // Balance Column với định dạng tiền tệ
         if (colBalance != null) {
             colBalance.setCellValueFactory(d -> new SimpleStringProperty(
-                String.format("$%,.2f", d.getValue().getBalance())));
+                    String.format("$%,.2f", d.getValue().getBalance())));
+            colBalance.setCellFactory(column -> new TableCell<>() {
+                @Override
+                protected void updateItem(String balance, boolean empty) {
+                    super.updateItem(balance, empty);
+                    if (empty || balance == null) {
+                        setText(null);
+                        getStyleClass().remove("balance-cell-positive");
+                    } else {
+                        setText(balance);
+                        if (!balance.startsWith("$0.00")) {
+                            getStyleClass().add("balance-cell-positive");
+                        } else {
+                            getStyleClass().remove("balance-cell-positive");
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -163,14 +294,14 @@ public class AdminController {
     private void loadUserData() {
         try {
             List<User> allUsers = new UserDAO().findAll();
-            userTable.setItems(FXCollections.observableArrayList(allUsers));
+            masterUsers.setAll(allUsers);
 
             long bidders = allUsers.stream().filter(u -> u instanceof model.user.Bidder).count();
             long sellers = allUsers.stream().filter(u -> u instanceof model.user.Seller).count();
 
-            if (labelTotalUsers   != null) labelTotalUsers  .setText("Tổng users: " + allUsers.size());
-            if (labelTotalBidders != null) labelTotalBidders.setText("Bidders: "    + bidders);
-            if (labelTotalSellers != null) labelTotalSellers.setText("Sellers: "    + sellers);
+            if (labelTotalUsers   != null) labelTotalUsers  .setText(String.valueOf(allUsers.size()));
+            if (labelTotalBidders != null) labelTotalBidders.setText(String.valueOf(bidders));
+            if (labelTotalSellers != null) labelTotalSellers.setText(String.valueOf(sellers));
         } catch (Exception e) {
             System.err.println("Lỗi load users: " + e.getMessage());
         }
@@ -191,24 +322,16 @@ public class AdminController {
             stage.setTitle("Chi tiết phiên: " + auction.getAuctionId());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+
+            // Giới hạn kích thước theo màn hình (Anti-overflow)
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setMaxWidth(screenBounds.getWidth() * 0.96);
+            stage.setMaxHeight(screenBounds.getHeight() * 0.96);
+
             stage.show();
         } catch (Exception e) {
             System.err.println("Lỗi mở chi tiết: " + e.getMessage());
             e.printStackTrace();
-        }
-    }
-
-    @FXML
-    void handleViewDetails() {
-        // Kiểm tra tab đang mở để quyết định xem chi tiết phiên hay chi tiết user
-
-        if (mainTabPane != null && mainTabPane.getSelectionModel().getSelectedIndex() == 1) {
-            // Tab 1 = Quản lý người dùng
-            handleViewUserDetails();
-        } else {
-            // Tab 0 = Phiên đấu giá
-            // Với giao diện thẻ, Admin có thể click trực tiếp vào thẻ
-            utils.AlertHelper.show(utils.AlertHelper.Type.INFO, "Hãy nhấn trực tiếp vào thẻ sản phẩm để xem chi tiết!");
         }
     }
 

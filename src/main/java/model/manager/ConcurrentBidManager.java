@@ -184,7 +184,9 @@ public class ConcurrentBidManager {
 
             // ===== 4. Lưu vào DB (Đảm bảo tính nhất quán) =====
             if (bidDao != null) {
-                boolean saved = bidDao.save(auctionId, bidder.getUserId(), amount);
+                model.auction.BidTransaction latest = auction.getHighestBid();
+                boolean saved = bidDao.save(auctionId, bidder.getUserId(), amount, 
+                                          latest.getBidType(), latest.getTimestamp());
                 if (!saved) {
                     System.err.println(">>> [WARN] Bid memory thành công nhưng DB lưu thất bại " +
                             "cho phiên " + auctionId);

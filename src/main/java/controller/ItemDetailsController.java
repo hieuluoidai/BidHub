@@ -6,21 +6,27 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -58,26 +64,26 @@ public class ItemDetailsController {
     @FXML private Label lblBidCount;
     @FXML private TextArea txtDescription;
     @FXML private ScrollPane detailsScrollPane;
-    @FXML private Label lblEndTime;
-    @FXML private Label lblExtraInfo;
+    @FXML private Label lblCountdown;
+    @FXML private HBox extraInfoContainer;
     @FXML private Label lblHighestBidder;
     @FXML private Label lblBidTime;
     @FXML private ImageView itemImageView;
+    @FXML private VBox noImagePlaceholder;
 
-    @FXML private LineChart<Number, Number> bidChart;
+    @FXML private AreaChart<Number, Number> bidChart;
     @FXML private NumberAxis bidXAxis;
     @FXML private NumberAxis bidYAxis;
 
-    @FXML private TableView<BidTransaction> bidHistoryTable;
-    @FXML private TableColumn<BidTransaction, String> colBidder;
-    @FXML private TableColumn<BidTransaction, String> colAmount;
-    @FXML private TableColumn<BidTransaction, String> colTimestamp;
-    @FXML private TableColumn<BidTransaction, String> colBidType;
+    @FXML private ListView<BidTransaction> bidHistoryList;
 
+    @FXML private VBox biddingContent;
+    @FXML private VBox paneNoPermission;
+    @FXML private VBox paneStatusMessage;
+    @FXML private Label lblStatusMessage;
+
+    @FXML private VBox paneManualBid;
     @FXML private Button btnOpenBid;
-    @FXML private Button btnEdit;
-    @FXML private Button btnDelete;
-    @FXML private Button btnCancel;
     @FXML private Button btnPay;
 
     @FXML private VBox paneAutoBid;
@@ -86,16 +92,41 @@ public class ItemDetailsController {
     @FXML private Button btnSetAutoBid;
     @FXML private Button btnCancelAutoBid;
 
+    @FXML private ToggleGroup bidTypeGroup;
+    @FXML private ToggleButton tglManualBid;
+    @FXML private ToggleButton tglAutoBid;
+
+    @FXML private Button btnEdit;
+    @FXML private Button btnDelete;
+    @FXML private Button btnCancel;
+
     private final ObservableList<BidTransaction> bidRows = FXCollections.observableArrayList();
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private final DateTimeFormatter endTimeFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
     private Auction auction;
     private String autoBidCheckedAuctionId;
+    private javafx.animation.Timeline countdownTimeline;
 
     @FXML
     private void initialize() {
-        setupBidHistoryTable();
+        setupBidHistoryList();
         setupBidChart();
+        setupSegmentedControl();
+    }
+
+    private void setupSegmentedControl() {
+        if (bidTypeGroup == null) return;
+        
+        bidTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
+                if (oldVal != null) oldVal.setSelected(true); // Ngăn không cho bỏ chọn cả 2
+                return;
+            }
+            boolean isAuto = (newVal == tglAutoBid);
+            paneManualBid.setVisible(!isAuto);
+            paneManualBid.setManaged(!isAuto);
+            paneAutoBid.setVisible(isAuto);
+            paneAutoBid.setManaged(isAuto);
+        });
     }
 
     public Auction getAuction() {
@@ -110,10 +141,67 @@ public class ItemDetailsController {
         refreshUI();
         setupPermissions();
         scrollToTop();
+        startCountdown();
 
         if (auction != null && !auction.getAuctionId().equals(autoBidCheckedAuctionId)) {
             autoBidCheckedAuctionId = auction.getAuctionId();
             checkExistingAutoBid();
+        }
+    }
+
+    private void startCountdown() {
+        if (countdownTimeline != null) {
+            countdownTimeline.stop();
+        }
+        if (auction == null || lblCountdown == null) return;
+
+        countdownTimeline = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), event -> updateCountdownLabel())
+        );
+        countdownTimeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        countdownTimeline.play();
+        updateCountdownLabel(); // Cập nhật ngay lần đầu
+    }
+
+    private void updateCountdownLabel() {
+        if (auction == null || lblCountdown == null) return;
+        
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime start = auction.getStartTime();
+        java.time.LocalDateTime end = auction.getEndTime();
+        String status = auction.getStatus();
+        
+        if (status.equals("FINISHED") || status.equals("PAID") || status.equals("CANCELED") || now.isAfter(end)) {
+            lblCountdown.setText("Đã kết thúc");
+            lblCountdown.getStyleClass().remove("countdown-urgent");
+            if (countdownTimeline != null) countdownTimeline.stop();
+            return;
+        }
+
+        if (status.equals("OPEN") && now.isBefore(start)) {
+            java.time.Duration duration = java.time.Duration.between(now, start);
+            long hours = duration.toHours();
+            long minutes = duration.toMinutesPart();
+            long seconds = duration.toSecondsPart();
+            lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
+            // Thêm tiền tố nhỏ nếu cần, hoặc cứ để timer chạy
+            return;
+        }
+
+        java.time.Duration duration = java.time.Duration.between(now, end);
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+
+        lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
+
+        // Kích hoạt hiệu ứng FOMO nếu còn dưới 5 phút
+        if (duration.toMinutes() < 5) {
+            if (!lblCountdown.getStyleClass().contains("countdown-urgent")) {
+                lblCountdown.getStyleClass().add("countdown-urgent");
+            }
+        } else {
+            lblCountdown.getStyleClass().remove("countdown-urgent");
         }
     }
 
@@ -126,33 +214,81 @@ public class ItemDetailsController {
         Platform.runLater(() -> detailsScrollPane.setVvalue(0));
     }
 
-    private void setupBidHistoryTable() {
-        if (bidHistoryTable == null) return;
+    private void setupBidHistoryList() {
+        if (bidHistoryList == null) return;
 
-        bidHistoryTable.setItems(bidRows);
-        bidHistoryTable.setPlaceholder(new Label("Chưa có lượt đặt giá nào"));
+        bidHistoryList.setItems(bidRows);
+        bidHistoryList.setPlaceholder(new Label("Chưa có lượt đặt giá nào"));
+        bidHistoryList.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(BidTransaction bid, boolean empty) {
+                super.updateItem(bid, empty);
+                if (empty || bid == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    setGraphic(createBidRowLayout(bid));
+                    setStyle("-fx-background-color: transparent; -fx-padding: 6 0 6 0;");
+                }
+            }
+        });
+    }
 
-        colBidder.setCellValueFactory(cell -> new SimpleStringProperty(
-                cell.getValue().getBidder() != null
-                        ? cell.getValue().getBidder().getUsername()
-                        : "Ẩn danh"
-        ));
-        colAmount.setCellValueFactory(cell -> new SimpleStringProperty(
-                String.format("$%,.2f", cell.getValue().getBidAmount())
-        ));
-        colTimestamp.setCellValueFactory(cell -> new SimpleStringProperty(
-                cell.getValue().getTimestamp().format(dateTimeFormatter)
-        ));
-        colBidType.setCellValueFactory(cell -> new SimpleStringProperty(
-                cell.getValue().getBidType().getDisplayName()
-        ));
+    /**
+     * Tạo layout "Activity Feed" cho mỗi dòng bid.
+     */
+    private javafx.scene.Node createBidRowLayout(BidTransaction bid) {
+        HBox container = new HBox(15);
+        container.setAlignment(Pos.CENTER_LEFT);
+        container.getStyleClass().add("bid-feed-item");
 
-        // Bảng lịch sử hoạt động như một stack: bid mới nhất luôn ở trên cùng.
-        // Tắt sort thủ công để TableView không tự phá vỡ thứ tự đó khi refresh.
-        colBidder.setSortable(false);
-        colAmount.setSortable(false);
-        colTimestamp.setSortable(false);
-        colBidType.setSortable(false);
+        // 1. Avatar (Initial)
+        String name = (bid.getBidder() != null) ? bid.getBidder().getUsername() : "Ẩn danh";
+        String initial = name.substring(0, 1).toUpperCase();
+        Label lblAvatar = new Label(initial);
+        lblAvatar.getStyleClass().add("bid-avatar");
+        // Đổi màu avatar dựa trên tên để tạo sự khác biệt
+        int colorIdx = Math.abs(name.hashCode() % 5);
+        lblAvatar.getStyleClass().add("avatar-color-" + colorIdx);
+
+        // 2. Nội dung chính (User + Hành động)
+        VBox vContent = new VBox(2);
+        vContent.setAlignment(Pos.CENTER_LEFT);
+
+        Label lblUser = new Label(name);
+        lblUser.getStyleClass().add("bid-user-name");
+
+        Label lblAction = new Label("đã đặt giá cho sản phẩm");
+        lblAction.getStyleClass().add("bid-action-text");
+
+        HBox hUserBox = new HBox(6, lblUser, lblAction);
+        hUserBox.setAlignment(Pos.BASELINE_LEFT);
+
+        // Badge loại bid
+        Label badge = new Label(bid.getBidType().getDisplayName());
+        badge.getStyleClass().addAll("bid-type-badge",
+                bid.getBidType() == BidTransaction.BidType.AUTO_BID ? "badge-auto" : "badge-manual");
+
+        vContent.getChildren().addAll(hUserBox, badge);
+
+        // 3. Thông tin giá và thời gian (Bên phải)
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        VBox vPrice = new VBox(2);
+        vPrice.setAlignment(Pos.CENTER_RIGHT);
+
+        Label lblAmount = new Label(String.format("$%,.2f", bid.getBidAmount()));
+        lblAmount.getStyleClass().add("bid-feed-amount");
+
+        Label lblTime = new Label(bid.getTimestamp().format(dateTimeFormatter));
+        lblTime.getStyleClass().add("bid-feed-time");
+
+        vPrice.getChildren().addAll(lblAmount, lblTime);
+
+        container.getChildren().addAll(lblAvatar, vContent, spacer, vPrice);
+        return container;
     }
 
     private void setupBidChart() {
@@ -211,22 +347,22 @@ public class ItemDetailsController {
         lblStartingPrice.setText(String.format("$%,.2f", auction.getItem().getStartingPrice()));
         lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
         txtDescription.setText(auction.getItem().getDescription());
-        lblEndTime.setText(auction.getEndTime().format(endTimeFormatter));
 
-        String extraInfoText = "Không có thông tin chi tiết";
+        // Cập nhật Property Chips
+        extraInfoContainer.getChildren().clear();
         var item = auction.getItem();
         if (item instanceof Electronics elec) {
-            extraInfoText = "Hãng sản xuất: " + elec.getBrand();
+            extraInfoContainer.getChildren().add(createPropertyChip("Hãng sản xuất", elec.getBrand()));
         } else if (item instanceof Art art) {
-            extraInfoText = "Tác giả: " + art.getArtist();
+            extraInfoContainer.getChildren().add(createPropertyChip("Tác giả", art.getArtist()));
         } else if (item instanceof Vehicle veh) {
-            extraInfoText = "Hãng xe: " + veh.getBrand();
+            extraInfoContainer.getChildren().add(createPropertyChip("Hãng xe", veh.getBrand()));
+        } else {
+            Label defaultLbl = new Label("Chưa có thông số kỹ thuật");
+            defaultLbl.getStyleClass().add("details-muted-text");
+            extraInfoContainer.getChildren().add(defaultLbl);
         }
-        lblExtraInfo.setText(extraInfoText);
 
-        // `bidHistory` đã được giữ theo thứ tự phát sinh: DB load từ cũ -> mới,
-        // bid realtime mới thì append vào cuối. Không sort lại theo timestamp nữa,
-        // vì sau restart clock DB/JVM có thể lệch nhau và làm bid mới rơi xuống đáy.
         List<BidTransaction> history = new ArrayList<>(auction.getBidHistory());
 
         if (!history.isEmpty()) {
@@ -246,6 +382,12 @@ public class ItemDetailsController {
         refreshItemImage();
     }
 
+    private Label createPropertyChip(String property, String value) {
+        Label chip = new Label(property + ": " + value);
+        chip.getStyleClass().add("property-chip");
+        return chip;
+    }
+
     private void refreshItemImage() {
         if (itemImageView == null || auction == null || auction.getItem() == null) return;
 
@@ -254,10 +396,14 @@ public class ItemDetailsController {
             String uri = ImageStorageService.toFileUri(imgPath);
             if (uri != null) {
                 itemImageView.setImage(new Image(uri, 360, 0, true, true));
+                itemImageView.setVisible(true);
+                if (noImagePlaceholder != null) noImagePlaceholder.setVisible(false);
                 return;
             }
         }
         itemImageView.setImage(null);
+        itemImageView.setVisible(false);
+        if (noImagePlaceholder != null) noImagePlaceholder.setVisible(true);
     }
 
     private void renderBidHistory(List<BidTransaction> history) {
@@ -268,21 +414,17 @@ public class ItemDetailsController {
     }
 
     /**
-     * TableView có xu hướng giữ selection/viewport cũ sau khi setAll(), vì vậy khi
-     * mở lại tab nó có thể tự kéo về cuối danh sách dù dữ liệu đã được sắp đúng.
-     * Bỏ selection cũ và ép về index 0 để bảng luôn bắt đầu từ bid mới nhất.
+     * Cuộn lên đầu danh sách để luôn thấy bid mới nhất.
      */
     private void scrollBidHistoryToTop() {
-        if (bidHistoryTable == null) return;
+        if (bidHistoryList == null) return;
 
-        bidHistoryTable.getSelectionModel().clearSelection();
-        bidHistoryTable.scrollTo(0);
+        bidHistoryList.getSelectionModel().clearSelection();
+        bidHistoryList.scrollTo(0);
 
-        // Gọi lại sau layout pass vì VirtualFlow của JavaFX đôi khi khôi phục
-        // viewport cũ sau khi TableView vừa nhận danh sách mới.
         Platform.runLater(() -> {
-            bidHistoryTable.getSelectionModel().clearSelection();
-            bidHistoryTable.scrollTo(0);
+            bidHistoryList.getSelectionModel().clearSelection();
+            bidHistoryList.scrollTo(0);
         });
     }
 
@@ -389,14 +531,42 @@ public class ItemDetailsController {
      */
     private void setupPermissions() {
         boolean isBidder = (AppState.getInstance().getCurrentUser() instanceof Bidder);
-        boolean canBid = isBidder && "RUNNING".equals(auction.getStatus());
+        String status = auction.getStatus();
+        boolean canBid = isBidder && "RUNNING".equals(status);
         boolean canEdit = SessionPermission.canEdit(auction);
         boolean canDelete = SessionPermission.canDelete(auction);
         boolean canCancel = SessionPermission.canCancel(auction);
 
-        if (paneAutoBid != null) {
-            paneAutoBid.setVisible(canBid);
-            paneAutoBid.setManaged(canBid);
+        if (biddingContent != null && paneNoPermission != null && paneStatusMessage != null) {
+            if (!isBidder) {
+                biddingContent.setVisible(false);
+                biddingContent.setManaged(false);
+                paneNoPermission.setVisible(true);
+                paneNoPermission.setManaged(true);
+                paneStatusMessage.setVisible(false);
+                paneStatusMessage.setManaged(false);
+            } else {
+                paneNoPermission.setVisible(false);
+                paneNoPermission.setManaged(false);
+                
+                if (canBid) {
+                    biddingContent.setVisible(true);
+                    biddingContent.setManaged(true);
+                    paneStatusMessage.setVisible(false);
+                    paneStatusMessage.setManaged(false);
+                } else {
+                    biddingContent.setVisible(false);
+                    biddingContent.setManaged(false);
+                    paneStatusMessage.setVisible(true);
+                    paneStatusMessage.setManaged(true);
+                    
+                    if ("OPEN".equals(status)) {
+                        lblStatusMessage.setText("Phiên đấu giá chưa bắt đầu. Vui lòng quay lại sau.");
+                    } else {
+                        lblStatusMessage.setText("Phiên đấu giá này đã kết thúc.");
+                    }
+                }
+            }
         }
 
         String winnerId = (auction.getHighestBid() != null

@@ -221,8 +221,9 @@ public class AutoBidManager {
             
             // 2. DB update
             if (bidDAO != null) {
+                model.auction.BidTransaction latest = auction.getHighestBid();
                 bidDAO.save(auction.getAuctionId(), bidder.getUserId(), amount,
-                        model.auction.BidTransaction.BidType.AUTO_BID);
+                        latest.getBidType(), latest.getTimestamp());
             }
 
             // 3. Giải phóng tiền cho người bị outbid (nếu người đó chỉ dùng manual bid)
@@ -239,6 +240,33 @@ public class AutoBidManager {
         } catch (Exception e) {
             System.err.println(">>> [AutoBid ERROR] " + e.getMessage());
         }
+    }
+
+    /**
+     * Dọn dẹp toàn bộ Auto-Bids khi phiên bị HỦY hoặc XÓA.
+     * Giải phóng TOÀN BỘ số tiền maxBid đã cam kết cho mọi người tham gia.
+     * @return Danh sách UserID đã được giải phóng Auto-Bid (để tránh giải phóng trùng lặp manual bid).
+     */
+    public synchronized java.util.Set<String> cleanupForCancellation(String auctionId) {
+        java.util.Set<String> unlockedUserIds = new java.util.HashSet<>();
+        List<AutoBid> autoBids = auctionAutoBids.remove(auctionId);
+        
+        if (autoBids == null) {
+            // Đề phòng trường hợp memory bị trống, load từ DB
+            autoBids = autoBidDAO.findAll().stream()
+                    .filter(ab -> ab.getAuctionId().equals(auctionId))
+                    .toList();
+        }
+
+        for (AutoBid ab : autoBids) {
+            userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
+            autoBidDAO.delete(ab.getAutoBidId());
+            unlockedUserIds.add(ab.getUserId());
+        }
+        
+        System.out.println(">>> [AutoBid CLEANUP] Đã giải phóng toàn bộ tiền cho " 
+                + unlockedUserIds.size() + " Auto-Bidders của phiên " + auctionId);
+        return unlockedUserIds;
     }
 
     public void cleanup(String auctionId) {

@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Auction extends Entity implements Serializable, Subject {
     private static final long serialVersionUID = 2L;
@@ -18,7 +19,6 @@ public class Auction extends Entity implements Serializable, Subject {
     // ================================================================
     // ANTI-SNIPING (Gia hạn phiên đấu giá) — yêu cầu 3.2.3
     // Nếu có bid hợp lệ trong X giây cuối → tự động gia hạn thêm Y giây.
-    // Ví dụ đề: end 20:00:00, bid 19:59:50 (còn 10s) → kéo dài 20:01:00
     // ================================================================
 
     /** X — Ngưỡng "phút cuối" tính bằng giây. */
@@ -52,7 +52,7 @@ public class Auction extends Entity implements Serializable, Subject {
         this.startTime = startTime;
         this.endTime   = endTime;
         this.status    = "OPEN";
-        this.bidHistory = new ArrayList<>();
+        this.bidHistory = new CopyOnWriteArrayList<>();
         this.observers  = new ArrayList<>();
     }
 
@@ -60,6 +60,10 @@ public class Auction extends Entity implements Serializable, Subject {
             throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
         this.observers = new ArrayList<>();
+        // Đảm bảo sau khi deserialization, list vẫn là thread-safe
+        if (!(this.bidHistory instanceof CopyOnWriteArrayList)) {
+            this.bidHistory = new CopyOnWriteArrayList<>(this.bidHistory);
+        }
     }
 
     // Subject interface
@@ -79,17 +83,11 @@ public class Auction extends Entity implements Serializable, Subject {
     @Override
     public void notifyObservers(String message) {
         if (observers == null) return;
-        // Tạo bản sao để tránh ConcurrentModificationException
-        // nếu observer tự detach trong lúc nhận thông báo
         List<Observer> snapshot = new ArrayList<>(observers);
         for (Observer o : snapshot) {
             o.update(message);
         }
     }
-
-    // ----------------------------------------------------------------
-    // placeBid — gọi notifyObservers sau khi bid thành công
-    // ----------------------------------------------------------------
 
     public synchronized void placeBid(User bidder, double amount)
             throws IllegalStateException, IllegalArgumentException {
@@ -112,10 +110,8 @@ public class Auction extends Entity implements Serializable, Subject {
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
 
-        // ===== ANTI-SNIPING: gia hạn nếu bid rơi vào X giây cuối =====
         boolean extended = applyAntiSnipingIfNeeded(newBid.getTimestamp());
 
-        // Thông báo tới tất cả observer đang theo dõi phiên này
         String msg = String.format("[BID] %s đặt $%.2f cho phiên %s",
                 bidder != null ? bidder.getUsername() : "Ẩn danh",
                 amount,
@@ -134,22 +130,11 @@ public class Auction extends Entity implements Serializable, Subject {
                 + (extended ? "  [ANTI-SNIPE → endTime mới: " + endTime + "]" : ""));
     }
 
-    /**
-     * Áp dụng thuật toán Anti-sniping.
-     * Quy tắc: nếu thời điểm bid cách endTime không quá X giây → đẩy
-     * endTime thêm Y giây (tính từ endTime hiện tại, đúng ví dụ đề:
-     * end 20:00:00, bid 19:59:50 còn 10s → 20:00:00 + 60s = 20:01:00).
-     * Gọi bên trong placeBid() (đã synchronized) nên thread-safe.
-     *
-     * @param bidTime thời điểm bid (lấy từ BidTransaction để nhất quán)
-     * @return true nếu phiên vừa được gia hạn
-     */
     private boolean applyAntiSnipingIfNeeded(LocalDateTime bidTime) {
         if (!antiSnipeEnabled)            return false;
         if (endTime == null)             return false;
         if (bidTime == null)             bidTime = LocalDateTime.now();
 
-        // Bid đến SAU thời điểm kết thúc → không gia hạn.
         if (!bidTime.isBefore(endTime))  return false;
 
         long secondsLeft = java.time.Duration.between(bidTime, endTime).getSeconds();
@@ -162,14 +147,11 @@ public class Auction extends Entity implements Serializable, Subject {
         return false;
     }
 
-    // Khi chuyển trạng thái cũng notify
     public void setStatus(String status) {
         this.status = status;
         notifyObservers("[STATUS] Phiên " + getAuctionId() + " → " + status);
     }
 
-    // Getters
-    
     public double getCurrentPrice() {
         return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
     }
@@ -183,27 +165,13 @@ public class Auction extends Entity implements Serializable, Subject {
     public void setSellerId(String id)  { this.sellerId = id; }
     public LocalDateTime getEndTime()   { return endTime; }
     public LocalDateTime getStartTime() { return startTime; }
-
-    /**
-     * Cập nhật end_time (dùng khi đồng bộ từ DB hoặc Seller sửa phiên
-     * lúc còn OPEN). Không tự notify; nơi gọi tự quyết định broadcast.
-     */
     public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-
-    /** Số lần phiên đã được gia hạn bởi anti-sniping. */
     public int getExtensionCount() { return extensionCount; }
-
-    // ---- Cấu hình Anti-sniping (static, dùng chung toàn hệ thống) ----
 
     public static long getAntiSnipeThresholdSeconds() { return antiSnipeThresholdSeconds; }
     public static long getAntiSnipeExtensionSeconds() { return antiSnipeExtensionSeconds; }
     public static boolean isAntiSnipeEnabled()        { return antiSnipeEnabled; }
 
-    /**
-     * Thiết lập tham số anti-sniping.
-     * @param thresholdSeconds X — ngưỡng giây cuối (phải > 0)
-     * @param extensionSeconds Y — số giây gia hạn mỗi lần (phải > 0)
-     */
     public static void configureAntiSnipe(long thresholdSeconds, long extensionSeconds) {
         if (thresholdSeconds <= 0 || extensionSeconds <= 0) {
             throw new IllegalArgumentException(
@@ -218,17 +186,8 @@ public class Auction extends Entity implements Serializable, Subject {
     public List<BidTransaction> getBidHistory() { return new ArrayList<>(bidHistory); }
     public BidTransaction getHighestBid()       { return highestBid; }
 
-    /**
-     * Khôi phục lịch sử bid từ DB khi server/client reload dữ liệu.
-     *
-     * Trong điều kiện bình thường, bid mới luôn cao hơn bid cũ nên phần tử cuối
-     * cũng là bid cao nhất. Tuy nhiên nếu server từng restart với state thiếu và
-     * lỡ chấp nhận một bid thấp hơn về sau, chỉ lấy phần tử cuối sẽ làm giá hiện
-     * tại "tụt về đầu" thêm lần nữa ở lần restart kế tiếp. Vì vậy highestBid luôn
-     * phải được dựng lại theo số tiền lớn nhất đã từng lưu trong DB.
-     */
     public void restoreBidHistory(List<BidTransaction> transactions) {
-        this.bidHistory = new ArrayList<>();
+        this.bidHistory = new CopyOnWriteArrayList<>();
         this.highestBid = null;
 
         if (transactions == null || transactions.isEmpty()) return;

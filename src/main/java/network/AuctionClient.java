@@ -166,12 +166,18 @@ public class AuctionClient {
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
                 Auction existing = list.get(i);
+                
+                // MẸO QUAN TRỌNG: Nếu bản cập nhật từ server bị thiếu history (do serialization hoặc 
+                // logic server tối giản), ta phải giữ lại history cũ để chart và table không bị trắng.
+                if (updated.getBidHistory().isEmpty() && !existing.getBidHistory().isEmpty()) {
+                    updated.restoreBidHistory(existing.getBidHistory());
+                }
+
                 boolean priceChanged = existing.getCurrentPrice() != updated.getCurrentPrice();
                 boolean statusChanged = !existing.getStatus().equals(updated.getStatus());
                 boolean bidHistoryChanged = existing.getBidHistory().size() != updated.getBidHistory().size();
                 boolean highestBidAppeared = existing.getHighestBid() == null && updated.getHighestBid() != null;
 
-                // Lịch sử là dữ liệu điều khiển chart/table, nên cũng phải coi là thay đổi thật.
                 if (priceChanged || statusChanged || bidHistoryChanged || highestBidAppeared) {
                     list.set(i, updated);
                 }

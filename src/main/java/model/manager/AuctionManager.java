@@ -143,11 +143,14 @@ public class AuctionManager {
             if (auctions.get(i).getAuctionId().equals(updatedAuction.getAuctionId())) {
                 Auction existing = auctions.get(i);
 
-                // Giá của một phiên đang chạy chỉ được phép đi lên. Nếu một payload cũ
-                // từ client mang ít history hơn và kéo giá xuống, giữ lại history giàu
-                // hơn trong RAM thay vì cho state bị "quay về đầu".
-                if ("RUNNING".equals(existing.getStatus())
+                // ĐẢM BẢO KHÔNG MẤT HISTORY (Source of Truth lÃ  Server)
+                // Nếu bản cập nhật từ Client gửi lên có ít bid hơn Server đang có, 
+                // ta giữ lại history đầy đủ của Server.
+                if (updatedAuction.getBidHistory().size() < existing.getBidHistory().size()) {
+                    updatedAuction.restoreBidHistory(existing.getBidHistory());
+                } else if ("RUNNING".equals(existing.getStatus())
                         && updatedAuction.getCurrentPrice() < existing.getCurrentPrice()) {
+                    // Chống rollback giá nếu client gửi data cũ
                     updatedAuction.restoreBidHistory(existing.getBidHistory());
                 }
 

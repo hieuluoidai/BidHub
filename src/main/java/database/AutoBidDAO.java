@@ -30,7 +30,7 @@ public class AutoBidDAO {
             stmt.setString(3, autoBid.getUserId());
             stmt.setDouble(4, autoBid.getMaxBid());
             stmt.setDouble(5, autoBid.getIncrement());
-            stmt.setTimestamp(6, Timestamp.valueOf(autoBid.getCreatedAt()));
+            stmt.setObject(6, autoBid.getCreatedAt());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi lưu AutoBid: " + e.getMessage());
@@ -116,7 +116,7 @@ public class AutoBidDAO {
                 rs.getDouble("max_bid"),
                 rs.getDouble("increment")
         );
-        ab.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        ab.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
         return ab;
     }
 }
