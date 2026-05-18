@@ -11,6 +11,11 @@ public class InvalidBidException extends RuntimeException {
         this.currentPrice = currentPrice;
     }
 
-    public double getAttemptedAmount() { return attemptedAmount; }
-    public double getCurrentPrice() { return currentPrice; }
+    public double getAttemptedAmount() {
+        return attemptedAmount;
+    }
+
+    public double getCurrentPrice() {
+        return currentPrice;
+    }
 }

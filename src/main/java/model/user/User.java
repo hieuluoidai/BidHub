@@ -60,28 +60,92 @@ public abstract class User extends Entity implements Serializable {
     }
 
     // Setters
-    public void setUserId(String userId)              { super.setId(userId); }
-    public void setUsername(String username)          { this.username = username; }
-    public void setEmail(String email)                { this.email = email; }
-    public void setPassWord(String password)          { this.password = password; }
-    public void setFullName(String fullName)          { this.fullName = fullName; }
-    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-    public void setPhoneNumber(String phoneNumber)    { this.phoneNumber = phoneNumber; }
-    public void setBalance(double balance)            { this.balance = balance; }
-    public void setLockedBalance(double lockedBalance) { this.lockedBalance = lockedBalance; }
-    public void setAvatarPath(String avatarPath)      { this.avatarPath = avatarPath; }
-    public void setPendingSeller(boolean pendingSeller) { this.pendingSeller = pendingSeller; }
+    public void setUserId(String userId) {
+        super.setId(userId);
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassWord(String password) {
+        this.password = password;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    public void setLockedBalance(double lockedBalance) {
+        this.lockedBalance = lockedBalance;
+    }
+
+    public void setAvatarPath(String avatarPath) {
+        this.avatarPath = avatarPath;
+    }
+
+    public void setPendingSeller(boolean pendingSeller) {
+        this.pendingSeller = pendingSeller;
+    }
 
     // Getters
-    public String    getUserId()      { return super.getId(); }
-    public String    getUsername()    { return username; }
-    public String    getEmail()       { return email; }
-    public String    getPassword()    { return password; }
-    public String    getFullName()    { return fullName; }
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-    public String    getPhoneNumber() { return phoneNumber; }
-    public double    getBalance()     { return balance; }
-    public double    getLockedBalance() { return lockedBalance; }
-    public String    getAvatarPath()  { return avatarPath; }
-    public boolean   isPendingSeller() { return pendingSeller; }
+    public String getUserId() {
+        return super.getId();
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public double getLockedBalance() {
+        return lockedBalance;
+    }
+
+    public String getAvatarPath() {
+        return avatarPath;
+    }
+
+    public boolean isPendingSeller() {
+        return pendingSeller;
+    }
 }

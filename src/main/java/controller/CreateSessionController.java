@@ -86,8 +86,12 @@ public class CreateSessionController {
         });
 
         // Nạp giờ (00–23) và phút (00, 05, 10, ..., 55) dạng String 2 chữ số
-        for (int h = 0; h < 24; h++) cbEndHour.getItems().add(String.format("%02d", h));
-        for (int m = 0; m < 60; m += 5) cbEndMinute.getItems().add(String.format("%02d", m));
+        for (int h = 0; h < 24; h++) {
+            cbEndHour.getItems().add(String.format("%02d", h));
+        }
+        for (int m = 0; m < 60; m += 5) {
+            cbEndMinute.getItems().add(String.format("%02d", m));
+        }
 
         // Mặc định: 7 ngày sau, lúc 23:55
         datePickerEndDate.setValue(LocalDate.now().plusDays(7));
@@ -112,7 +116,10 @@ public class CreateSessionController {
             String endMinStr  = cbEndMinute.getValue();
 
             // 2. Validation
-            if (type == null) { showError("Vui lòng chọn loại sản phẩm!"); return; }
+            if (type == null) {
+                showError("Vui lòng chọn loại sản phẩm!");
+                return;
+            }
             if (name.isEmpty() || priceStr.isEmpty() || extraInfo.isEmpty()) {
                 showError("Vui lòng điền đầy đủ các thông tin bắt buộc!");
                 return;
@@ -123,7 +130,10 @@ public class CreateSessionController {
             }
 
             double startingPrice = Double.parseDouble(priceStr);
-            if (startingPrice <= 0) { showError("Giá khởi điểm phải lớn hơn 0!"); return; }
+            if (startingPrice <= 0) {
+                showError("Giá khởi điểm phải lớn hơn 0!");
+                return;
+            }
 
             // 3. Ghép ngày + giờ + phút thành LocalDateTime
             int endHour = Integer.parseInt(endHourStr);

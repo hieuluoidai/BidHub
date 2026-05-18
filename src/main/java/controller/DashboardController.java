@@ -2,8 +2,6 @@ package controller;
 
 import java.io.IOException;
 
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -14,14 +12,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
-import javafx.geometry.Pos;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
@@ -71,7 +63,8 @@ public class DashboardController {
 
     private FilteredList<Auction> filteredData;
     private final ObservableList<model.auction.WalletTransaction> transactionRows = FXCollections.observableArrayList();
-    private final java.time.format.DateTimeFormatter dateTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private final java.time.format.DateTimeFormatter dateTimeFormatter =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     /**
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -142,7 +135,8 @@ public class DashboardController {
                             if (u != null) u.setBalance(newAvail);
                         }
                         javafx.application.Platform.runLater(this::refreshBalanceLabel);
-                    } catch (Exception ignore) {}
+                    } catch (Exception ignore) {
+                    }
                 }
             }
         });
@@ -403,7 +397,9 @@ public class DashboardController {
             });
 
             currentDetailStage.show();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -412,7 +408,8 @@ public class DashboardController {
     @FXML
     void handleViewProfile() {
         try {
-            System.out.println(">>> Attempting to open profile for user: " + AppState.getInstance().getCurrentUser().getUsername());
+            System.out.println(">>> Attempting to open profile for user: "
+                    + AppState.getInstance().getCurrentUser().getUsername());
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/user_details.fxml"));
             Parent root = loader.load();
             
@@ -457,7 +454,9 @@ public class DashboardController {
         try {
             Parent root = FXMLLoader.load(getClass().getResource(fxml));
             showStage(root, title);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -537,7 +536,8 @@ public class DashboardController {
                 btnRequestSeller.setDisable(true);
                 btnRequestSeller.setText("Đang chờ duyệt...");
             } else {
-                lblSellerRequestStatus.setText("Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình.");
+                lblSellerRequestStatus.setText(
+                        "Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình.");
                 btnRequestSeller.setVisible(true);
                 btnRequestSeller.setManaged(true);
                 btnRequestSeller.setDisable(false);
@@ -561,7 +561,8 @@ public class DashboardController {
 
         boolean confirm = utils.AlertHelper.showConfirm(
             "Xác nhận yêu cầu",
-            "Bạn có chắc chắn muốn gửi yêu cầu trở thành Seller không? Sau khi gửi, Admin sẽ xét duyệt hồ sơ của bạn."
+            "Bạn có chắc chắn muốn gửi yêu cầu trở thành Seller không? "
+                    + "Sau khi gửi, Admin sẽ xét duyệt hồ sơ của bạn."
         );
 
         if (confirm) {

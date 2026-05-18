@@ -3,7 +3,6 @@ package controller;
 import database.UserDAO;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -12,7 +11,6 @@ import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import model.manager.AppState;
 import model.user.Bidder;
-import model.user.Seller;
 import model.user.User;
 import utils.AlertHelper;
 import utils.PasswordUtils;
@@ -436,12 +434,16 @@ public class RegisterController {
     //                          UTILITIES
     // =====================================================================
 
-    private String safeTrim(String s) { return s == null ? "" : s.trim(); }
+    private String safeTrim(String s) {
+        return s == null ? "" : s.trim();
+    }
 
     private void showError(String msg) {
         messageLabel.setText(msg);
         messageLabel.setTextFill(Color.web("#EF4444"));
     }
 
-    private void clearError() { messageLabel.setText(""); }
+    private void clearError() {
+        messageLabel.setText("");
+    }
 }

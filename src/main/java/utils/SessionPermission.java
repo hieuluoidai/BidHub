@@ -21,7 +21,8 @@ public class SessionPermission {
     private static String cachedSellerId = null;
     private static Set<String> cachedOwnedIds = null;
 
-    private SessionPermission() {}
+    private SessionPermission() {
+    }
 
     public static boolean canEdit(Auction auction) {
         User user = AppState.getInstance().getCurrentUser();

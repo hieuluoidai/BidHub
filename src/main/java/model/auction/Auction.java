@@ -156,21 +156,61 @@ public class Auction extends Entity implements Serializable, Subject {
         return (highestBid != null) ? highestBid.getBidAmount() : item.getStartingPrice();
     }
 
-    public void setHighestBid(BidTransaction highestBid) { this.highestBid = highestBid; }
-    public String getAuctionId()        { return super.getId(); }
-    public Item getItem()               { return item; }
-    public String getItemName()         { return item != null ? item.getItemName() : "N/A"; }
-    public String getStatus()           { return status; }
-    public String getSellerId()         { return sellerId; }
-    public void setSellerId(String id)  { this.sellerId = id; }
-    public LocalDateTime getEndTime()   { return endTime; }
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-    public int getExtensionCount() { return extensionCount; }
+    public void setHighestBid(BidTransaction highestBid) {
+        this.highestBid = highestBid;
+    }
 
-    public static long getAntiSnipeThresholdSeconds() { return antiSnipeThresholdSeconds; }
-    public static long getAntiSnipeExtensionSeconds() { return antiSnipeExtensionSeconds; }
-    public static boolean isAntiSnipeEnabled()        { return antiSnipeEnabled; }
+    public String getAuctionId() {
+        return super.getId();
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public String getItemName() {
+        return item != null ? item.getItemName() : "N/A";
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(String id) {
+        this.sellerId = id;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public int getExtensionCount() {
+        return extensionCount;
+    }
+
+    public static long getAntiSnipeThresholdSeconds() {
+        return antiSnipeThresholdSeconds;
+    }
+
+    public static long getAntiSnipeExtensionSeconds() {
+        return antiSnipeExtensionSeconds;
+    }
+
+    public static boolean isAntiSnipeEnabled() {
+        return antiSnipeEnabled;
+    }
 
     public static void configureAntiSnipe(long thresholdSeconds, long extensionSeconds) {
         if (thresholdSeconds <= 0 || extensionSeconds <= 0) {
@@ -182,9 +222,17 @@ public class Auction extends Entity implements Serializable, Subject {
         antiSnipeExtensionSeconds = extensionSeconds;
     }
 
-    public static void setAntiSnipeEnabled(boolean enabled) { antiSnipeEnabled = enabled; }
-    public List<BidTransaction> getBidHistory() { return new ArrayList<>(bidHistory); }
-    public BidTransaction getHighestBid()       { return highestBid; }
+    public static void setAntiSnipeEnabled(boolean enabled) {
+        antiSnipeEnabled = enabled;
+    }
+
+    public List<BidTransaction> getBidHistory() {
+        return new ArrayList<>(bidHistory);
+    }
+
+    public BidTransaction getHighestBid() {
+        return highestBid;
+    }
 
     public void restoreBidHistory(List<BidTransaction> transactions) {
         this.bidHistory = new CopyOnWriteArrayList<>();

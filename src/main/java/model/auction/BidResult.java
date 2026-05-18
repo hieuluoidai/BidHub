@@ -51,14 +51,37 @@ public class BidResult implements Serializable {
         return new BidResult(Status.FAILURE, auctionId, amount, -1, reason, null);
     }
 
-    public Status getStatus()          { return status; }
-    public String getAuctionId()       { return auctionId; }
-    public double getBidAmount()       { return bidAmount; }
-    public double getCurrentPrice()    { return currentPrice; }
-    public String getMessage()         { return message; }
-    public String getWinnerUsername()  { return winnerUsername; }
-    public boolean isSuccess()         { return status == Status.SUCCESS; }
-    public boolean isOutbid()          { return status == Status.OUTBID; }
+    public Status getStatus() {
+        return status;
+    }
+
+    public String getAuctionId() {
+        return auctionId;
+    }
+
+    public double getBidAmount() {
+        return bidAmount;
+    }
+
+    public double getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getWinnerUsername() {
+        return winnerUsername;
+    }
+
+    public boolean isSuccess() {
+        return status == Status.SUCCESS;
+    }
+
+    public boolean isOutbid() {
+        return status == Status.OUTBID;
+    }
 
     @Override
     public String toString() {

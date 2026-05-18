@@ -1,6 +1,5 @@
 package controller;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -57,13 +56,19 @@ public class BidController {
     }
 
     @FXML
-    void addBid10() { addToBid(10); }
+    void addBid10() {
+        addToBid(10);
+    }
 
     @FXML
-    void addBid50() { addToBid(50); }
+    void addBid50() {
+        addToBid(50);
+    }
 
     @FXML
-    void addBid100() { addToBid(100); }
+    void addBid100() {
+        addToBid(100);
+    }
 
     private void addToBid(double amount) {
         try {

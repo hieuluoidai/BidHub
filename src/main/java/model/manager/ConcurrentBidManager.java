@@ -236,10 +236,21 @@ public class ConcurrentBidManager {
     }
 
     // ===== Metrics getters (Dùng cho báo cáo/demo bảo vệ đồ án) =====
-    public long getSuccessCount()    { return successCount.get(); }
-    public long getOutbidCount()     { return outbidCount.get(); }
-    public long getFailureCount()    { return failureCount.get(); }
-    public long getContentionCount() { return contentionCount.get(); }
+    public long getSuccessCount() {
+        return successCount.get();
+    }
+
+    public long getOutbidCount() {
+        return outbidCount.get();
+    }
+
+    public long getFailureCount() {
+        return failureCount.get();
+    }
+
+    public long getContentionCount() {
+        return contentionCount.get();
+    }
 
     public String metricsSummary() {
         return String.format("Bids → SUCCESS=%d, OUTBID=%d, FAILURE=%d, contention=%d",

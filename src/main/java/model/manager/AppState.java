@@ -34,14 +34,18 @@ public class AppState {
     }
 
     // Quản lý giao diện
-    public SceneManager getSceneManager() { return sceneManager; }
+    public SceneManager getSceneManager() {
+        return sceneManager;
+    }
     
     public void setSceneManager(SceneManager sceneManager) {
         this.sceneManager = sceneManager;
     }
 
     // Quản lý người dùng
-    public User getCurrentUser() { return currentUser; }
+    public User getCurrentUser() {
+        return currentUser;
+    }
     
     public void setCurrentUser(User user) {
         this.currentUser = user;
@@ -52,7 +56,9 @@ public class AppState {
     }
 
     // Quản lí kết nối
-    public AuctionClient getClient() { return client; }
+    public AuctionClient getClient() {
+        return client;
+    }
 
     public ObservableList<Auction> getAuctionList() {
         return auctionList;

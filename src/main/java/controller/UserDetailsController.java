@@ -3,7 +3,10 @@ package controller;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
@@ -94,7 +97,8 @@ public class UserDetailsController {
 
         boolean confirm = utils.AlertHelper.showConfirm(
             "Xác nhận phê duyệt",
-            "Bạn có chắc chắn muốn phê duyệt người dùng này làm Seller không? Người dùng sẽ có quyền đăng bán sản phẩm ngay lập tức."
+            "Bạn có chắc chắn muốn phê duyệt người dùng này làm Seller không? "
+                    + "Người dùng sẽ có quyền đăng bán sản phẩm ngay lập tức."
         );
 
         if (confirm) {
@@ -112,7 +116,8 @@ public class UserDetailsController {
             lblPendingStatusLabel.setVisible(false);
             lblRoleBadge.setText("SELLER"); // Mock UI update
 
-            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã phê duyệt người dùng làm Seller!");
+            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                    "Thành công", "Đã phê duyệt người dùng làm Seller!");
         }
     }
 
@@ -192,7 +197,8 @@ public class UserDetailsController {
                         if (msg.equals("UPDATE_AVATAR_OK")) {
                             user.setAvatarPath(newAvatarPath);
                             refreshAvatar();
-                            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật ảnh đại diện!");
+                            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                                    "Thành công", "Đã cập nhật ảnh đại diện!");
                         } else {
                             utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
                         }
@@ -246,7 +252,8 @@ public class UserDetailsController {
                         btnEditProfile.getStyleClass().remove("button-primary");
                         toggleEditUI(false);
                         
-                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật thông tin hồ sơ!");
+                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                                "Thành công", "Đã cập nhật thông tin hồ sơ!");
                     } else {
                         utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
                     }
@@ -283,7 +290,9 @@ public class UserDetailsController {
             stage.setScene(new javafx.scene.Scene(root));
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             stage.show();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

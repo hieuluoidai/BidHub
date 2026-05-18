@@ -46,6 +46,9 @@ jobs:
           mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_item_image.sql
           mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_autobid.sql
 
+      - name: Check coding conventions (Checkstyle)
+        run: mvn --batch-mode --no-transfer-progress checkstyle:check
+
       - name: Build and run tests
         run: mvn --batch-mode --no-transfer-progress test
       

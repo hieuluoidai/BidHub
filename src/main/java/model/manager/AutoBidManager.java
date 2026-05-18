@@ -5,7 +5,6 @@ import database.BidTransactionDAO;
 import database.UserDAO;
 import model.auction.Auction;
 import model.auction.AutoBid;
-import model.auction.BidResult;
 import model.user.User;
 
 import java.util.ArrayList;
@@ -125,7 +124,7 @@ public class AutoBidManager {
 
         double currentPrice = auction.getCurrentPrice();
         
-        // 1. PhÃ¢n loáº¡i: Auto-Bids cÃ²n hiá»‡u lá»±c vÃ  Auto-Bids Ä‘Ã£ háº¿t háº¡n (Max < Current)
+        // 1. Phân loại: Auto-Bids còn hiệu lực và Auto-Bids đã hết hạn (Max < Current)
         List<AutoBid> validAutoBids = new ArrayList<>();
         List<AutoBid> exhaustedAutoBids = new ArrayList<>();
 
@@ -137,7 +136,7 @@ public class AutoBidManager {
             }
         }
 
-        // 2. Dá»n dáº¹p ngay cÃ¡c Auto-Bids Ä‘Ã£ tháº¥t báº¡i (Unlock tiá»n cho ngÆ°á»i dÃ¹ng)
+        // 2. Dọn dẹp ngay các Auto-Bids đã thất bại (Unlock tiền cho người dùng)
         for (AutoBid ab : exhaustedAutoBids) {
             System.out.printf(">>> [AutoBid RETIRE] User %s outbid. Unlocking $%.2f%n", ab.getUserId(), ab.getMaxBid());
             userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
@@ -147,7 +146,7 @@ public class AutoBidManager {
 
         if (validAutoBids.isEmpty()) return;
 
-        // 3. TÃ¬m ngÆ°á»i tháº¯ng cuá»™c trong danh sÃ¡ch Auto-Bidders
+        // 3. Tìm người thắng cuộc trong danh sách Auto-Bidders
         AutoBid best = null;
         AutoBid secondBest = null;
 
@@ -175,7 +174,7 @@ public class AutoBidManager {
 
         String currentWinnerId = (auction.getHighestBid() != null) ? auction.getHighestBid().getBidder().getUserId() : null;
 
-        // 4. Náº¿u ngÆ°á»i tháº¯ng hiá»‡n táº¡i lÃ  ngÆ°á»i cÃ³ Auto-Bid tá»‘t nháº¥t, chá»‰ cáº§n nÃ¢ng giÃ¡ náº¿u cáº§n thiáº¿t
+        // 4. Nếu người thắng hiện tại là người có Auto-Bid tốt nhất, chỉ cần nâng giá nếu cần thiết
         if (best.getUserId().equals(currentWinnerId)) {
             if (secondBest != null) {
                 double neededPrice = secondBest.getMaxBid() + best.getIncrement();
@@ -189,7 +188,7 @@ public class AutoBidManager {
             return;
         }
 
-        // 5. TÃ­nh toÃ¡n giÃ¡ nháº£y (Instant Jump)
+        // 5. Tính toán giá nhảy (Instant Jump)
         double priceToJump;
         if (secondBest != null) {
             priceToJump = secondBest.getMaxBid() + best.getIncrement();
@@ -202,7 +201,7 @@ public class AutoBidManager {
 
         applyAutoBid(auction, best, priceToJump, bidDAO);
         
-        // 6. Äá»‡ quy kiá»ƒm tra láº¡i Ä‘á»ƒ loáº¡i bá» các Auto-Bid vá»«a bá»‹ outbid bởi giá mới
+        // 6. Đệ quy kiểm tra lại để loại bỏ các Auto-Bid vừa bị outbid bởi giá mới
         executeAutoBids(auctionId, bidDAO);
     }
 
@@ -285,7 +284,8 @@ public class AutoBidManager {
                 double excess = ab.getMaxBid() - finalPrice;
                 if (excess > 0) {
                     userDAO.unlockBalance(ab.getUserId(), excess);
-                    System.out.printf(">>> [AutoBid CLEANUP] Winner %s: Unlocking excess $%.2f, keeping $%.2f locked for payment.%n",
+                    System.out.printf(
+                            ">>> [AutoBid CLEANUP] Winner %s: Unlocking excess $%.2f, keeping $%.2f locked.%n",
                             ab.getUserId(), excess, finalPrice);
                 }
             } else {

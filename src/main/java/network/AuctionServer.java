@@ -31,7 +31,9 @@ public class AuctionServer {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(clientSocket, this);
-                synchronized (clients) { clients.add(handler); }
+                synchronized (clients) {
+                    clients.add(handler);
+                }
                 new Thread(handler).start();
             }
         } catch (IOException e) {
@@ -89,8 +91,13 @@ public class AuctionServer {
     }
 
     // Quản lý Observers
-    public synchronized void addObserver(ClientHandler observer) { observers.add(observer); }
-    public synchronized void removeObserver(ClientHandler observer) { observers.remove(observer); }
+    public synchronized void addObserver(ClientHandler observer) {
+        observers.add(observer);
+    }
+
+    public synchronized void removeObserver(ClientHandler observer) {
+        observers.remove(observer);
+    }
     public synchronized void notifyObservers(Object data) {
         for (ClientHandler observer : observers) {
             observer.send(data);
