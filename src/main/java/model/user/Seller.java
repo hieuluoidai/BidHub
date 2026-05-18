@@ -3,9 +3,9 @@ package model.user;
 /**
  * Class cho seller, có quyền upload sản phẩm đấu giá.
  */
-public class Seller extends User {
-    public Seller(String id, String name, String email, String pass) { 
-        super(id, name, email, pass); 
+public class Seller extends Bidder {
+    public Seller(String id, String name, String email, String pass) {
+        super(id, name, email, pass);
     }
     
     @Override

@@ -557,7 +557,7 @@ public class DashboardController {
     @FXML
     void handleRequestSeller() {
         User user = AppState.getInstance().getCurrentUser();
-        if (user == null || !(user instanceof Bidder)) return;
+        if (user == null || !(user instanceof Bidder) || user instanceof Seller) return;
 
         boolean confirm = utils.AlertHelper.showConfirm(
             "Xác nhận yêu cầu",
