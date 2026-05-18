@@ -35,6 +35,8 @@ public class DashboardController {
     @FXML private ComboBox<String> comboFilter;
     @FXML private javafx.scene.layout.FlowPane flowPaneAuctions;
     @FXML private javafx.scene.layout.VBox paneEmptyAuctions;
+    @FXML private Label lblEmptyTitle;
+    @FXML private Label lblEmptySubtitle;
     
     @FXML private Button createSessionButton;
     @FXML private Button btnTopUp;          // nút nạp tiền
@@ -180,6 +182,17 @@ public class DashboardController {
             if (paneEmptyAuctions != null) {
                 paneEmptyAuctions.setVisible(true);
                 paneEmptyAuctions.setManaged(true);
+            }
+            boolean noAuctionsAtAll = AppState.getInstance().getAuctionList().isEmpty();
+            if (lblEmptyTitle != null) {
+                lblEmptyTitle.setText(noAuctionsAtAll
+                        ? "Chưa có phiên đấu giá nào"
+                        : "Không tìm thấy phiên đấu giá nào");
+            }
+            if (lblEmptySubtitle != null) {
+                lblEmptySubtitle.setText(noAuctionsAtAll
+                        ? "Các phiên đấu giá mới sẽ sớm xuất hiện ở đây"
+                        : "Thử thay đổi từ khóa hoặc bộ lọc của bạn");
             }
         } else {
             if (paneEmptyAuctions != null) {

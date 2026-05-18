@@ -26,6 +26,11 @@
             <content>
                 <VBox spacing="22.0" styleClass="item-details-content">
                     <children>
+                        <VBox fx:id="paneAntiSnipeNotif" alignment="CENTER" managed="false" spacing="5.0" styleClass="anti-snipe-banner" visible="false">
+                            <children>
+                                <Label styleClass="anti-snipe-text" text="⏰ ANTI-SNIPING: Thời gian đấu giá vừa được gia hạn thêm!" wrapText="true" />
+                            </children>
+                        </VBox>
                         <GridPane hgap="22.0" vgap="22.0">
                             <columnConstraints>
                                 <ColumnConstraints percentWidth="37.0" />
@@ -113,6 +118,8 @@
                                                 </VBox>
                                             </children>
                                         </GridPane>
+
+                                        <ProgressBar fx:id="progressTimeBar" maxWidth="Infinity" prefHeight="6.0" progress="1.0" styleClass="time-progress-bar" />
 
                                         <VBox fx:id="paneWinner" managed="false" spacing="12.0" style="-fx-background-color: linear-gradient(to bottom right, #ECFDF5, #D1FAE5); -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #10B981; -fx-border-width: 2; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.2), 10, 0, 0, 5);" visible="false">
                                             <children>

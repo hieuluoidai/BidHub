@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Test-Path *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(python --version 2>&1; node --version 2>&1)",
+      "PowerShell(python -c \"import pypdf; print\\('pypdf available'\\)\" 2>&1; python -c \"import PyPDF2; print\\('PyPDF2 available'\\)\" 2>&1; python -c \"import pdfplumber; print\\('pdfplumber available'\\)\" 2>&1)",
+      "PowerShell(pip install *)",
+      "Bash(mvn --batch-mode --no-transfer-progress checkstyle:check)",
+      "Bash(python -c ' *)",
+      "Bash(python *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(mvn --batch-mode --no-transfer-progress test -Dcheckstyle.skip=true)",
+      "Bash(git commit *)",
+      "Bash(mvn --batch-mode --no-transfer-progress test)",
+      "Bash(mvn checkstyle:check -q)",
+      "Bash(mvn compile *)"
+    ]
+  }
+}

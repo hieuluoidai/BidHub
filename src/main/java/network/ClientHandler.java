@@ -700,6 +700,12 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
+        Auction auctionCheck = AuctionManager.getInstance().getAuctionById(auctionId);
+        if (auctionCheck != null && bidderId.equals(auctionCheck.getSellerId())) {
+            send(BidResult.failure(auctionId, amount, "Seller không thể tự bid sản phẩm của mình!"));
+            return;
+        }
+
         // Trước khi bid, lấy thông tin người đang dẫn đầu để notify nếu họ bị outbid
         Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
         String prevBidderId = (auction != null && auction.getHighestBid() != null) 

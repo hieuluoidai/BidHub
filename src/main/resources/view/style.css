@@ -795,7 +795,7 @@
 
 /* --- AREA CHART --- */
 .bid-chart .chart-series-area-fill {
-    -fx-fill: linear-gradient(to bottom, rgba(124, 58, 237, 0.3), rgba(124, 58, 237, 0.02));
+    -fx-fill: linear-gradient(to bottom, rgba(124, 58, 237, 0.25), rgba(124, 58, 237, 0.01));
 }
 .button-change-password {
     -fx-background-color: #F1F5F9;
@@ -1043,10 +1043,11 @@
 .bid-chart {
     -fx-background-color: #F8FAFC;
     -fx-background-radius: 18px;
-    -fx-border-color: #DBEAFE;
+    -fx-border-color: #C4B5FD;
     -fx-border-radius: 18px;
-    -fx-border-style: dashed;
+    -fx-border-width: 1.5px;
     -fx-padding: 8 8 4 8;
+    -fx-effect: dropshadow(gaussian, rgba(124, 58, 237, 0.10), 16, 0.1, 0, 4);
 }
 
 .bid-chart .chart-plot-background {
@@ -1078,6 +1079,21 @@
 
 .bid-point:hover {
     -fx-background-color: #5B21B6;
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+.start-point {
+    -fx-background-color: #94A3B8;
+    -fx-background-radius: 3px;
+    -fx-border-color: white;
+    -fx-border-radius: 3px;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 6, 0.2, 0, 1);
+}
+
+.start-point:hover {
+    -fx-background-color: #64748B;
     -fx-scale-x: 1.2;
     -fx-scale-y: 1.2;
 }
@@ -1398,4 +1414,57 @@
     -fx-background-radius: 16px;
     -fx-padding: 5;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 15, 0, 0, 6);
+}
+
+/* ===================================================================
+   FEATURE: PROGRESS BAR (Time Remaining)
+   =================================================================== */
+.time-progress-bar {
+    -fx-background-radius: 3px;
+    -fx-pref-height: 6px;
+    -fx-accent: #7C3AED;
+}
+.time-progress-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #7C3AED, #A78BFA);
+    -fx-background-radius: 3px;
+    -fx-background-insets: 0;
+}
+.time-progress-bar > .track {
+    -fx-background-color: #E2E8F0;
+    -fx-background-radius: 3px;
+    -fx-background-insets: 0;
+}
+.time-progress-bar.time-progress-urgent > .bar {
+    -fx-background-color: linear-gradient(to right, #EF4444, #F87171);
+}
+
+/* ===================================================================
+   FEATURE: AUTO-BID BADGE (Item Card)
+   =================================================================== */
+.auto-bid-badge {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-padding: 5 9 5 9;
+    -fx-background-radius: 0 14px 0 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(99, 102, 241, 0.5), 6, 0, 0, 2);
+}
+
+/* ===================================================================
+   FEATURE: ANTI-SNIPE NOTIFICATION BANNER
+   =================================================================== */
+.anti-snipe-banner {
+    -fx-background-color: linear-gradient(to right, #FEF3C7, #FDE68A);
+    -fx-background-radius: 12px;
+    -fx-border-color: #F59E0B;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 12 20 12 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(245, 158, 11, 0.35), 10, 0, 0, 3);
+}
+.anti-snipe-text {
+    -fx-text-fill: #92400E;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
 }

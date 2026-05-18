@@ -179,6 +179,15 @@ public class AuctionClient {
                 boolean bidHistoryChanged = existing.getBidHistory().size() != updated.getBidHistory().size();
                 boolean highestBidAppeared = existing.getHighestBid() == null && updated.getHighestBid() != null;
 
+                // Phát hiện gia hạn thời gian do Anti-Sniping
+                if ("RUNNING".equals(updated.getStatus())
+                        && updated.getEndTime() != null && existing.getEndTime() != null
+                        && updated.getEndTime().isAfter(existing.getEndTime())) {
+                    for (Consumer<String> listener : stringMessageListeners) {
+                        listener.accept("ANTI_SNIPE_EXTENDED:" + updated.getAuctionId());
+                    }
+                }
+
                 if (priceChanged || statusChanged || bidHistoryChanged || highestBidAppeared) {
                     list.set(i, updated);
                 }

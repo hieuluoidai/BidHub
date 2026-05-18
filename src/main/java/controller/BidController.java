@@ -114,6 +114,10 @@ public class BidController {
                 showError("Chỉ người mua (Bidder) mới có quyền đặt giá!");
                 return;
             }
+            if (currentUser.getUserId().equals(currentAuction.getSellerId())) {
+                showError("Bạn không thể đặt giá cho sản phẩm của chính mình!");
+                return;
+            }
 
             // 1. Vô hiệu hóa nút bấm để tránh gửi trùng (Race Condition phía Client)
             setLoading(true);
