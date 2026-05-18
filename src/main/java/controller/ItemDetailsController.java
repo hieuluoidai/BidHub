@@ -85,6 +85,9 @@ public class ItemDetailsController {
     @FXML private VBox paneManualBid;
     @FXML private Button btnOpenBid;
     @FXML private Button btnPay;
+    @FXML private VBox paneWinner;
+    @FXML private Label lblWinnerName;
+    @FXML private VBox panePayWinner;
 
     @FXML private VBox paneAutoBid;
     @FXML private TextField txtAutoMaxBid;
@@ -371,9 +374,21 @@ public class ItemDetailsController {
                     ? latestBid.getBidder().getUsername()
                     : "Ẩn danh");
             lblBidTime.setText(latestBid.getTimestamp().format(dateTimeFormatter));
+
+            // Hiển thị người thắng nếu phiên đã kết thúc
+            if ("FINISHED".equals(auction.getStatus()) || "PAID".equals(auction.getStatus())) {
+                paneWinner.setVisible(true);
+                paneWinner.setManaged(true);
+                lblWinnerName.setText(latestBid.getBidder() != null ? latestBid.getBidder().getUsername() : "Ẩn danh");
+            } else {
+                paneWinner.setVisible(false);
+                paneWinner.setManaged(false);
+            }
         } else {
             lblHighestBidder.setText("Chưa có ai dẫn đầu");
             lblBidTime.setText("-");
+            paneWinner.setVisible(false);
+            paneWinner.setManaged(false);
         }
 
         lblBidCount.setText(String.valueOf(history.size()));
@@ -591,9 +606,10 @@ public class ItemDetailsController {
             btnCancel.setVisible(canCancel);
             btnCancel.setManaged(canCancel);
         }
-        if (btnPay != null) {
-            btnPay.setVisible(canPay);
-            btnPay.setManaged(canPay);
+        
+        if (panePayWinner != null) {
+            panePayWinner.setVisible(canPay);
+            panePayWinner.setManaged(canPay);
         }
     }
 

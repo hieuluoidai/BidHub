@@ -28,6 +28,7 @@ public class AdminController {
     @FXML private TableColumn<User, String> colUsername;
     @FXML private TableColumn<User, String> colEmail;
     @FXML private TableColumn<User, String> colRole;
+    @FXML private TableColumn<User, String> colStatus;
     @FXML private TableColumn<User, String> colBalance;
     @FXML private TextField txtUserSearch;
     @FXML private TextField txtAuctionSearch;
@@ -42,6 +43,8 @@ public class AdminController {
     private final ObservableList<User> masterUsers = FXCollections.observableArrayList();
 
     @FXML private Label lblSidebarAvatar;
+    @FXML private javafx.scene.shape.Circle sidebarAvatarClip;
+    @FXML private javafx.scene.image.ImageView imgSidebarAvatar;
     @FXML private Label lblSidebarUsername;
     @FXML private Label lblSidebarRole;
 
@@ -67,8 +70,34 @@ public class AdminController {
             if (lblSidebarAvatar != null) {
                 String firstChar = currentUser.getUsername().isEmpty() ? "A" : currentUser.getUsername().substring(0, 1).toUpperCase();
                 lblSidebarAvatar.setText(firstChar);
+                
+                if (imgSidebarAvatar != null) {
+                    if (sidebarAvatarClip != null) imgSidebarAvatar.setClip(sidebarAvatarClip);
+                    
+                    if (currentUser.getAvatarPath() != null && !currentUser.getAvatarPath().isEmpty()) {
+                        String uri = utils.ImageStorageService.toFileUri(currentUser.getAvatarPath());
+                        if (uri != null) {
+                            imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri));
+                            imgSidebarAvatar.setVisible(true);
+                            lblSidebarAvatar.setVisible(false);
+                        } else {
+                            imgSidebarAvatar.setVisible(false);
+                            lblSidebarAvatar.setVisible(true);
+                        }
+                    } else {
+                        imgSidebarAvatar.setVisible(false);
+                        lblSidebarAvatar.setVisible(true);
+                    }
+                }
             }
         }
+
+        // Lắng nghe các thông báo cập nhật người dùng từ Server để refresh bảng real-time
+        AppState.getInstance().getClient().addStringMessageListener(msg -> {
+            if (msg.equals("USERS_UPDATED") || msg.startsWith("NEW_SELLER_REQUEST:")) {
+                javafx.application.Platform.runLater(this::loadUserData);
+            }
+        });
 
         setupUserTable();
         setupAuctionFiltering();
@@ -89,6 +118,15 @@ public class AdminController {
 
         userTable.setRowFactory(tv -> {
             TableRow<User> row = new TableRow<>();
+            
+            // Highlight hàng nếu user đang chờ duyệt Seller
+            row.itemProperty().addListener((obs, oldVal, newVal) -> {
+                row.getStyleClass().remove("row-pending");
+                if (newVal != null && newVal.isPendingSeller()) {
+                    row.getStyleClass().add("row-pending");
+                }
+            });
+
             row.setOnMouseClicked(e -> {
                 if (e.getClickCount() == 2 && !row.isEmpty()) {
                     openUserDetails(row.getItem());
@@ -230,9 +268,10 @@ public class AdminController {
 
         // Gán Style Class để căn lề Header (đồng bộ với CSS)
         colRole.getStyleClass().add("centered-column");
+        colStatus.getStyleClass().add("centered-column");
         colBalance.getStyleClass().add("right-column");
 
-        // Role Column với Badge màu sắc
+        // 1. Role Column: Chỉ hiển thị badge Vai trò hiện tại
         colRole.setCellValueFactory(d -> new SimpleStringProperty(
                 d.getValue().getClass().getSimpleName().toUpperCase()));
         colRole.setCellFactory(column -> new TableCell<>() {
@@ -250,6 +289,29 @@ public class AdminController {
                         case "BIDDER" -> badge.getStyleClass().add("role-bidder");
                     }
                     setGraphic(badge);
+                }
+            }
+        });
+
+        // 2. Status Column: Tách riêng trạng thái xét duyệt
+        colStatus.setCellValueFactory(d -> new SimpleStringProperty(
+                d.getValue().isPendingSeller() ? "PENDING" : "NORMAL"));
+        colStatus.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                } else {
+                    if ("PENDING".equals(status)) {
+                        Label badge = new Label("CHỜ DUYỆT SELLER");
+                        badge.getStyleClass().addAll("role-badge", "role-pending");
+                        setGraphic(badge);
+                    } else {
+                        Label label = new Label("Bình thường");
+                        label.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 13px;");
+                        setGraphic(label);
+                    }
                 }
             }
         });
@@ -286,9 +348,9 @@ public class AdminController {
         long finished = auctions.stream().filter(a -> "FINISHED".equals(a.getStatus())).count();
         long finalized = auctions.stream().filter(a -> "PAID".equals(a.getStatus()) || "CANCELED".equals(a.getStatus())).count();
 
-        if (labelTotalAuctions   != null) labelTotalAuctions  .setText("TOTAL: " + auctions.size() + " (OPEN: " + open + ")");
-        if (labelRunningAuctions != null) labelRunningAuctions.setText("RUNNING: " + running);
-        if (labelFinishedAuctions!= null) labelFinishedAuctions.setText("PAID/CANCELLED: " + (finished + finalized));
+        if (labelTotalAuctions   != null) labelTotalAuctions  .setText(String.valueOf(auctions.size()));
+        if (labelRunningAuctions != null) labelRunningAuctions.setText(String.valueOf(running));
+        if (labelFinishedAuctions!= null) labelFinishedAuctions.setText(String.valueOf(finished + finalized));
     }
 
     private void loadUserData() {

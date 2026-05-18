@@ -17,6 +17,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Pos;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
@@ -37,16 +42,36 @@ public class DashboardController {
     @FXML private TextField textSearch;
     @FXML private ComboBox<String> comboFilter;
     @FXML private javafx.scene.layout.FlowPane flowPaneAuctions;
+    @FXML private javafx.scene.layout.VBox paneEmptyAuctions;
     
     @FXML private Button createSessionButton;
     @FXML private Button btnTopUp;          // nút nạp tiền
     @FXML private Label sidebarUserLabel;
+    @FXML private javafx.scene.shape.Circle sidebarAvatarClip;
+    @FXML private javafx.scene.image.ImageView imgSidebarAvatar;
     @FXML private Label lblSidebarAvatar;
     @FXML private Label lblSidebarUsername;
     @FXML private Label lblSidebarRole;
     @FXML private javafx.scene.layout.VBox paneUserProfile;
 
+    // View Navigation
+    @FXML private Button btnNavAuctions;
+    @FXML private Button btnNavWallet;
+    @FXML private javafx.scene.layout.VBox viewAuctions;
+    @FXML private javafx.scene.layout.VBox viewWallet;
+
+    // Wallet Section
+    @FXML private Label lblWalletBalance;
+    @FXML private Label lblWalletLocked;
+    @FXML private javafx.scene.control.ListView<model.auction.WalletTransaction> listTransactions;
+    @FXML private javafx.scene.layout.VBox paneAccountStatus;
+    @FXML private Label lblCurrentRole;
+    @FXML private Label lblSellerRequestStatus;
+    @FXML private Button btnRequestSeller;
+
     private FilteredList<Auction> filteredData;
+    private final ObservableList<model.auction.WalletTransaction> transactionRows = FXCollections.observableArrayList();
+    private final java.time.format.DateTimeFormatter dateTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     /**
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -55,6 +80,9 @@ public class DashboardController {
         // Khởi tạo các giá trị cho bộ lọc danh mục
         comboFilter.setItems(FXCollections.observableArrayList("All", "Electronics", "Art", "Vehicle"));
         comboFilter.setValue("All");
+
+        // Setup personal transaction list
+        setupTransactionList();
 
         // Lấy danh sách từ AppState để hiển thị
         ObservableList<Auction> masterData = AppState.getInstance().getAuctionList();
@@ -154,22 +182,34 @@ public class DashboardController {
         if (flowPaneAuctions == null) return;
         flowPaneAuctions.getChildren().clear();
 
-        for (Auction auction : filteredData) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_card.fxml"));
-                javafx.scene.Node card = loader.load();
-                
-                ItemCardController cardController = loader.getController();
-                cardController.setData(auction, 
-                    this::handleViewDetailsOf, 
-                    this::handleQuickBidOf);
-                
-                // Lưu controller vào node để phục vụ updateSpecificCard
-                card.setUserData(cardController);
-                
-                flowPaneAuctions.getChildren().add(card);
-            } catch (IOException e) {
-                System.err.println("Lỗi load item card: " + e.getMessage());
+        if (filteredData.isEmpty()) {
+            if (paneEmptyAuctions != null) {
+                paneEmptyAuctions.setVisible(true);
+                paneEmptyAuctions.setManaged(true);
+            }
+        } else {
+            if (paneEmptyAuctions != null) {
+                paneEmptyAuctions.setVisible(false);
+                paneEmptyAuctions.setManaged(false);
+            }
+
+            for (Auction auction : filteredData) {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/item_card.fxml"));
+                    javafx.scene.Node card = loader.load();
+                    
+                    ItemCardController cardController = loader.getController();
+                    cardController.setData(auction, 
+                        this::handleViewDetailsOf, 
+                        this::handleQuickBidOf);
+                    
+                    // Lưu controller vào node để phục vụ updateSpecificCard
+                    card.setUserData(cardController);
+                    
+                    flowPaneAuctions.getChildren().add(card);
+                } catch (IOException e) {
+                    System.err.println("Lỗi load item card: " + e.getMessage());
+                }
             }
         }
     }
@@ -214,6 +254,25 @@ public class DashboardController {
             if (lblSidebarAvatar != null) {
                 String firstChar = user.getUsername().isEmpty() ? "?" : user.getUsername().substring(0, 1).toUpperCase();
                 lblSidebarAvatar.setText(firstChar);
+                
+                if (imgSidebarAvatar != null) {
+                    if (sidebarAvatarClip != null) imgSidebarAvatar.setClip(sidebarAvatarClip);
+                    
+                    if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
+                        String uri = utils.ImageStorageService.toFileUri(user.getAvatarPath());
+                        if (uri != null) {
+                            imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri));
+                            imgSidebarAvatar.setVisible(true);
+                            lblSidebarAvatar.setVisible(false);
+                        } else {
+                            imgSidebarAvatar.setVisible(false);
+                            lblSidebarAvatar.setVisible(true);
+                        }
+                    } else {
+                        imgSidebarAvatar.setVisible(false);
+                        lblSidebarAvatar.setVisible(true);
+                    }
+                }
             }
 
             // Mọi user đều được xem số dư và nạp tiền
@@ -426,4 +485,173 @@ public class DashboardController {
         }
         return fallback;
     }
+
+    // =========================================================================
+    // WALLET & VIEW NAVIGATION LOGIC
+    // =========================================================================
+
+    @FXML
+    void handleNavAuctions() {
+        switchView(true);
+    }
+
+    @FXML
+    void handleNavWallet() {
+        switchView(false);
+        refreshWalletData();
+    }
+
+    private void switchView(boolean showAuctions) {
+        viewAuctions.setVisible(showAuctions);
+        viewAuctions.setManaged(showAuctions);
+        viewWallet.setVisible(!showAuctions);
+        viewWallet.setManaged(!showAuctions);
+
+        // Update sidebar active state
+        btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
+        btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
+
+        if (showAuctions) {
+            btnNavAuctions.getStyleClass().add("sidebar-item-active");
+        } else {
+            btnNavWallet.getStyleClass().add("sidebar-item-active");
+        }
+    }
+
+    private void refreshWalletData() {
+        User user = AppState.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        lblWalletBalance.setText(String.format("$%,.2f", user.getBalance()));
+        lblWalletLocked.setText(String.format("$%,.2f", user.getLockedBalance()));
+        
+        // Cập nhật trạng thái tài khoản
+        if (paneAccountStatus != null) {
+            lblCurrentRole.setText(user.getClass().getSimpleName().toUpperCase());
+            if (user instanceof Seller || user instanceof Admin) {
+                lblSellerRequestStatus.setText("Tài khoản của bạn đã có quyền đăng bán sản phẩm.");
+                btnRequestSeller.setVisible(false);
+                btnRequestSeller.setManaged(false);
+            } else if (user.isPendingSeller()) {
+                lblSellerRequestStatus.setText("Yêu cầu trở thành Seller của bạn đang được Admin xét duyệt.");
+                btnRequestSeller.setDisable(true);
+                btnRequestSeller.setText("Đang chờ duyệt...");
+            } else {
+                lblSellerRequestStatus.setText("Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình.");
+                btnRequestSeller.setVisible(true);
+                btnRequestSeller.setManaged(true);
+                btnRequestSeller.setDisable(false);
+                btnRequestSeller.setText("Trở thành Seller?");
+            }
+        }
+
+        // Fetch wallet transactions from DB
+        new Thread(() -> {
+            var transactions = new database.WalletTransactionDAO().findByUserId(user.getUserId());
+            javafx.application.Platform.runLater(() -> {
+                transactionRows.setAll(transactions);
+            });
+        }).start();
+    }
+
+    @FXML
+    void handleRequestSeller() {
+        User user = AppState.getInstance().getCurrentUser();
+        if (user == null || !(user instanceof Bidder)) return;
+
+        boolean confirm = utils.AlertHelper.showConfirm(
+            "Xác nhận yêu cầu",
+            "Bạn có chắc chắn muốn gửi yêu cầu trở thành Seller không? Sau khi gửi, Admin sẽ xét duyệt hồ sơ của bạn."
+        );
+
+        if (confirm) {
+            AppState.getInstance().getClient().send("REQUEST_SELLER:" + user.getUserId());
+            user.setPendingSeller(true);
+            refreshWalletData();
+            
+            utils.AlertHelper.show(
+                utils.AlertHelper.Type.SUCCESS,
+                "Đã gửi yêu cầu",
+                "Yêu cầu của bạn đã được gửi tới quản trị viên."
+            );
+        }
+    }
+
+    private void setupTransactionList() {
+        if (listTransactions == null) return;
+
+        listTransactions.setItems(transactionRows);
+        listTransactions.setPlaceholder(new Label("Bạn chưa có giao dịch tài chính nào."));
+        listTransactions.setCellFactory(lv -> new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(model.auction.WalletTransaction tx, boolean empty) {
+                super.updateItem(tx, empty);
+                if (empty || tx == null) {
+                    setGraphic(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    setGraphic(createTransactionRow(tx));
+                    setStyle("-fx-background-color: transparent; -fx-padding: 6 0 6 0;");
+                }
+            }
+        });
+    }
+
+    private javafx.scene.Node createTransactionRow(model.auction.WalletTransaction tx) {
+        javafx.scene.layout.HBox container = new javafx.scene.layout.HBox(15);
+        container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        container.getStyleClass().add("bid-feed-item");
+
+        // 1. Icon & Style based on Type
+        Label lblIcon = new Label();
+        lblIcon.getStyleClass().add("bid-avatar");
+        
+        String symbol = tx.getAmount() > 0 ? "+" : "";
+        String colorStyle = "-fx-text-fill: white;";
+        
+        switch (tx.getType()) {
+            case TOPUP -> {
+                lblIcon.setText("💰");
+                lblIcon.setStyle("-fx-background-color: #10B981;" + colorStyle);
+            }
+            case PAYMENT -> {
+                lblIcon.setText("🛒");
+                lblIcon.setStyle("-fx-background-color: #EF4444;" + colorStyle);
+            }
+            case EARNING -> {
+                lblIcon.setText("📈");
+                lblIcon.setStyle("-fx-background-color: #3B82F6;" + colorStyle);
+            }
+            case REFUND -> {
+                lblIcon.setText("🔄");
+                lblIcon.setStyle("-fx-background-color: #F59E0B;" + colorStyle);
+            }
+        }
+
+        // 2. Info
+        javafx.scene.layout.VBox vContent = new javafx.scene.layout.VBox(2);
+        Label lblTitle = new Label(tx.getDescription());
+        lblTitle.getStyleClass().add("bid-user-name");
+
+        Label lblTime = new Label(tx.getCreatedAt().format(dateTimeFormatter));
+        lblTime.getStyleClass().add("bid-feed-time");
+        vContent.getChildren().addAll(lblTitle, lblTime);
+
+        // 3. Amount
+        Region spacer = new Region();
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        
+        Label lblAmount = new Label(String.format("%s$%,.2f", symbol, tx.getAmount()));
+        lblAmount.getStyleClass().add("bid-feed-amount");
+        
+        if (tx.getAmount() < 0) {
+            lblAmount.setStyle("-fx-text-fill: #EF4444;");
+        } else {
+            lblAmount.setStyle("-fx-text-fill: #10B981;");
+        }
+
+        container.getChildren().addAll(lblIcon, vContent, spacer, lblAmount);
+        return container;
+    }
 }
+

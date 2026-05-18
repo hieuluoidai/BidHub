@@ -4,7 +4,9 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
@@ -12,9 +14,14 @@
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane prefHeight="760.0" prefWidth="1450.0" styleClass="dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
+
+   <fx:define>
+       <javafx.scene.shape.Circle fx:id="sidebarAvatarClip" radius="20" centerX="20" centerY="20" />
+   </fx:define>
 
    <!-- ================= SIDEBAR ================= -->
    <left>
@@ -36,7 +43,8 @@
 
             <Label styleClass="sidebar-section" text="MENU" />
 
-            <Button maxWidth="Infinity" mnemonicParsing="false" styleClass="sidebar-item, sidebar-item-active" text="Bảng điều khiển" />
+            <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" styleClass="sidebar-item, sidebar-item-active" text="Bảng điều khiển" />
+            <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item" text="Ví &amp; Giao dịch" />
 
             <Region VBox.vgrow="ALWAYS" />
 
@@ -45,7 +53,10 @@
                <children>
                   <HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
-                        <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="U" />
+                     <StackPane prefWidth="40" prefHeight="40">
+                         <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="U" />
+                         <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                     </StackPane>
                         <VBox spacing="1.0">
                            <children>
                               <Label fx:id="lblSidebarUsername" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;" text="Username" />
@@ -67,57 +78,151 @@
 
    <!-- ================= MAIN CONTENT ================= -->
    <center>
-      <VBox spacing="16.0" styleClass="main-content" BorderPane.alignment="CENTER">
-         <padding>
-            <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
-         </padding>
+      <StackPane BorderPane.alignment="CENTER">
          <children>
-
-            <!-- TOP BAR: Title + Balance + Top-up -->
-            <HBox alignment="CENTER_LEFT" spacing="14.0">
-               <children>
-                  <VBox spacing="2.0">
-                     <Label fx:id="titleLabel" styleClass="page-title" text="Live Auctions" />
-                     <Label styleClass="page-subtitle" text="Khám phá và đặt giá cho các phiên đang diễn ra" />
-                  </VBox>
-                  <Region HBox.hgrow="ALWAYS" />
-
-                  <HBox alignment="CENTER" spacing="8.0" styleClass="balance-pill-light">
-                     <Label minWidth="65.0" styleClass="balance-label-light" text="Khả dụng" />
-                     <Label fx:id="lblBalance" styleClass="balance-value-light" text="\$0.00" />
-                  </HBox>
-
-                  <HBox alignment="CENTER" spacing="8.0" styleClass="locked-pill-light">
-                     <Label minWidth="75.0" styleClass="locked-label-light" text="Đang khóa" />
-                     <Label fx:id="lblLockedBalance" styleClass="locked-value-light" text="\$0.00" />
-                  </HBox>
-
-                  <Button fx:id="btnTopUp" mnemonicParsing="false" onAction="#handleTopUp" prefHeight="40.0" prefWidth="140.0" styleClass="button-primary" text="+ Nạp tiền" />
-               </children>
-            </HBox>
-
-            <!-- TOOLBAR -->
-            <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="card toolbar-card">
+            <!-- VIEW 1: AUCTIONS -->
+            <VBox fx:id="viewAuctions" spacing="16.0" styleClass="main-content">
                <padding>
-                  <Insets bottom="14.0" left="16.0" right="16.0" top="14.0" />
+                  <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
                </padding>
                <children>
-                  <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="38.0" prefWidth="170.0" styleClass="button-primary" text="+ Create Session" />
-                  <Region HBox.hgrow="ALWAYS" />
-                  <Label styleClass="filter-label" text="Filter:" />
-                  <ComboBox fx:id="comboFilter" prefHeight="38.0" prefWidth="160.0" promptText="All Categories" />
-                  <TextField fx:id="textSearch" prefHeight="38.0" prefWidth="220.0" promptText="🔍 Search items..." />
+                  <!-- TOP BAR: Title + Balance + Top-up -->
+                  <HBox alignment="CENTER_LEFT" spacing="14.0">
+                     <children>
+                        <VBox spacing="2.0">
+                           <Label fx:id="titleLabel" styleClass="page-title" text="Live Auctions" />
+                           <Label styleClass="page-subtitle" text="Khám phá và đặt giá cho các phiên đang diễn ra" />
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+
+                        <HBox alignment="CENTER" spacing="8.0" styleClass="balance-pill-light">
+                           <Label minWidth="65.0" styleClass="balance-label-light" text="Khả dụng" />
+                           <Label fx:id="lblBalance" styleClass="balance-value-light" text="\$0.00" />
+                        </HBox>
+
+                        <HBox alignment="CENTER" spacing="8.0" styleClass="locked-pill-light">
+                           <Label minWidth="75.0" styleClass="locked-label-light" text="Đang khóa" />
+                           <Label fx:id="lblLockedBalance" styleClass="locked-value-light" text="\$0.00" />
+                        </HBox>
+
+                        <Button fx:id="btnTopUp" mnemonicParsing="false" onAction="#handleTopUp" prefHeight="40.0" prefWidth="140.0" styleClass="button-primary" text="+ Nạp tiền" />
+                     </children>
+                  </HBox>
+
+                  <!-- TOOLBAR -->
+                  <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="card toolbar-card">
+                     <padding>
+                        <Insets bottom="14.0" left="16.0" right="16.0" top="14.0" />
+                     </padding>
+                     <children>
+                        <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="38.0" prefWidth="170.0" styleClass="button-primary" text="+ Create Session" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label styleClass="filter-label" text="Filter:" />
+                        <ComboBox fx:id="comboFilter" prefHeight="38.0" prefWidth="160.0" promptText="All Categories" />
+                        <TextField fx:id="textSearch" prefHeight="38.0" prefWidth="220.0" promptText="🔍 Search items..." />
+                     </children>
+                  </HBox>
+
+                  <!-- CARDS CONTAINER -->
+                  <StackPane VBox.vgrow="ALWAYS">
+                     <children>
+                        <ScrollPane fitToWidth="true" styleClass="auction-scroll-pane">
+                           <content>
+                              <FlowPane fx:id="flowPaneAuctions" hgap="20.0" vgap="25.0" styleClass="cards-flow-pane" />
+                           </content>
+                        </ScrollPane>
+
+                        <!-- EMPTY STATE AUCTIONS -->
+                        <VBox fx:id="paneEmptyAuctions" alignment="CENTER" managed="false" spacing="20.0" styleClass="empty-state-pane" visible="false">
+                           <children>
+                              <StackPane prefHeight="100.0">
+                                 <children>
+                                    <javafx.scene.shape.SVGPath content="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" fill="TRANSPARENT" scaleX="3.5" scaleY="3.5" stroke="#CBD5E1" strokeWidth="1.5" />
+                                 </children>
+                              </StackPane>
+                              <Label styleClass="empty-state-title" text="Không tìm thấy phiên đấu giá nào" />
+                              <Label styleClass="empty-state-subtitle" text="Thử thay đổi từ khóa hoặc bộ lọc của bạn" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </StackPane>
                </children>
-            </HBox>
+            </VBox>
 
-            <!-- CARDS CONTAINER -->
-            <ScrollPane fitToWidth="true" styleClass="auction-scroll-pane" VBox.vgrow="ALWAYS">
-               <content>
-                  <FlowPane fx:id="flowPaneAuctions" hgap="20.0" vgap="25.0" styleClass="cards-flow-pane" />
-               </content>
-            </ScrollPane>
+            <!-- VIEW 2: WALLET & TRANSACTIONS -->
+            <VBox fx:id="viewWallet" spacing="20.0" styleClass="main-content" visible="false" managed="false">
+               <padding>
+                  <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
+               </padding>
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="14.0">
+                     <children>
+                        <VBox spacing="2.0">
+                           <Label styleClass="page-title" text="Ví &amp; Giao dịch" />
+                           <Label styleClass="page-subtitle" text="Quản lý tài chính và xem lại lịch sử hoạt động" />
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
 
+                  <HBox spacing="20.0">
+                     <children>
+                        <!-- Wallet Summary Card -->
+                        <VBox spacing="20.0" styleClass="card" style="-fx-padding: 25; -fx-background-radius: 20;" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label style="-fx-font-weight: 900; -fx-text-fill: #1E293B; -fx-font-size: 16px;" text="Tổng quan tài sản" />
+                              <HBox spacing="30.0">
+                                 <children>
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label styleClass="balance-label-light" text="SỐ DƯ KHẢ DỤNG" />
+                                          <Label fx:id="lblWalletBalance" style="-fx-font-size: 32px; -fx-font-weight: 900; -fx-text-fill: #059669;" text="\$0.00" />
+                                       </children>
+                                    </VBox>
+                                    <Separator orientation="VERTICAL" />
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label styleClass="locked-label-light" text="ĐANG BỊ KHÓA (BID)" />
+                                          <Label fx:id="lblWalletLocked" style="-fx-font-size: 32px; -fx-font-weight: 900; -fx-text-fill: #DC2626;" text="\$0.00" />
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </HBox>
+                              <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#handleTopUp" prefHeight="48.0" styleClass="button-primary" text="+ NẠP TIỀN VÀO VÍ" />
+                           </children>
+                        </VBox>
+                        
+                        <!-- Account Status / Upgrade Card -->
+                        <VBox fx:id="paneAccountStatus" prefWidth="300.0" spacing="12.0" style="-fx-background-color: #F0F9FF; -fx-padding: 25; -fx-background-radius: 20; -fx-border-color: #BAE6FD; -fx-border-width: 1; -fx-border-radius: 20;">
+                           <children>
+                              <Label style="-fx-text-fill: #0369A1; -fx-font-weight: 900;" text="Tài khoản của bạn" />
+                              <VBox spacing="8.0">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                       <children>
+                                          <Label style="-fx-text-fill: #0C4A6E; -fx-font-size: 14px;" text="Vai trò hiện tại:" />
+                                          <Label fx:id="lblCurrentRole" style="-fx-text-fill: #0369A1; -fx-font-weight: 700;" text="BIDDER" />
+                                       </children>
+                                    </HBox>
+                                    <Label fx:id="lblSellerRequestStatus" minHeight="-Infinity" style="-fx-text-fill: #0891B2; -fx-font-size: 13px;" text="Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình." wrapText="true" />
+                                 </children>
+                              </VBox>
+                              <Button fx:id="btnRequestSeller" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleRequestSeller" styleClass="button-primary" style="-fx-background-color: #0369A1;" text="Trở thành Seller?" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+
+                  <!-- Transaction History Feed -->
+                  <VBox spacing="14.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-font-weight: 900; -fx-text-fill: #1E293B; -fx-font-size: 18px;" text="Lịch sử giao dịch" />
+                        <ListView fx:id="listTransactions" styleClass="modern-bid-list" VBox.vgrow="ALWAYS" />
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
          </children>
-      </VBox>
+      </StackPane>
    </center>
 </BorderPane>

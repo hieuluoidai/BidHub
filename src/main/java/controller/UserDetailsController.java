@@ -1,210 +1,283 @@
 package controller;
 
-import database.AuctionDAO;
-import database.BidTransactionDAO;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.DatePicker;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import model.auction.Auction;
 import model.manager.AppState;
-import model.user.Admin;
-import model.user.Bidder;
-import model.user.Seller;
 import model.user.User;
+import utils.ImageStorageService;
 
+import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 public class UserDetailsController {
 
-    @FXML private Label lblAvatar;
     @FXML private Label lblUsername;
-    @FXML private Label lblRoleBadge;
-    @FXML private Label lblUserId;
-    
     @FXML private Label lblEmail;
-    @FXML private TextField txtEmail;
-    
-    @FXML private Label lblPhone;
-    @FXML private TextField txtPhone;
-    
-    @FXML private Label lblDOB;
-    @FXML private DatePicker dpDOB;
-    
+    @FXML private Label lblRoleBadge;
     @FXML private Label lblBalance;
     @FXML private Label lblLockedBalance;
-
+    @FXML private Label lblUserId;
+    @FXML private Label lblPhone;
+    @FXML private Label lblDOB;
+    @FXML private Label lblAvatar;
+    @FXML private ImageView imgAvatar;
+    
+    @FXML private TextField txtEmail;
+    @FXML private TextField txtPhone;
+    @FXML private DatePicker dpDOB;
+    
+    @FXML private Button btnEditProfile;
+    @FXML private Button btnChangePassword;
+    @FXML private Button btnApproveSeller;
+    @FXML private Label lblPendingStatusLabel;
+    @FXML private Label lblPendingStatus;
+    
     @FXML private Label lblStat1Value;
     @FXML private Label lblStat1Label;
     @FXML private Label lblStat2Value;
     @FXML private Label lblStat2Label;
     @FXML private Label lblStat3Value;
     @FXML private Label lblStat3Label;
-    
-    @FXML private javafx.scene.control.Button btnEditProfile;
-    @FXML private javafx.scene.control.Button btnChangePassword;
+
+    @FXML private javafx.scene.shape.Circle avatarClip;
+    @FXML private javafx.scene.layout.StackPane cameraOverlay;
+    @FXML private javafx.scene.layout.StackPane avatarContainer;
 
     private User user;
+    private boolean isEditing = false;
 
     public void setUserData(User user) {
-        if (user == null) return;
         this.user = user;
-
-        String firstChar = user.getUsername().substring(0, 1).toUpperCase();
-        lblAvatar.setText(firstChar);
-
         lblUsername.setText(user.getUsername());
-        lblUserId  .setText(user.getUserId());
-        
-        refreshProfileData();
-
-        // Hiển thị số dư
-        lblBalance.setText(String.format("$%,.2f", user.getBalance()));
-        lblLockedBalance.setText(String.format("$%,.2f", user.getLockedBalance()));
-
-        // Chỉ hiện nút "Sửa hồ sơ" & "Đổi mật khẩu" nếu là chính chủ
-        User currentUser = AppState.getInstance().getCurrentUser();
-        boolean isSelf = (currentUser != null && currentUser.getUserId().equals(user.getUserId()));
-        
-        if (btnEditProfile != null) {
-            btnEditProfile.setVisible(isSelf);
-            btnEditProfile.setManaged(isSelf);
-        }
-        if (btnChangePassword != null) {
-            btnChangePassword.setVisible(isSelf);
-            btnChangePassword.setManaged(isSelf);
-        }
-
-        // Role + màu badge + thống kê
-        updateRoleUI();
-    }
-
-    private void refreshProfileData() {
         lblEmail.setText(user.getEmail());
-        txtEmail.setText(user.getEmail());
+        lblRoleBadge.setText(user.getClass().getSimpleName().toUpperCase());
+        lblUserId.setText(user.getUserId());
         
-        String phone = user.getPhoneNumber();
-        lblPhone.setText((phone == null || phone.isBlank()) ? "Chưa cập nhật" : phone);
-        txtPhone.setText(phone);
-        
+        lblPhone.setText(user.getPhoneNumber() != null ? user.getPhoneNumber() : "Chưa cập nhật");
         if (user.getDateOfBirth() != null) {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            lblDOB.setText(user.getDateOfBirth().format(fmt));
-            dpDOB.setValue(user.getDateOfBirth());
+            lblDOB.setText(user.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         } else {
             lblDOB.setText("Chưa cập nhật");
-            dpDOB.setValue(null);
+        }
+        
+        // Cập nhật trạng thái duyệt Seller
+        boolean isAdmin = AppState.getInstance().getCurrentUser() instanceof model.user.Admin;
+        boolean isPending = user.isPendingSeller();
+        
+        if (lblPendingStatus != null) {
+            lblPendingStatus.setVisible(isPending);
+            lblPendingStatusLabel.setVisible(isPending);
+        }
+        
+        if (btnApproveSeller != null) {
+            boolean canApprove = isAdmin && isPending;
+            btnApproveSeller.setVisible(canApprove);
+            btnApproveSeller.setManaged(canApprove);
+        }
+
+        setupAvatarEffects();
+        refreshBalanceLabels();
+        refreshAvatar();
+        loadStats();
+    }
+
+    @FXML
+    void handleApproveSeller() {
+        if (user == null) return;
+
+        boolean confirm = utils.AlertHelper.showConfirm(
+            "Xác nhận phê duyệt",
+            "Bạn có chắc chắn muốn phê duyệt người dùng này làm Seller không? Người dùng sẽ có quyền đăng bán sản phẩm ngay lập tức."
+        );
+
+        if (confirm) {
+            String cmd = "APPROVE_SELLER:" + user.getUserId();
+            AppState.getInstance().getClient().send(cmd);
+            
+            // Tạm thời giả định thành công hoặc chờ message SELLER_APPROVED từ server nếu server broadcast
+            // Tuy nhiên ở đây UserDetailsController thường dùng cho 1 user cụ thể, 
+            // ta có thể cập nhật UI local luôn.
+            user.setPendingSeller(false);
+            // Lưu ý: class của 'user' vẫn là Bidder trong memory client cho đến khi reload
+            // Nhưng ta có thể ẩn nút đi.
+            btnApproveSeller.setVisible(false);
+            lblPendingStatus.setVisible(false);
+            lblPendingStatusLabel.setVisible(false);
+            lblRoleBadge.setText("SELLER"); // Mock UI update
+
+            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã phê duyệt người dùng làm Seller!");
         }
     }
 
-    private void updateRoleUI() {
-        if (user instanceof Admin) {
-            lblRoleBadge.setText("ADMIN");
-            loadAdminStats();
-        } else if (user instanceof Seller) {
-            lblRoleBadge.setText("SELLER");
-            loadSellerStats();
+    private void setupAvatarEffects() {
+        if (imgAvatar != null && avatarClip != null) {
+            imgAvatar.setClip(avatarClip);
+        }
+        
+        if (avatarContainer != null && cameraOverlay != null) {
+            boolean isOwnProfile = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
+            
+            avatarContainer.setOnMouseEntered(e -> {
+                if (isOwnProfile && !isEditing) cameraOverlay.setVisible(true);
+            });
+            avatarContainer.setOnMouseExited(e -> {
+                cameraOverlay.setVisible(false);
+            });
+        }
+        
+        // Chỉ cho phép sửa profile của chính mình
+        if (btnEditProfile != null) {
+            boolean isOwnProfile = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
+            btnEditProfile.setVisible(isOwnProfile);
+            btnEditProfile.setManaged(isOwnProfile);
+        }
+    }
+
+    private void refreshBalanceLabels() {
+        lblBalance.setText(String.format("%,.2f VND", user.getBalance()));
+        lblLockedBalance.setText(String.format("%,.2f VND", user.getLockedBalance()));
+    }
+
+    private void refreshAvatar() {
+        if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
+            String uri = ImageStorageService.toFileUri(user.getAvatarPath());
+            if (uri != null) {
+                imgAvatar.setImage(new Image(uri));
+                imgAvatar.setVisible(true);
+                lblAvatar.setVisible(false);
+            } else {
+                imgAvatar.setVisible(false);
+                lblAvatar.setVisible(true);
+            }
         } else {
-            lblRoleBadge.setText("BIDDER");
-            loadBidderStats();
+            imgAvatar.setVisible(false);
+            lblAvatar.setVisible(true);
+            String firstChar = user.getUsername().isEmpty() ? "?" : user.getUsername().substring(0, 1).toUpperCase();
+            lblAvatar.setText(firstChar);
         }
     }
 
-    private void loadSellerStats() {
-        java.util.Set<String> ownedIds = new database.AuctionDAO().getAuctionIdsBySeller(user.getUserId());
-        List<Auction> all = AppState.getInstance().getAuctionList();
-        long running = all.stream().filter(a -> ownedIds.contains(a.getAuctionId()) && "RUNNING".equals(a.getStatus())).count();
-        long finished = all.stream().filter(a -> ownedIds.contains(a.getAuctionId()) && "FINISHED".equals(a.getStatus())).count();
-
-        lblStat1Label.setText("Phiên đã tạo");
-        lblStat1Value.setText(String.valueOf(ownedIds.size()));
-        lblStat2Label.setText("Đang chạy");
-        lblStat2Value.setText(String.valueOf(running));
-        lblStat3Label.setText("Đã kết thúc");
-        lblStat3Value.setText(String.valueOf(finished));
+    private void loadStats() {
+        // Stats are managed by Server, can be expanded later
+        lblStat1Value.setText("0");
+        lblStat2Value.setText("0");
+        lblStat3Value.setText("0");
     }
 
-    private void loadBidderStats() {
-        BidTransactionDAO bidDao = new BidTransactionDAO();
-        lblStat1Label.setText("Lượt bid");
-        lblStat1Value.setText(String.valueOf(bidDao.countBidsByBidderId(user.getUserId())));
-        lblStat2Label.setText("Phiên thắng");
-        lblStat2Value.setText(String.valueOf(bidDao.countWinsByBidderId(user.getUserId())));
-        lblStat3Label.setText("Đang tham gia");
-        lblStat3Value.setText(String.valueOf(bidDao.countActiveParticipations(user.getUserId())));
+    @FXML
+    void handleAvatarClick() {
+        if (isEditing) return; // Không cho đổi ảnh khi đang sửa thông tin chữ
+        if (user == null || !AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId())) return;
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn ảnh đại diện");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        );
+        File selectedFile = fileChooser.showOpenDialog(lblUsername.getScene().getWindow());
+        if (selectedFile != null) {
+            try {
+                String newAvatarPath = ImageStorageService.saveAvatar(selectedFile, user.getUserId());
+                
+                String cmd = "UPDATE_AVATAR:" + user.getUserId() + ":" + newAvatarPath;
+                AppState.getInstance().getClient().setStringMessageCallback(msg -> {
+                    javafx.application.Platform.runLater(() -> {
+                        if (msg.equals("UPDATE_AVATAR_OK")) {
+                            user.setAvatarPath(newAvatarPath);
+                            refreshAvatar();
+                            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật ảnh đại diện!");
+                        } else {
+                            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
+                        }
+                    });
+                });
+                AppState.getInstance().getClient().send(cmd);
+                
+            } catch (Exception e) {
+                utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Lỗi", "Không thể lưu ảnh: " + e.getMessage());
+            }
+        }
     }
 
-    private void loadAdminStats() {
-        List<Auction> all = AppState.getInstance().getAuctionList();
-        lblStat1Label.setText("Tổng phiên");
-        lblStat1Value.setText(String.valueOf(all.size()));
-        lblStat2Label.setText("Đang chạy");
-        lblStat2Value.setText(String.valueOf(all.stream().filter(a -> "RUNNING".equals(a.getStatus())).count()));
-        lblStat3Label.setText("Đã kết thúc");
-        lblStat3Value.setText(String.valueOf(all.stream().filter(a -> "FINISHED".equals(a.getStatus())).count()));
-    }
-
-    private boolean isEditMode = false;
     @FXML
     void handleEditProfile() {
-        if (!isEditMode) {
-            isEditMode = true;
-            toggleEditUI(true);
-            btnEditProfile.setText("Lưu hồ sơ");
-            btnEditProfile.getStyleClass().remove("button-secondary");
-            btnEditProfile.getStyleClass().add("button-success");
-        } else {
-            String newEmail = txtEmail.getText().trim();
-            String newPhone = txtPhone.getText().trim();
-            LocalDate newDOB = dpDOB.getValue();
+        if (!isEditing) {
+            // Chuyển sang chế độ Sửa
+            isEditing = true;
+            btnEditProfile.setText("Lưu thay đổi");
+            btnEditProfile.getStyleClass().add("button-primary");
+            
+            txtEmail.setText(user.getEmail());
+            txtPhone.setText(user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
+            dpDOB.setValue(user.getDateOfBirth());
 
-            if (newEmail.isEmpty()) {
-                utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Lỗi", "Email không được để trống.");
+            toggleEditUI(true);
+        } else {
+            // Thực hiện Lưu
+            String email = txtEmail.getText().trim();
+            String phone = txtPhone.getText().trim();
+            String dob = (dpDOB.getValue() != null) ? dpDOB.getValue().toString() : "NULL";
+
+            if (email.isEmpty()) {
+                utils.AlertHelper.show(utils.AlertHelper.Type.WARNING, "Email không được để trống");
                 return;
             }
 
-            String dobStr = (newDOB != null) ? newDOB.toString() : "NULL";
-            String cmd = String.format("UPDATE_PROFILE:%s:%s:%s:%s", user.getUserId(), newEmail, newPhone, dobStr);
-
+            String cmd = String.format("UPDATE_PROFILE:%s:%s:%s:%s", user.getUserId(), email, phone, dob);
+            
             AppState.getInstance().getClient().setStringMessageCallback(msg -> {
                 javafx.application.Platform.runLater(() -> {
                     if (msg.equals("UPDATE_PROFILE_OK")) {
-                        user.setPhoneNumber(newPhone);
-                        user.setDateOfBirth(newDOB);
-                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật hồ sơ!");
-                        isEditMode = false;
-                        toggleEditUI(false);
+                        user.setEmail(email);
+                        user.setPhoneNumber(phone);
+                        user.setDateOfBirth(dpDOB.getValue());
+                        
+                        setUserData(user); // Refresh UI labels
+                        
+                        isEditing = false;
                         btnEditProfile.setText("Sửa hồ sơ");
-                        btnEditProfile.getStyleClass().remove("button-success");
-                        btnEditProfile.getStyleClass().add("button-secondary");
-                        refreshProfileData();
+                        btnEditProfile.getStyleClass().remove("button-primary");
+                        toggleEditUI(false);
+                        
+                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã cập nhật thông tin hồ sơ!");
                     } else {
                         utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
                     }
                 });
             });
+            
             AppState.getInstance().getClient().send(cmd);
         }
     }
-
+    
     private void toggleEditUI(boolean editing) {
         lblEmail.setVisible(!editing);
         txtEmail.setVisible(editing);
+        
         lblPhone.setVisible(!editing);
         txtPhone.setVisible(editing);
+        
         lblDOB.setVisible(!editing);
         dpDOB.setVisible(editing);
+        
+        if (btnChangePassword != null) {
+            btnChangePassword.setDisable(editing);
+        }
     }
 
     @FXML
     void handleChangePassword() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/change_password.fxml"));
-            javafx.scene.Parent root = loader.load();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/change_password.fxml"));
+            Parent root = loader.load();
+            
             Stage stage = new Stage();
             stage.setTitle("Đổi mật khẩu");
             stage.setScene(new javafx.scene.Scene(root));

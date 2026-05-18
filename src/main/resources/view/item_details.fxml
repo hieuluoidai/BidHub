@@ -113,6 +113,31 @@
                                                 </VBox>
                                             </children>
                                         </GridPane>
+
+                                        <VBox fx:id="paneWinner" managed="false" spacing="12.0" style="-fx-background-color: linear-gradient(to bottom right, #ECFDF5, #D1FAE5); -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #10B981; -fx-border-width: 2; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.2), 10, 0, 0, 5);" visible="false">
+                                            <children>
+                                                <HBox alignment="CENTER" spacing="15.0">
+                                                    <children>
+                                                        <Label style="-fx-font-size: 24px;" text="🏆" />
+                                                        <VBox alignment="CENTER_LEFT" spacing="2.0">
+                                                            <children>
+                                                                <Label style="-fx-font-size: 14px; -fx-text-fill: #065F46; -fx-font-weight: bold;" text="CHÚC MỪNG NGƯỜI CHIẾN THẮNG" />
+                                                                <Label fx:id="lblWinnerName" style="-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: #047857;" text="-" />
+                                                            </children>
+                                                        </VBox>
+                                                        <Region HBox.hgrow="ALWAYS" />
+                                                    </children>
+                                                </HBox>
+                                                
+                                                <VBox fx:id="panePayWinner" managed="false" spacing="10.0" visible="false">
+                                                    <children>
+                                                        <Separator style="-fx-opacity: 0.3;" />
+                                                        <Label style="-fx-text-fill: #065F46; -fx-font-size: 13px;" text="Bạn đã thắng phiên đấu giá này! Vui lòng hoàn tất thanh toán để nhận sản phẩm." wrapText="true" />
+                                                        <Button fx:id="btnPay" maxWidth="Infinity" mnemonicParsing="false" onAction="#handlePay" prefHeight="50.0" style="-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 16px; -fx-background-radius: 8; -fx-cursor: hand;" text="THANH TOÁN NGAY" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </VBox>
                                     </children>
                                 </VBox>
 
@@ -146,7 +171,6 @@
                                                                 <VBox fx:id="paneManualBid" spacing="12.0">
                                                                     <children>
                                                                         <Button fx:id="btnOpenBid" maxWidth="Infinity" onAction="#handleOpenBidDialog" prefHeight="48.0" styleClass="button-primary" text="ĐẶT GIÁ NGAY" />
-                                                                        <Button fx:id="btnPay" managed="false" maxWidth="Infinity" mnemonicParsing="false" onAction="#handlePay" prefHeight="48.0" style="-fx-background-color: #F59E0B;" styleClass="button-primary" text="THANH TOÁN NGAY" visible="false" />
                                                                     </children>
                                                                 </VBox>
 

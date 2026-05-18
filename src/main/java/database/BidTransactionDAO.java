@@ -210,6 +210,44 @@ public class BidTransactionDAO {
         return 0;
     }
 
+    public List<BidTransaction> findTransactionsByBidderId(String bidderId) {
+        List<BidTransaction> history = new ArrayList<>();
+        String sql = """
+                SELECT auction_id, bid_amount, bid_time, bid_type
+                FROM bid_transactions
+                WHERE bidder_id = ?
+                ORDER BY bid_time DESC
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, bidderId);
+            ResultSet rs = stmt.executeQuery();
+            UserDAO userDAO = new UserDAO();
+            User bidder = userDAO.findById(bidderId);
+            AuctionDAO auctionDAO = new AuctionDAO();
+
+            while (rs.next()) {
+                double amount = rs.getDouble("bid_amount");
+                LocalDateTime timestamp = rs.getObject("bid_time", LocalDateTime.class);
+                if (timestamp == null) timestamp = LocalDateTime.now();
+                BidTransaction.BidType bidType = parseBidType(rs.getString("bid_type"));
+                
+                // Để hiển thị tên sản phẩm, ta có thể mock một Auction object tối giản
+                String auctionId = rs.getString("auction_id");
+                // Note: Ở đây ta chỉ cần bidder và amount/time cho feed. 
+                // Nếu muốn hiện tên item, ta cần join hoặc fetch thêm.
+                
+                BidTransaction tx = new BidTransaction(bidder, amount, timestamp, bidType);
+                // Gán tạm auctionId vào meta nếu cần dùng (tùy model hỗ trợ không)
+                history.add(tx);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tải lịch sử giao dịch cá nhân: " + e.getMessage());
+        }
+        return history;
+    }
+
     public double getTopBidCommitment(String bidderId, String excludeAuction) {
         String sql = """
                 SELECT COALESCE(SUM(top.bid_amount), 0) AS commitment

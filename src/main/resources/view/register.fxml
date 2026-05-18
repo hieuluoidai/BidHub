@@ -128,12 +128,6 @@
                         </VBox>
                     </HBox>
 
-                    <VBox spacing="4.0">
-                        <Label styleClass="form-label" text="Vai trò"/>
-                        <ChoiceBox fx:id="roleChoice" styleClass="form-input"
-                                   maxWidth="Infinity"/>
-                    </VBox>
-
                     <Label fx:id="messageLabel" styleClass="form-error" wrapText="true"/>
 
                     <Button defaultButton="true" mnemonicParsing="false"

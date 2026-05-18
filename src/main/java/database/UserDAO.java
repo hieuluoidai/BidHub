@@ -107,7 +107,7 @@ public class UserDAO {
     }
 
     /**
-     * Lưu user mới (Đăng ký). Balance mặc định $10,000 (set qua DEFAULT trong schema).
+     * Lưu user mới (Đăng ký). Balance mặc định $0 (set qua DEFAULT trong schema).
      * Caller phải HASH password trước.
      */
     public boolean save(User user) {
@@ -445,10 +445,12 @@ public class UserDAO {
             user.setPhoneNumber(phone);
         } catch (SQLException ignore) { }
 
-        // Balance & Locked Balance — có thể chưa có cột nếu DB cũ
+        // Balance & Locked Balance & Avatar & Pending Seller — có thể chưa có cột nếu DB cũ
         try {
             user.setBalance(rs.getDouble("balance"));
             user.setLockedBalance(rs.getDouble("locked_balance"));
+            user.setAvatarPath(rs.getString("avatar_path"));
+            user.setPendingSeller(rs.getBoolean("pending_seller"));
         } catch (SQLException ignore) { }
 
         return user;
@@ -458,6 +460,44 @@ public class UserDAO {
         if (user instanceof Admin)  return "ADMIN";
         if (user instanceof Seller) return "SELLER";
         return "BIDDER";
+    }
+
+    public boolean updateAvatar(String userId, String avatarPath) {
+        String sql = "UPDATE users SET avatar_path = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, avatarPath);
+            pstmt.setString(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật avatar: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean updatePendingSeller(String userId, boolean pending) {
+        String sql = "UPDATE users SET pending_seller = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBoolean(1, pending);
+            stmt.setString(2, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi cập nhật trạng thái yêu cầu seller: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean approveSeller(String userId) {
+        String sql = "UPDATE users SET role = 'SELLER', pending_seller = 0 WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi phê duyệt seller: " + e.getMessage());
+            return false;
+        }
     }
 
     public List<User> findAll() {

@@ -23,6 +23,10 @@
 
 <BorderPane prefHeight="760.0" prefWidth="1450.0" styleClass="dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AdminController">
 
+   <fx:define>
+       <javafx.scene.shape.Circle fx:id="sidebarAvatarClip" radius="20" centerX="20" centerY="20" />
+   </fx:define>
+
    <!-- ================= SIDEBAR ================= -->
    <left>
       <VBox alignment="TOP_CENTER" prefWidth="240.0" spacing="6.0" styleClass="sidebar">
@@ -51,7 +55,10 @@
             <children>
                <HBox alignment="CENTER_LEFT" spacing="12.0">
                   <children>
-                     <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="A" />
+                     <StackPane prefWidth="40" prefHeight="40">
+                         <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="A" />
+                         <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                     </StackPane>
                      <VBox spacing="1.0">
                         <children>
                            <Label fx:id="lblSidebarUsername" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;" text="Admin Name" />
@@ -92,34 +99,49 @@
                <VBox spacing="12.0">
                   <padding><Insets top="6.0" /></padding>
 
-                  <HBox alignment="CENTER_LEFT" spacing="15.0">
+                  <HBox alignment="CENTER_LEFT" spacing="20.0">
                      <children>
-                        <Label fx:id="labelTotalAuctions" minWidth="160.0" styleClass="stat-chip stat-blue" text="Tổng phiên: --" />
-                        <Label fx:id="labelRunningAuctions" minWidth="160.0" styleClass="stat-chip stat-green" text="RUNNING: --" />
-                        <Label fx:id="labelFinishedAuctions" minWidth="160.0" styleClass="stat-chip stat-orange" text="PAID/CANCELLED: --" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button onAction="#handleRefresh" styleClass="button-secondary" text="↻ Làm mới" />
+                        <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-blue" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label styleClass="admin-stat-label" text="TỔNG PHIÊN" />
+                              <Label fx:id="labelTotalAuctions" styleClass="admin-stat-value" text="--" />
+                           </children>
+                        </VBox>
+                        <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-green" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label styleClass="admin-stat-label" text="ĐANG DIỄN RA" />
+                              <Label fx:id="labelRunningAuctions" styleClass="admin-stat-value" text="--" />
+                           </children>
+                        </VBox>
+                        <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-purple" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label styleClass="admin-stat-label" text="ĐÃ KẾT THÚC" />
+                              <Label fx:id="labelFinishedAuctions" styleClass="admin-stat-value" text="--" />
+                           </children>
+                        </VBox>
+                        <Button onAction="#handleRefresh" prefHeight="85.0" prefWidth="120.0" styleClass="button-secondary" text="↻ Làm mới" />
                      </children>
                   </HBox>
 
                   <!-- AUCTION FILTER BAR -->
-                  <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="admin-table-actions">
+                  <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="admin-table-actions">
                      <children>
-                        <HBox alignment="CENTER_LEFT" maxWidth="300.0" styleClass="search-box" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" maxWidth="350.0" prefHeight="42.0" styleClass="search-box" HBox.hgrow="ALWAYS">
                            <children>
                               <Label style="-fx-text-fill: #94A3B8; -fx-padding: 0 0 0 12;" text="🔍" />
                               <TextField fx:id="txtAuctionSearch" promptText="Tìm tên sản phẩm..." styleClass="search-field" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
-                        <HBox alignment="CENTER" styleClass="segmented-control" prefHeight="36.0">
+                        <Region HBox.hgrow="ALWAYS" />
+                        <HBox alignment="CENTER" styleClass="segmented-control" prefHeight="42.0">
                            <fx:define>
                               <ToggleGroup fx:id="auctionStatusGroup" />
                            </fx:define>
                            <children>
-                              <ToggleButton fx:id="tglAllAuctions" selected="true" styleClass="segment-button, segment-left" text="TẤT CẢ" toggleGroup="$auctionStatusGroup" />
-                              <ToggleButton fx:id="tglOpenAuctions" styleClass="segment-button" text="SẮP DIỄN RA" toggleGroup="$auctionStatusGroup" />
-                              <ToggleButton fx:id="tglRunningAuctions" styleClass="segment-button" text="ĐANG DIỄN RA" toggleGroup="$auctionStatusGroup" />
-                              <ToggleButton fx:id="tglEndedAuctions" styleClass="segment-button, segment-right" text="ĐÃ KẾT THÚC" toggleGroup="$auctionStatusGroup" />
+                              <ToggleButton fx:id="tglAllAuctions" minWidth="90.0" selected="true" styleClass="segment-button, segment-left" text="TẤT CẢ" toggleGroup="$auctionStatusGroup" />
+                              <ToggleButton fx:id="tglOpenAuctions" minWidth="120.0" styleClass="segment-button" text="SẮP DIỄN RA" toggleGroup="$auctionStatusGroup" />
+                              <ToggleButton fx:id="tglRunningAuctions" minWidth="130.0" styleClass="segment-button" text="ĐANG DIỄN RA" toggleGroup="$auctionStatusGroup" />
+                              <ToggleButton fx:id="tglEndedAuctions" minWidth="120.0" styleClass="segment-button, segment-right" text="ĐÃ KẾT THÚC" toggleGroup="$auctionStatusGroup" />
                            </children>
                         </HBox>
                      </children>
@@ -218,6 +240,7 @@
                                     <TableColumn fx:id="colUsername" prefWidth="160" text="Username" />
                                     <TableColumn fx:id="colEmail" prefWidth="240" text="Địa chỉ Email" />
                                     <TableColumn fx:id="colRole" prefWidth="120" style="-fx-alignment: CENTER;" text="Vai trò" />
+                                    <TableColumn fx:id="colStatus" prefWidth="150" style="-fx-alignment: CENTER;" text="Trạng thái" />
                                     <TableColumn fx:id="colBalance" prefWidth="150" style="-fx-alignment: CENTER_RIGHT;" text="Số dư khả dụng" />
                                  </columns>
                                  <columnResizePolicy>

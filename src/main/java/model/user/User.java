@@ -9,12 +9,12 @@ import java.time.Period;
  * Abstract class đại diện cho người dùng chung trong hệ thống.
  *
  * Bổ sung trường BALANCE — phục vụ chức năng thanh toán phiên đấu giá:
- *   - User mới tạo: $10,000
+ *   - User mới tạo: $0
  *   - Khi phiên FINISHED và có winner → trừ balance winner, cộng cho seller → PAID
  *   - Tương lai: nạp tiền, hold/refund khi cancel
  */
 public abstract class User extends Entity implements Serializable {
-    private static final long serialVersionUID = 4L;     // bumped vì thêm field
+    private static final long serialVersionUID = 5L;     // bumped vì thêm pending_seller
 
     private String username;
     private String email;
@@ -30,6 +30,12 @@ public abstract class User extends Entity implements Serializable {
 
     /** Số dư bị khóa cho Auto-Bidding (Logic mới của Hiếu) */
     private double lockedBalance;
+
+    /** Đường dẫn ảnh đại diện (avatar_path) */
+    private String avatarPath;
+
+    /** Trạng thái chờ xét duyệt lên Seller */
+    private boolean pendingSeller;
 
     /**
      * Constructor cũ — giữ tương thích với code hiện hành.
@@ -63,6 +69,8 @@ public abstract class User extends Entity implements Serializable {
     public void setPhoneNumber(String phoneNumber)    { this.phoneNumber = phoneNumber; }
     public void setBalance(double balance)            { this.balance = balance; }
     public void setLockedBalance(double lockedBalance) { this.lockedBalance = lockedBalance; }
+    public void setAvatarPath(String avatarPath)      { this.avatarPath = avatarPath; }
+    public void setPendingSeller(boolean pendingSeller) { this.pendingSeller = pendingSeller; }
 
     // Getters
     public String    getUserId()      { return super.getId(); }
@@ -74,4 +82,6 @@ public abstract class User extends Entity implements Serializable {
     public String    getPhoneNumber() { return phoneNumber; }
     public double    getBalance()     { return balance; }
     public double    getLockedBalance() { return lockedBalance; }
+    public String    getAvatarPath()  { return avatarPath; }
+    public boolean   isPendingSeller() { return pendingSeller; }
 }

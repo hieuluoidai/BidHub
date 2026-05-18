@@ -26,9 +26,11 @@ public final class ImageStorageService {
 
     /** Thư mục chứa ảnh, nằm ở root của project. */
     public static final String STORAGE_DIR = "uploads/items";
+    public static final String AVATAR_DIR = "uploads/avatars";
 
     /** Prefix dùng trong DB image_path — sau "items/" là filename. */
     public static final String DB_PATH_PREFIX = "items/";
+    public static final String DB_AVATAR_PREFIX = "avatars/";
 
     /** Định dạng file ảnh được phép upload. */
     private static final Set<String> ALLOWED_EXTS = Set.of("jpg", "jpeg", "png", "gif");
@@ -71,6 +73,17 @@ public final class ImageStorageService {
      * @throws IllegalArgumentException nếu file không hợp lệ
      */
     public static String saveImage(File sourceFile, String itemId) throws IOException {
+        return saveFile(sourceFile, itemId, STORAGE_DIR, DB_PATH_PREFIX);
+    }
+
+    /**
+     * Copy file ảnh avatar từ source path.
+     */
+    public static String saveAvatar(File sourceFile, String userId) throws IOException {
+        return saveFile(sourceFile, userId, AVATAR_DIR, DB_AVATAR_PREFIX);
+    }
+
+    private static String saveFile(File sourceFile, String id, String targetDir, String prefix) throws IOException {
         if (sourceFile == null || !sourceFile.exists()) {
             throw new IllegalArgumentException("File không tồn tại");
         }
@@ -87,19 +100,19 @@ public final class ImageStorageService {
         }
 
         // Tạo thư mục đích nếu chưa có
-        Path storageDir = Paths.get(STORAGE_DIR);
+        Path storageDir = Paths.get(targetDir);
         Files.createDirectories(storageDir);
 
-        // Đặt tên: <itemId>.<ext>
+        // Đặt tên: <id>.<ext>
         String ext = getExtension(sourceFile.getName());
-        String filename = itemId + "." + ext;
+        String filename = id + "." + ext;
         Path target = storageDir.resolve(filename);
 
         // Copy (ghi đè nếu trùng — case update ảnh)
         Files.copy(sourceFile.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
 
         // Trả về relative path để lưu DB
-        String dbPath = DB_PATH_PREFIX + filename;
+        String dbPath = prefix + filename;
         System.out.println(">>> [IMAGE] Đã lưu ảnh: " + sourceFile.getAbsolutePath()
                 + " → " + target.toAbsolutePath() + " (DB path: " + dbPath + ")");
         return dbPath;
@@ -114,12 +127,15 @@ public final class ImageStorageService {
     public static void deleteImage(String dbPath) {
         if (dbPath == null || dbPath.isBlank()) return;
 
-        // Build absolute path từ relative path
-        // DB path: "items/u-abc123.jpg" → file thật: "./uploads/items/u-abc123.jpg"
-        String filename = dbPath.startsWith(DB_PATH_PREFIX)
-                ? dbPath.substring(DB_PATH_PREFIX.length())
-                : dbPath;
-        Path target = Paths.get(STORAGE_DIR, filename);
+        String filename;
+        Path target;
+        if (dbPath.startsWith(DB_AVATAR_PREFIX)) {
+            filename = dbPath.substring(DB_AVATAR_PREFIX.length());
+            target = Paths.get(AVATAR_DIR, filename);
+        } else {
+            filename = dbPath.startsWith(DB_PATH_PREFIX) ? dbPath.substring(DB_PATH_PREFIX.length()) : dbPath;
+            target = Paths.get(STORAGE_DIR, filename);
+        }
 
         try {
             boolean deleted = Files.deleteIfExists(target);
@@ -138,10 +154,15 @@ public final class ImageStorageService {
     public static String toFileUri(String dbPath) {
         if (dbPath == null || dbPath.isBlank()) return null;
 
-        String filename = dbPath.startsWith(DB_PATH_PREFIX)
-                ? dbPath.substring(DB_PATH_PREFIX.length())
-                : dbPath;
-        Path target = Paths.get(STORAGE_DIR, filename).toAbsolutePath();
+        String filename;
+        Path target;
+        if (dbPath.startsWith(DB_AVATAR_PREFIX)) {
+            filename = dbPath.substring(DB_AVATAR_PREFIX.length());
+            target = Paths.get(AVATAR_DIR, filename).toAbsolutePath();
+        } else {
+            filename = dbPath.startsWith(DB_PATH_PREFIX) ? dbPath.substring(DB_PATH_PREFIX.length()) : dbPath;
+            target = Paths.get(STORAGE_DIR, filename).toAbsolutePath();
+        }
 
         if (!Files.exists(target)) {
             System.err.println(">>> [IMAGE] File không tồn tại: " + target);
@@ -155,9 +176,16 @@ public final class ImageStorageService {
      */
     public static boolean imageExists(String dbPath) {
         if (dbPath == null || dbPath.isBlank()) return false;
-        String filename = dbPath.startsWith(DB_PATH_PREFIX)
-                ? dbPath.substring(DB_PATH_PREFIX.length())
-                : dbPath;
-        return Files.exists(Paths.get(STORAGE_DIR, filename));
+        
+        String filename;
+        Path target;
+        if (dbPath.startsWith(DB_AVATAR_PREFIX)) {
+            filename = dbPath.substring(DB_AVATAR_PREFIX.length());
+            target = Paths.get(AVATAR_DIR, filename);
+        } else {
+            filename = dbPath.startsWith(DB_PATH_PREFIX) ? dbPath.substring(DB_PATH_PREFIX.length()) : dbPath;
+            target = Paths.get(STORAGE_DIR, filename);
+        }
+        return Files.exists(target);
     }
 }

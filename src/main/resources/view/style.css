@@ -28,41 +28,50 @@
    AUTH PAGES (LOGIN + REGISTER) — LAYOUT 2 CỘT
    =================================================================== */
 
-/* Panel TRÁI: gradient xanh dương sang trọng */
+/* Panel TRÁI: Phong cách Premium Mesh (Deep Navy + Radial Glow) */
 .auth-brand-panel {
-    -fx-background-color: linear-gradient(to bottom right, #1976D2, #0D47A1);
+    /* Lớp 1: Base Gradient tối | Lớp 2: Luồng sáng xanh từ góc trên trái | Lớp 3: Luồng sáng tím mờ từ góc dưới phải */
+    -fx-background-color: 
+        linear-gradient(to bottom right, #0F172A, #1E293B),
+        radial-gradient(center 20% 20%, radius 70%, rgba(59, 130, 246, 0.18), transparent),
+        radial-gradient(center 80% 80%, radius 60%, rgba(139, 92, 246, 0.12), transparent);
+    -fx-background-insets: 0, 0, 0;
 }
 
 .brand-title {
     -fx-text-fill: white;
-    -fx-font-size: 42px;
+    -fx-font-size: 44px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4, 0, 0, 2);
+    /* Đổ bóng chữ mạnh hơn để tạo độ nổi trên nền mesh */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);
 }
 
 .brand-subtitle {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
-    -fx-font-size: 15px;
+    -fx-text-fill: rgba(255, 255, 255, 0.75);
+    -fx-font-size: 16px;
     -fx-font-weight: 500;
     -fx-text-alignment: center;
     -fx-alignment: center;
 }
 
 .brand-bullet-icon {
-    -fx-text-fill: white;
-    -fx-font-size: 16px;
+    -fx-text-fill: #3B82F6; /* Màu xanh brand */
+    -fx-font-size: 14px;
     -fx-font-weight: 900;
-    -fx-background-color: rgba(255, 255, 255, 0.18);
-    -fx-background-radius: 12px;
-    -fx-min-width: 24px;
-    -fx-min-height: 24px;
+    /* Hiệu ứng Glassmorphism cho icon */
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-background-radius: 50%;
+    -fx-min-width: 28px;
+    -fx-min-height: 28px;
     -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.4), 8, 0, 0, 0);
 }
 
 .brand-bullet-text {
-    -fx-text-fill: rgba(255, 255, 255, 0.92);
+    -fx-text-fill: rgba(255, 255, 255, 0.9);
     -fx-font-size: 14px;
-    -fx-font-weight: 500;
+    -fx-font-weight: 600;
+    -fx-line-spacing: 4px;
 }
 
 /* Panel PHẢI — phần form */
@@ -584,7 +593,12 @@
 
 /* --- SIDEBAR --- */
 .sidebar {
-    -fx-background-color: linear-gradient(to bottom, #0F172A 0%, #1E293B 100%);
+    /* Đồng bộ với Premium Mesh của Login */
+    -fx-background-color: 
+        linear-gradient(to bottom, #0F172A 0%, #1E293B 100%),
+        radial-gradient(center 0% 0%, radius 100%, rgba(59, 130, 246, 0.15), transparent),
+        radial-gradient(center 100% 100%, radius 80%, rgba(139, 92, 246, 0.1), transparent);
+    -fx-background-insets: 0, 0, 0;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0, 0, 0);
 }
 .sidebar-logo {
@@ -1362,6 +1376,17 @@
 .role-admin  { -fx-background-color: #EF4444; } /* Red */
 .role-seller { -fx-background-color: #8B5CF6; } /* Purple */
 .role-bidder { -fx-background-color: #10B981; } /* Emerald */
+.role-pending { -fx-background-color: #F59E0B; } /* Orange */
+
+.row-pending {
+    -fx-background-color: #FFFBEB; /* Light Amber */
+}
+.row-pending:hover {
+    -fx-background-color: #FEF3C7;
+}
+.row-pending:selected {
+    -fx-background-color: #FDE68A;
+}
 
 .balance-cell-positive {
     -fx-text-fill: #059669;

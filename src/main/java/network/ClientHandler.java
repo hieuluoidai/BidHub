@@ -139,11 +139,20 @@ public class ClientHandler implements Runnable {
             else if (msg.startsWith("UPDATE_PROFILE:")) {
                 handleUpdateProfile(msg);
             }
+            else if (msg.startsWith("UPDATE_AVATAR:")) {
+                handleUpdateAvatar(msg);
+            }
             else if (msg.startsWith("CHANGE_PASSWORD:")) {
                 handleChangePassword(msg);
             }
             else if (msg.startsWith("RELOAD_AUCTION:")) {
                 handleReloadAuction(msg);
+            }
+            else if (msg.startsWith("REQUEST_SELLER:")) {
+                handleRequestSeller(msg);
+            }
+            else if (msg.startsWith("APPROVE_SELLER:")) {
+                handleApproveSeller(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
@@ -307,6 +316,38 @@ public class ClientHandler implements Runnable {
             send("UPDATE_PROFILE_OK");
         } else {
             send("UPDATE_PROFILE_FAILED: Lỗi cơ sở dữ liệu");
+        }
+    }
+
+    /**
+     * Cập nhật Avatar User.
+     * Format: "UPDATE_AVATAR:<userId>:<avatarPath>"
+     */
+    private void handleUpdateAvatar(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) return;
+        
+        String userId = parts[1];
+        String avatarPath = parts[2];
+
+        // Do path có thể chứa dấu ":" nếu có scheme file: //, nhưng ở đây db lưu relative path (items/...) 
+        // Tuy nhiên tốt nhất ghép lại từ phần tử thứ 2 trở đi
+        if (parts.length > 3) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 2; i < parts.length; i++) {
+                sb.append(parts[i]);
+                if (i < parts.length - 1) sb.append(":");
+            }
+            avatarPath = sb.toString();
+        }
+
+        database.UserDAO dao = new database.UserDAO();
+        boolean ok = dao.updateAvatar(userId, avatarPath);
+        
+        if (ok) {
+            send("UPDATE_AVATAR_OK");
+        } else {
+            send("UPDATE_AVATAR_FAILED: Lỗi cơ sở dữ liệu");
         }
     }
 
@@ -536,8 +577,22 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
-        // 5. Cập nhật memory + broadcast
+        // 5. LƯU LỊCH SỬ GIAO DỊCH VÍ CHO CẢ 2 BÊN
+        database.WalletTransactionDAO walletDao = new database.WalletTransactionDAO();
         Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
+        String itemName = (auction != null && auction.getItem() != null) ? auction.getItem().getItemName() : auctionId;
+        
+        // Winner chi tiền
+        walletDao.save(winnerId, -finalPrice, 
+            model.auction.WalletTransaction.TransactionType.PAYMENT, 
+            "Thanh toán sản phẩm: " + itemName);
+        
+        // Seller nhận tiền
+        walletDao.save(sellerId, finalPrice, 
+            model.auction.WalletTransaction.TransactionType.EARNING, 
+            "Tiền bán sản phẩm: " + itemName);
+
+        // 6. Cập nhật memory + broadcast
         if (auction != null) auction.setStatus("PAID");
 
         double newBalance = userDao.getBalance(winnerId);
@@ -549,6 +604,11 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         // Push thêm Balance Update chi tiết (avail + locked) cho người thắng
         double locked = userDao.getLockedBalance(winnerId);
         send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
+        
+        // Notify seller about balance update too
+        double sellerAvail = userDao.getBalance(sellerId);
+        double sellerLocked = userDao.getLockedBalance(sellerId);
+        server.sendToUser(sellerId, String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", sellerAvail, sellerLocked));
 
         server.broadcast(AuctionManager.getInstance().getAllAuctions());
     }
@@ -610,6 +670,11 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         boolean ok = userDao.setBalance(userId, newBalance);
 
         if (ok) {
+            // LƯU LỊCH SỬ GIAO DỊCH VÍ
+            new database.WalletTransactionDAO().save(userId, amount, 
+                model.auction.WalletTransaction.TransactionType.TOPUP, 
+                "Nạp tiền vào ví qua hệ thống");
+
             System.out.printf(">>> [TOPUP] %s nạp $%.2f thành công | balance: $%.2f → $%.2f%n",
                     user.getUsername(), amount, current, newBalance);
             send("TOPUP_OK:" + newBalance);
@@ -729,4 +794,28 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             e.printStackTrace();
         }
     }
+
+    private void handleRequestSeller(String msg) {
+        String userId = msg.split(":")[1];
+        UserDAO userDao = new UserDAO();
+        if (userDao.updatePendingSeller(userId, true)) {
+            System.out.println(">>> [SELLER_REQ] User " + userId + " requested to become Seller.");
+            // Thông báo cho Admin nếu đang online
+            server.broadcastToRole("ADMIN", "NEW_SELLER_REQUEST:" + userId);
+        }
+    }
+
+    private void handleApproveSeller(String msg) {
+        String userId = msg.split(":")[1];
+        UserDAO userDao = new UserDAO();
+        if (userDao.approveSeller(userId)) {
+            System.out.println(">>> [SELLER_APP] User " + userId + " approved as Seller.");
+            server.sendToUser(userId, "SELLER_APPROVED");
+
+            // Thông báo cho tất cả Admin để refresh bảng người dùng
+            server.broadcastToRole("ADMIN", "USERS_UPDATED");
+
+            // Re-broadcast all auctions to update role-based UI if needed
+            server.broadcast(AuctionManager.getInstance().getAllAuctions());
+        }    }
 }

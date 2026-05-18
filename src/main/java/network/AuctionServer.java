@@ -65,6 +65,29 @@ public class AuctionServer {
         }
     }
 
+    /**
+     * Gửi thông báo tới toàn bộ người dùng có role cụ thể (VD: ADMIN).
+     */
+    public void broadcastToRole(String role, Object data) {
+        synchronized (clients) {
+            database.UserDAO userDao = new database.UserDAO();
+            for (ClientHandler client : clients) {
+                if (client.getUserId() != null && client.isAlive()) {
+                    model.user.User u = userDao.findById(client.getUserId());
+                    if (u != null) {
+                        String userRole = "BIDDER";
+                        if (u instanceof model.user.Admin) userRole = "ADMIN";
+                        else if (u instanceof model.user.Seller) userRole = "SELLER";
+                        
+                        if (role.equals(userRole)) {
+                            client.send(data);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Quản lý Observers
     public synchronized void addObserver(ClientHandler observer) { observers.add(observer); }
     public synchronized void removeObserver(ClientHandler observer) { observers.remove(observer); }

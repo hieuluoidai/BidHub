@@ -39,7 +39,6 @@ public class RegisterController {
     @FXML private TextField     usernameField;
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
-    @FXML private ChoiceBox<String> roleChoice;
     @FXML private Label         messageLabel;
 
     // ===== FXML bindings (per-field hint labels) =====
@@ -90,9 +89,6 @@ public class RegisterController {
 
     @FXML
     public void initialize() {
-        roleChoice.getItems().addAll(LABEL_BIDDER, LABEL_SELLER);
-        roleChoice.setValue(LABEL_BIDDER);
-
         configureDobPicker();
         clearAllHints();
         attachRealtimeListeners();
@@ -412,9 +408,7 @@ public class RegisterController {
         String hashedPassword = PasswordUtils.hash(password);
 
         String userId = "u-" + UUID.randomUUID().toString().substring(0, 8);
-        User newUser = LABEL_SELLER.equals(roleChoice.getValue())
-                ? new Seller(userId, username, email, hashedPassword)
-                : new Bidder(userId, username, email, hashedPassword);
+        User newUser = new Bidder(userId, username, email, hashedPassword);
 
         newUser.setFullName(fullName);
         newUser.setDateOfBirth(dob);
