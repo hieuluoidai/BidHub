@@ -92,6 +92,10 @@ public class NotificationCenter {
             popupController = null;
             return;
         }
+
+        // Luôn fetch mới nhất khi mở popup để đảm bảo tính real-time
+        fetchNow();
+
         try {
             FXMLLoader loader = new FXMLLoader(NotificationCenter.class.getResource("/view/notification_popup.fxml"));
             javafx.scene.Parent root = loader.load();
@@ -108,7 +112,7 @@ public class NotificationCenter {
             // Đặt popup phía trên-bên phải của icon (vì bell thường nằm dưới cùng sidebar)
             javafx.geometry.Bounds b = anchor.localToScreen(anchor.getBoundsInLocal());
             double x = b.getMinX() + anchor.getBoundsInLocal().getWidth() + 8;
-            double y = b.getMinY() - 650; // hiện lên trên do icon nằm dưới
+            double y = b.getMinY() - 710; // hiện lên trên do icon nằm dưới
             if (y < 20) y = 20;
             popup.show(anchor, x, y);
             currentPopup = popup;

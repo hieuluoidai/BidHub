@@ -180,6 +180,19 @@ public class ConcurrentBidManager {
                 }
                 System.out.printf(">>> [ANTI-SNIPE] Phiên %s gia hạn: %s → %s (lần %d)%n",
                         auctionId, endTimeBefore, endTimeAfter, auction.getExtensionCount());
+
+                // Gửi Notification gia hạn
+                network.AuctionServer server = manager.getServer();
+                if (server != null) {
+                    String itemName = (auction.getItem() != null) ? auction.getItem().getItemName() : auctionId;
+                    // Thông báo cho Seller
+                    utils.NotificationService.notifyUser(server, auction.getSellerId(),
+                        model.notification.Notification.Type.AUCTION_EXTENDED,
+                        "Phiên đấu giá được gia hạn",
+                        String.format("Phiên \"%s\" vừa được cộng thêm thời gian do có người bid vào phút chót.", itemName));
+                    
+                    // Có thể broadcast một signal đặc biệt để client reload end_time (Auction object broadcast đã làm việc này)
+                }
             }
 
             // ===== 4. Lưu vào DB (Đảm bảo tính nhất quán) =====

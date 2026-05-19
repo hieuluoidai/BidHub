@@ -125,9 +125,6 @@ public class UserDetailsController {
             lblPendingStatus.setVisible(false);
             lblPendingStatusLabel.setVisible(false);
             lblRoleBadge.setText("SELLER"); // Mock UI update
-
-            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
-                    "Thành công", "Đã phê duyệt người dùng làm Seller!");
         }
     }
 
@@ -152,9 +149,6 @@ public class UserDetailsController {
         btnRevokeSeller.setVisible(false);
         btnRevokeSeller.setManaged(false);
         lblRoleBadge.setText("BIDDER");
-
-        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công",
-                "Đã hủy quyền Seller của \"" + user.getUsername() + "\".");
     }
 
     private void setupAvatarEffects() {
@@ -178,6 +172,12 @@ public class UserDetailsController {
             boolean isOwnProfile = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
             btnEditProfile.setVisible(isOwnProfile);
             btnEditProfile.setManaged(isOwnProfile);
+            
+            // CŨNG CHỈ cho phép đổi mật khẩu của chính mình
+            if (btnChangePassword != null) {
+                btnChangePassword.setVisible(isOwnProfile);
+                btnChangePassword.setManaged(isOwnProfile);
+            }
         }
     }
 

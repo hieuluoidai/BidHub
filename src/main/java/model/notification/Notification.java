@@ -24,6 +24,7 @@ public class Notification implements Serializable {
         AUCTION_ENDED_SOLD,      // Phiên của bạn kết thúc — đã bán
         AUCTION_ENDED_NO_BID,    // Phiên của bạn kết thúc — không có bid
         AUCTION_EXTENDED,        // Anti-snipe: phiên được gia hạn
+        AUCTION_CANCELED,        // Phiên đấu giá bị hủy
         SELLER_APPROVED,
         SELLER_REVOKED,
 

@@ -75,7 +75,7 @@
                      <children>
                         <Label text="🔔" styleClass="notif-bell" />
                         <Label fx:id="lblNotifBadge" styleClass="notif-badge" managed="false" visible="false" StackPane.alignment="TOP_RIGHT">
-                           <StackPane.margin><Insets top="-2.0" right="-4.0" /></StackPane.margin>
+                           <StackPane.margin><Insets top="4.0" right="4.0" /></StackPane.margin>
                         </Label>
                      </children>
                   </StackPane>

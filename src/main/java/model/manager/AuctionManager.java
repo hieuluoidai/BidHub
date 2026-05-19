@@ -17,6 +17,7 @@ import exception.AuctionClosedException;
 public class AuctionManager {
     private static AuctionManager instance;
     private final List<Auction> auctions; // Danh sách gốc quản lý mọi phiên đấu giá
+    private network.AuctionServer server; // Lưu reference để notify
 
     private AuctionManager() {
         auctions = new ArrayList<>();
@@ -28,6 +29,10 @@ public class AuctionManager {
             instance = new AuctionManager();
         }
         return instance;
+    }
+
+    public network.AuctionServer getServer() {
+        return server;
     }
 
     // Thêm phiên đấu giá mới (Đảm bảo an toàn đa luồng)
@@ -80,6 +85,7 @@ public class AuctionManager {
      * giữ lock vô tận cho các phiên đã kết thúc.
      */
     public void startAutoClosureService(network.AuctionServer server) {
+        this.server = server;
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         database.AuctionDAO auctionDao = new database.AuctionDAO();
 

@@ -10,7 +10,7 @@
 
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="controller.NotificationPopupController"
-      prefWidth="620" maxWidth="620" minWidth="620" prefHeight="640" maxHeight="640"
+      prefWidth="750" maxWidth="750" minWidth="750" prefHeight="700" maxHeight="700"
       styleClass="notification-popup">
     <padding><Insets top="0" right="0" bottom="0" left="0"/></padding>
 

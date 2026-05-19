@@ -135,6 +135,7 @@ public class NotificationPopupController {
             case AUCTION_ENDED_SOLD    -> "✅";
             case AUCTION_ENDED_NO_BID  -> "🚫";
             case AUCTION_EXTENDED      -> "⏱️";
+            case AUCTION_CANCELED      -> "❌";
             case SELLER_APPROVED  -> "🎉";
             case SELLER_REVOKED   -> "⛔";
             case ADMIN_NEW_USER           -> "👤";
@@ -147,7 +148,7 @@ public class NotificationPopupController {
         if (t == null) return "#94A3B8";
         return switch (t) {
             case WALLET_TOPUP, WALLET_EARNING, SELLER_APPROVED, AUCTION_WON, AUCTION_ENDED_SOLD -> "#10B981";
-            case WALLET_PAYMENT, AUCTION_OUTBID, SELLER_REVOKED -> "#EF4444";
+            case WALLET_PAYMENT, AUCTION_OUTBID, SELLER_REVOKED, AUCTION_CANCELED -> "#EF4444";
             case WALLET_REFUND, AUCTION_EXTENDED -> "#F59E0B";
             case ITEM_POSTED, AUCTION_NEW_BID -> "#3B82F6";
             case AUCTION_ENDED_NO_BID -> "#64748B";

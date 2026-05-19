@@ -142,6 +142,32 @@ public class DashboardController {
                     } catch (Exception ignore) {
                     }
                 }
+            } else if (msg.equals("SELLER_APPROVED")) {
+                javafx.application.Platform.runLater(() -> {
+                    User u = AppState.getInstance().getCurrentUser();
+                    if (u != null) {
+                        // Reload user object from DB to get the correct subclass (Seller)
+                        User updated = new database.UserDAO().findById(u.getUserId());
+                        if (updated != null) {
+                            AppState.getInstance().setCurrentUser(updated);
+                        }
+                        setupPermissions();
+                        refreshWalletData();
+                    }
+                });
+            } else if (msg.equals("SELLER_REVOKED")) {
+                javafx.application.Platform.runLater(() -> {
+                    User u = AppState.getInstance().getCurrentUser();
+                    if (u != null) {
+                        // Reload user object from DB to get the correct subclass (Bidder)
+                        User updated = new database.UserDAO().findById(u.getUserId());
+                        if (updated != null) {
+                            AppState.getInstance().setCurrentUser(updated);
+                        }
+                        setupPermissions();
+                        refreshWalletData();
+                    }
+                });
             }
         });
 

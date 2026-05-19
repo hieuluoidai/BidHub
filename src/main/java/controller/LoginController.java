@@ -40,6 +40,9 @@ public class LoginController {
             AppState.getInstance().getClient().connect("localhost", 1234);
             AppState.getInstance().setCurrentUser(foundUser);
 
+            // Gửi lệnh IDENTIFY để Server gắn ID người dùng vào connection này (cực kỳ quan trọng cho real-time push)
+            AppState.getInstance().getClient().send("IDENTIFY:" + foundUser.getUserId());
+
             if (foundUser instanceof Admin) {
                 AppState.getInstance().getSceneManager().showAdminDashboard();
             } else {
