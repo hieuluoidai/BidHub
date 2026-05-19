@@ -17,15 +17,15 @@ public class ConfirmPayController {
     private boolean isConfirmed = false;
 
     public void setPaymentData(double finalPrice, double currentBalance) {
-        amountDueLabel.setText(String.format("$%,.2f", finalPrice));
-        currentBalanceLabel.setText(String.format("$%,.2f", currentBalance));
+        amountDueLabel.setText(String.format("%,.0f ₫", finalPrice));
+        currentBalanceLabel.setText(String.format("%,.0f ₫", currentBalance));
 
         boolean hasEnoughBalance = currentBalance >= finalPrice;
 
         if (hasEnoughBalance) {
             double remainingBalance = currentBalance - finalPrice;
             resultStatusLabel.setText("Sau thanh toán, số dư còn:");
-            resultAmountLabel.setText(String.format("$%,.2f", remainingBalance));
+            resultAmountLabel.setText(String.format("%,.0f ₫", remainingBalance));
             resultAmountLabel.setStyle("-fx-text-fill: #10B981; -fx-font-weight: bold;"); // Màu xanh lá
         } else {
             double missingAmount = finalPrice - currentBalance;
@@ -33,7 +33,7 @@ public class ConfirmPayController {
             titleLabel.setStyle("-fx-text-fill: #EF4444;"); // Chữ đỏ cảnh báo
             
             resultStatusLabel.setText("Bạn cần nạp thêm:");
-            resultAmountLabel.setText(String.format("$%,.2f", missingAmount));
+            resultAmountLabel.setText(String.format("%,.0f ₫", missingAmount));
             resultAmountLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold;"); // Màu đỏ
             
             // Ẩn nút xác nhận, chỉ cho phép đóng cửa sổ

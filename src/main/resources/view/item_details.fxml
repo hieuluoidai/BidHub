@@ -95,13 +95,13 @@
                                                 <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="0">
                                                     <children>
                                                         <Label styleClass="bid-stat-label" text="Giá khởi điểm" wrapText="false" />
-                                                        <Label fx:id="lblStartingPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
+                                                        <Label fx:id="lblStartingPrice" styleClass="bid-stat-value" text="0 ₫" wrapText="false" />
                                                     </children>
                                                 </VBox>
                                                 <VBox maxWidth="Infinity" styleClass="bid-stat-card-current" GridPane.columnIndex="1">
                                                     <children>
                                                         <Label styleClass="bid-stat-label" text="Giá hiện tại" wrapText="false" />
-                                                        <Label fx:id="lblCurrentPrice" styleClass="bid-stat-value" text="\$0.00" wrapText="false" />
+                                                        <Label fx:id="lblCurrentPrice" styleClass="bid-stat-value" text="0 ₫" wrapText="false" />
                                                     </children>
                                                 </VBox>
                                                 <VBox maxWidth="Infinity" styleClass="bid-stat-card" GridPane.columnIndex="2">

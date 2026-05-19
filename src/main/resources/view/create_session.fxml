@@ -49,7 +49,7 @@
                                         <HBox spacing="15.0">
                                             <children>
                                                 <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                                                    <Label styleClass="form-label" text="Giá khởi điểm ($)" />
+                                                    <Label styleClass="form-label" text="Giá khởi điểm (₫)" />
                                                     <TextField fx:id="textStartingPrice" prefHeight="45.0" promptText="VD: 150.0" styleClass="form-input" />
                                                 </VBox>
                                                 <VBox spacing="8.0" HBox.hgrow="ALWAYS">

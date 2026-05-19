@@ -162,6 +162,11 @@ public class ClientHandler implements Runnable {
                 handleMarkNotificationRead(msg);
             } else if (msg.startsWith("MARK_ALL_NOTIFICATIONS_READ:")) {
                 handleMarkAllNotificationsRead(msg);
+            } else if (msg.startsWith("DEPOSIT_REQUEST:")) {
+                if (parts.length >= 2) this.currentUserId = parts[1];
+                handleDepositRequest(msg);
+            } else if (msg.startsWith("DEPOSIT_REVIEW:")) {
+                handleDepositReview(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
@@ -312,7 +317,7 @@ public class ClientHandler implements Runnable {
                 NotificationService.notifyUser(server, winnerId,
                     Notification.Type.WALLET_REFUND,
                     "Hoàn tiền cam kết",
-                    String.format("Phiên \"%s\" bị xóa. Số tiền cam kết $%,.2f đã được hoàn trả vào ví của bạn.",
+                    String.format("Phiên \"%s\" bị xóa. Số tiền cam kết %,.0f ₫ đã được hoàn trả vào ví của bạn.",
                         (auction.getItem() != null) ? auction.getItem().getItemName() : auctionId,
                         auction.getHighestBid().getBidAmount()));
             }
@@ -510,7 +515,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                     NotificationService.notifyUser(server, winnerId,
                         Notification.Type.WALLET_REFUND,
                         "Hoàn tiền cam kết",
-                        String.format("Phiên \"%s\" bị hủy. Số tiền cam kết $%,.2f đã được hoàn trả vào ví của bạn.",
+                        String.format("Phiên \"%s\" bị hủy. Số tiền cam kết %,.0f ₫ đã được hoàn trả vào ví của bạn.",
                             (auction.getItem() != null) ? auction.getItem().getItemName() : auctionId,
                             auction.getHighestBid().getBidAmount()));
                 }
@@ -608,7 +613,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                     return;
                 }
             }
-            send(String.format("PAY_FAILED: Số dư cam kết không đủ (cần $%.2f, bạn có $%.2f locked)",
+            send(String.format("PAY_FAILED: Số dư cam kết không đủ (cần %,.0f ₫, bạn có %,.0f ₫ locked)",
                     finalPrice, currentLocked));
             return;
         }
@@ -651,13 +656,12 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         NotificationService.notifyUser(server, winnerId,
             Notification.Type.WALLET_PAYMENT,
             "Thanh toán thành công",
-            String.format(java.util.Locale.US, "Bạn đã thanh toán $%,.2f cho sản phẩm \"%s\".", finalPrice, itemName));
+            String.format("Bạn đã thanh toán %,.0f ₫ cho sản phẩm \"%s\".", finalPrice, itemName));
         
         NotificationService.notifyUser(server, sellerId,
             Notification.Type.WALLET_EARNING,
             "Bạn nhận được tiền bán hàng",
-            String.format(java.util.Locale.US, 
-                "Người mua đã thanh toán $%,.2f cho sản phẩm \"%s\" của bạn.", finalPrice, itemName));
+            String.format("Người mua đã thanh toán %,.0f ₫ cho sản phẩm \"%s\" của bạn.", finalPrice, itemName));
 
         // 6. Cập nhật memory + broadcast
         if (auction != null) auction.setStatus("PAID");
@@ -722,13 +726,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
-        // Mô phỏng "xử lý giao dịch" — sleep 1.5s
-        try {
-            System.out.println(">>> [TOPUP] Đang xử lý $" + amount + " cho " + user.getUsername() + "...");
-            Thread.sleep(1500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        System.out.println(">>> [TOPUP] Đang xử lý $" + amount + " cho " + user.getUsername() + "...");
 
         // Cộng tiền: lấy balance hiện tại + amount, set lại
         // (không dùng transferAtomic vì đây không phải transfer giữa 2 user)
@@ -746,7 +744,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             NotificationService.notifyUser(server, userId,
                 Notification.Type.WALLET_TOPUP,
                 "Nạp tiền thành công",
-                String.format(java.util.Locale.US, "Bạn đã nạp thành công $%,.2f vào ví.", amount));
+                String.format("Bạn đã nạp thành công %,.0f ₫ vào ví.", amount));
 
             System.out.printf(">>> [TOPUP] %s nạp $%.2f thành công | balance: $%.2f → $%.2f%n",
                     user.getUsername(), amount, current, newBalance);
@@ -827,8 +825,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                 NotificationService.notifyUser(server, prevBidderId,
                     Notification.Type.AUCTION_OUTBID,
                     "Bạn đã bị vượt giá!",
-                    String.format(java.util.Locale.US, 
-                        "Có người đã đặt giá $%,.2f cho \"%s\". Hãy đặt giá cao hơn để dẫn đầu!", 
+                    String.format("Có người đã đặt giá %,.0f ₫ cho \"%s\". Hãy đặt giá cao hơn để dẫn đầu!",
                         amount, itemName));
             }
 
@@ -837,8 +834,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                 NotificationService.notifyUser(server, updated.getSellerId(),
                     Notification.Type.AUCTION_NEW_BID,
                     "Có lượt đặt giá mới",
-                    String.format(java.util.Locale.US, 
-                        "Người dùng %s đã đặt giá $%,.2f cho \"%s\" của bạn.", 
+                    String.format("Người dùng %s đã đặt giá %,.0f ₫ cho \"%s\" của bạn.",
                         bidder.getUsername(), amount, itemName));
             }
 
@@ -988,5 +984,130 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     private void handleMarkAllNotificationsRead(String msg) {
         String userId = msg.split(":")[1];
         new database.NotificationDAO().markAllAsRead(userId);
+    }
+
+    /**
+     * Lưu yêu cầu nạp tiền qua chuyển khoản ngân hàng.
+     * Format: "DEPOSIT_REQUEST:<userId>:<amount>:<requestId>"
+     * Phản hồi: DEPOSIT_REQUEST_OK | DEPOSIT_REQUEST_FAILED:<reason>
+     */
+    private void handleDepositRequest(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 4) {
+            send("DEPOSIT_REQUEST_FAILED:Lệnh sai định dạng");
+            return;
+        }
+        String userId = parts[1];
+        double amount;
+        try {
+            amount = Double.parseDouble(parts[2]);
+        } catch (NumberFormatException e) {
+            send("DEPOSIT_REQUEST_FAILED:Số tiền không hợp lệ");
+            return;
+        }
+        String requestId = parts[3];
+
+        if (amount <= 0) {
+            send("DEPOSIT_REQUEST_FAILED:Số tiền phải lớn hơn 0");
+            return;
+        }
+
+        UserDAO userDao = new UserDAO();
+        User user = userDao.findById(userId);
+        if (user == null) {
+            send("DEPOSIT_REQUEST_FAILED:Người dùng không tồn tại");
+            return;
+        }
+
+        boolean saved = new database.DepositRequestDAO().save(requestId, userId, amount);
+        if (!saved) {
+            send("DEPOSIT_REQUEST_FAILED:Lỗi lưu yêu cầu");
+            return;
+        }
+
+        send("DEPOSIT_REQUEST_OK");
+        System.out.printf(">>> [DEPOSIT] %s yêu cầu nạp $%.2f (mã: %s)%n",
+                user.getUsername(), amount, requestId);
+
+        NotificationService.notifyAdmins(server,
+                Notification.Type.ADMIN_DEPOSIT_REQUEST,
+                "Yêu cầu nạp tiền mới",
+                String.format("%s muốn nạp %,.0f ₫ (mã: %s)", user.getUsername(), amount, requestId));
+        server.broadcastToRole("ADMIN", "NEW_DEPOSIT_REQUEST:" + userId);
+    }
+
+    /**
+     * Admin duyệt hoặc từ chối yêu cầu nạp tiền.
+     * Format: "DEPOSIT_REVIEW:<requestId>:<APPROVED|REJECTED>:<adminNote>"
+     * Phản hồi: DEPOSIT_REVIEW_OK | DEPOSIT_REVIEW_FAILED:<reason>
+     */
+    private void handleDepositReview(String msg) {
+        String[] parts = msg.split(":", 4);
+        if (parts.length < 3) {
+            send("DEPOSIT_REVIEW_FAILED:Lệnh sai định dạng");
+            return;
+        }
+        String requestId = parts[1];
+        String statusStr  = parts[2];
+        String adminNote  = parts.length >= 4 ? parts[3] : "";
+
+        model.auction.DepositRequest.Status status;
+        try {
+            status = model.auction.DepositRequest.Status.valueOf(statusStr);
+        } catch (IllegalArgumentException e) {
+            send("DEPOSIT_REVIEW_FAILED:Trạng thái không hợp lệ");
+            return;
+        }
+        if (status == model.auction.DepositRequest.Status.PENDING) {
+            send("DEPOSIT_REVIEW_FAILED:Trạng thái không hợp lệ");
+            return;
+        }
+
+        database.DepositRequestDAO dao = new database.DepositRequestDAO();
+        model.auction.DepositRequest dr = dao.findById(requestId);
+        if (dr == null) {
+            send("DEPOSIT_REVIEW_FAILED:Không tìm thấy yêu cầu");
+            return;
+        }
+
+        boolean ok = dao.review(requestId, status, adminNote);
+        if (!ok) {
+            send("DEPOSIT_REVIEW_FAILED:Lỗi cập nhật DB");
+            return;
+        }
+
+        if (status == model.auction.DepositRequest.Status.APPROVED) {
+            UserDAO userDao = new UserDAO();
+            double current    = userDao.getBalance(dr.getUserId());
+            double newBalance = current + dr.getAmount();
+            userDao.setBalance(dr.getUserId(), newBalance);
+
+            new database.WalletTransactionDAO().save(dr.getUserId(), dr.getAmount(),
+                    model.auction.WalletTransaction.TransactionType.TOPUP,
+                    "Nạp tiền qua chuyển khoản - Mã: " + requestId);
+
+            NotificationService.notifyUser(server, dr.getUserId(),
+                    Notification.Type.WALLET_TOPUP,
+                    "Nạp tiền thành công",
+                    String.format("Yêu cầu nạp %,.0f ₫ (mã: %s) đã được duyệt.", dr.getAmount(), requestId));
+
+            double locked = userDao.getLockedBalance(dr.getUserId());
+            server.sendToUser(dr.getUserId(), String.format(java.util.Locale.US,
+                    "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
+
+            System.out.printf(">>> [DEPOSIT] Duyệt nạp $%.2f cho user %s%n",
+                    dr.getAmount(), dr.getUserId());
+        } else {
+            NotificationService.notifyUser(server, dr.getUserId(),
+                    Notification.Type.DEPOSIT_REJECTED,
+                    "Yêu cầu nạp tiền bị từ chối",
+                    "Yêu cầu nạp tiền (mã: " + requestId + ") bị từ chối."
+                            + (adminNote.isEmpty() ? "" : " Lý do: " + adminNote));
+
+            System.out.printf(">>> [DEPOSIT] Từ chối nạp tiền cho user %s%n", dr.getUserId());
+        }
+
+        send("DEPOSIT_REVIEW_OK");
+        server.broadcastToRole("ADMIN", "USERS_UPDATED");
     }
 }

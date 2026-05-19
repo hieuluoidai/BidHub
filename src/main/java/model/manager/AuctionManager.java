@@ -137,7 +137,7 @@ public class AuctionManager {
                                     model.notification.Notification.Type.AUCTION_WON,
                                     "Bạn đã thắng phiên đấu giá!",
                                     String.format(java.util.Locale.US,
-                                        "Bạn đã thắng \"%s\" với giá $%,.2f. Vào ví để thanh toán.",
+                                        "Bạn đã thắng \"%s\" với giá %,.0f ₫. Vào ví để thanh toán.",
                                         itemName, price)
                                 );
                                 if (sellerId != null) {
@@ -145,7 +145,7 @@ public class AuctionManager {
                                         model.notification.Notification.Type.AUCTION_ENDED_SOLD,
                                         "Phiên của bạn đã kết thúc — có người thắng",
                                         String.format(java.util.Locale.US,
-                                            "Phiên \"%s\" kết thúc. Người thắng: %s, giá $%,.2f. Chờ thanh toán.",
+                                            "Phiên \"%s\" kết thúc. Người thắng: %s, giá %,.0f ₫. Chờ thanh toán.",
                                             itemName, auction.getHighestBid().getBidder().getUsername(), price)
                                     );
                                 }

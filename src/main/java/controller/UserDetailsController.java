@@ -56,6 +56,11 @@ public class UserDetailsController {
 
     private User user;
     private boolean isEditing = false;
+    private Runnable onAvatarChanged;
+
+    public void setOnAvatarChanged(Runnable callback) {
+        this.onAvatarChanged = callback;
+    }
 
     public void setUserData(User user) {
         this.user = user;
@@ -182,8 +187,8 @@ public class UserDetailsController {
     }
 
     private void refreshBalanceLabels() {
-        lblBalance.setText(String.format("%,.2f VND", user.getBalance()));
-        lblLockedBalance.setText(String.format("%,.2f VND", user.getLockedBalance()));
+        lblBalance.setText(String.format("%,.0f ₫", user.getBalance()));
+        lblLockedBalance.setText(String.format("%,.0f ₫", user.getLockedBalance()));
     }
 
     private void refreshAvatar() {
@@ -214,7 +219,7 @@ public class UserDetailsController {
 
     @FXML
     void handleAvatarClick() {
-        if (isEditing) return; // Không cho đổi ảnh khi đang sửa thông tin chữ
+        if (isEditing) return;
         if (user == null || !AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId())) return;
 
         FileChooser fileChooser = new FileChooser();
@@ -223,28 +228,48 @@ public class UserDetailsController {
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
         );
         File selectedFile = fileChooser.showOpenDialog(lblUsername.getScene().getWindow());
-        if (selectedFile != null) {
-            try {
-                String newAvatarPath = ImageStorageService.saveAvatar(selectedFile, user.getUserId());
-                
-                String cmd = "UPDATE_AVATAR:" + user.getUserId() + ":" + newAvatarPath;
-                AppState.getInstance().getClient().setStringMessageCallback(msg -> {
-                    javafx.application.Platform.runLater(() -> {
-                        if (msg.equals("UPDATE_AVATAR_OK")) {
-                            user.setAvatarPath(newAvatarPath);
-                            refreshAvatar();
-                            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
-                                    "Thành công", "Đã cập nhật ảnh đại diện!");
-                        } else {
-                            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
-                        }
-                    });
+        if (selectedFile == null) return;
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/avatar_crop_dialog.fxml"));
+            Parent root = loader.load();
+            AvatarCropController cropCtrl = loader.getController();
+            cropCtrl.setImage(
+                new javafx.scene.image.Image(selectedFile.toURI().toString()),
+                this::uploadCroppedAvatar
+            );
+            Stage cropStage = new Stage();
+            cropStage.setTitle("Chỉnh sửa ảnh đại diện");
+            cropStage.setScene(new javafx.scene.Scene(root));
+            cropStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            cropStage.setResizable(false);
+            cropStage.showAndWait();
+        } catch (Exception e) {
+            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR,
+                    "Lỗi", "Không thể mở trình chỉnh sửa: " + e.getMessage());
+        }
+    }
+
+    private void uploadCroppedAvatar(File croppedFile) {
+        try {
+            String newAvatarPath = ImageStorageService.saveAvatar(croppedFile, user.getUserId());
+            AppState.getInstance().getClient().setStringMessageCallback(msg -> {
+                javafx.application.Platform.runLater(() -> {
+                    if (msg.equals("UPDATE_AVATAR_OK")) {
+                        user.setAvatarPath(newAvatarPath);
+                        refreshAvatar();
+                        if (onAvatarChanged != null) onAvatarChanged.run();
+                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                                "Thành công", "Đã cập nhật ảnh đại diện!");
+                    } else {
+                        utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Thất bại", msg);
+                    }
                 });
-                AppState.getInstance().getClient().send(cmd);
-                
-            } catch (Exception e) {
-                utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Lỗi", "Không thể lưu ảnh: " + e.getMessage());
-            }
+            });
+            AppState.getInstance().getClient().send("UPDATE_AVATAR:" + user.getUserId() + ":" + newAvatarPath);
+        } catch (Exception e) {
+            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR,
+                    "Lỗi", "Không thể lưu ảnh: " + e.getMessage());
         }
     }
 

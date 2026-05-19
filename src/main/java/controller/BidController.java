@@ -44,11 +44,11 @@ public class BidController {
     public void setAuctionData(Auction auction) {
         this.currentAuction = auction;
         labelItemName.setText(auction.getItem().getItemName());
-        labelCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
+        labelCurrentPrice.setText(String.format("%,.0f ₫", auction.getCurrentPrice()));
         
         User user = AppState.getInstance().getCurrentUser();
         if (user != null) {
-            labelUserBalance.setText(String.format("$%,.2f", user.getBalance()));
+            labelUserBalance.setText(String.format("%,.0f ₫", user.getBalance()));
         }
         
         // Không tự gợi ý sẵn giá đặt; để người dùng chủ động nhập mức muốn bid.
@@ -104,7 +104,7 @@ public class BidController {
             }
 
             if (amount <= currentAuction.getCurrentPrice()) {
-                showError(String.format("Giá đặt phải cao hơn giá hiện tại ($%.2f)!",
+                showError(String.format("Giá đặt phải cao hơn giá hiện tại (%,.0f ₫)!",
                         currentAuction.getCurrentPrice()));
                 return;
             }
@@ -163,7 +163,7 @@ public class BidController {
             }
             case OUTBID -> {
                 // Cập nhật giá mới nhất để user biết đường bid lại ngay
-                labelCurrentPrice.setText(String.format("Giá hiện tại: $%.2f", result.getCurrentPrice()));
+                labelCurrentPrice.setText(String.format("Giá hiện tại: %,.0f ₫", result.getCurrentPrice()));
                 showError(result.getMessage());
             }
             case FAILURE -> {

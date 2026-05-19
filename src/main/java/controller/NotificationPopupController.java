@@ -141,6 +141,8 @@ public class NotificationPopupController {
             case ADMIN_NEW_USER           -> "👤";
             case ADMIN_NEW_SELLER_REQUEST -> "📨";
             case ADMIN_NEW_AUCTION        -> "🆕";
+            case ADMIN_DEPOSIT_REQUEST    -> "💳";
+            case DEPOSIT_REJECTED         -> "❌";
         };
     }
 
@@ -152,7 +154,9 @@ public class NotificationPopupController {
             case WALLET_REFUND, AUCTION_EXTENDED -> "#F59E0B";
             case ITEM_POSTED, AUCTION_NEW_BID -> "#3B82F6";
             case AUCTION_ENDED_NO_BID -> "#64748B";
-            case ADMIN_NEW_USER, ADMIN_NEW_SELLER_REQUEST, ADMIN_NEW_AUCTION -> "#8B5CF6";
+            case DEPOSIT_REJECTED -> "#EF4444";
+            case ADMIN_NEW_USER, ADMIN_NEW_SELLER_REQUEST, ADMIN_NEW_AUCTION,
+                 ADMIN_DEPOSIT_REQUEST -> "#8B5CF6";
         };
     }
 }

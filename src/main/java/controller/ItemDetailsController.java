@@ -384,7 +384,7 @@ public class ItemDetailsController {
         VBox vPrice = new VBox(2);
         vPrice.setAlignment(Pos.CENTER_RIGHT);
 
-        Label lblAmount = new Label(String.format("$%,.2f", bid.getBidAmount()));
+        Label lblAmount = new Label(String.format("%,.0f ₫", bid.getBidAmount()));
         lblAmount.getStyleClass().add("bid-feed-amount");
 
         Label lblTime = new Label(bid.getTimestamp().format(dateTimeFormatter));
@@ -416,7 +416,7 @@ public class ItemDetailsController {
             @Override
             public String toString(Number value) {
                 if (value == null) return "";
-                return String.format("$%,.0f", value.doubleValue());
+                return String.format("%,.0f ₫", value.doubleValue());
             }
 
             @Override
@@ -449,10 +449,10 @@ public class ItemDetailsController {
 
         lblItemName.setText(auction.getItemName());
         lblCategory.setText(auction.getItem().getClass().getSimpleName());
-        lblStartingPrice.setText(String.format("$%,.2f", auction.getItem().getStartingPrice()));
+        lblStartingPrice.setText(String.format("%,.0f ₫", auction.getItem().getStartingPrice()));
 
         double newPrice = auction.getCurrentPrice();
-        lblCurrentPrice.setText(String.format("$%,.2f", newPrice));
+        lblCurrentPrice.setText(String.format("%,.0f ₫", newPrice));
         if (lastDisplayedPrice >= 0 && newPrice > lastDisplayedPrice) {
             flashPriceLabel();
         }
@@ -645,7 +645,7 @@ public class ItemDetailsController {
         point.setMinSize(10, 10);
         point.setMaxSize(10, 10);
         Tooltip.install(point, new Tooltip(
-                "Giá khởi điểm\n" + String.format("$%,.2f", startingPrice)
+                "Giá khởi điểm\n" + String.format("%,.0f ₫", startingPrice)
         ));
         return point;
     }
@@ -660,7 +660,7 @@ public class ItemDetailsController {
         String bidderName = bid.getBidder() != null ? bid.getBidder().getUsername() : "Ẩn danh";
         Tooltip.install(point, new Tooltip(
                 bidderName + "\n"
-                        + String.format("$%,.2f", bid.getBidAmount()) + "\n"
+                        + String.format("%,.0f ₫", bid.getBidAmount()) + "\n"
                         + bid.getTimestamp().format(dateTimeFormatter) + "\n"
                         + bid.getBidType().getDisplayName()
         ));

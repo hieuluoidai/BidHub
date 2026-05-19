@@ -4,12 +4,14 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="380.0" prefWidth="430.0" spacing="18.0" styleClass="card"
+<VBox prefWidth="430.0" spacing="0.0" styleClass="card"
       stylesheets="@style.css"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -18,54 +20,123 @@
         <Insets top="35.0" right="35.0" bottom="30.0" left="35.0"/>
     </padding>
 
-    <!-- Tiêu đề -->
-    <VBox spacing="4.0">
-        <Label styleClass="label-header" text="Nạp tiền vào tài khoản">
-            <font><Font name="System Bold" size="22.0"/></font>
-        </Label>
-        <Label text="Tiền nạp sẽ vào ngay sau khi xử lý" textFill="#64748b">
+    <!-- ===== BƯỚC 1: Nhập số tiền ===== -->
+    <VBox fx:id="stepInputPane" spacing="18.0">
+
+        <!-- Tiêu đề -->
+        <VBox spacing="4.0">
+            <Label styleClass="label-header" text="Nạp tiền vào tài khoản">
+                <font><Font name="System Bold" size="22.0"/></font>
+            </Label>
+            <Label text="Chuyển khoản ngân hàng — Admin sẽ duyệt và cộng tiền" textFill="#64748b">
+                <font><Font size="13.0"/></font>
+            </Label>
+        </VBox>
+
+        <!-- Số dư hiện tại -->
+        <VBox spacing="4.0"
+              style="-fx-background-color: #f0f9ff; -fx-background-radius: 8;
+                     -fx-border-color: #bae6fd; -fx-border-radius: 8; -fx-padding: 14;">
+            <Label text="Số dư hiện tại"
+                   style="-fx-font-size: 12px; -fx-text-fill: #475569; -fx-font-weight: bold;"/>
+            <Label fx:id="lblCurrentBalance" text="0 ₫"
+                   style="-fx-font-size: 22px; -fx-text-fill: #0369a1; -fx-font-weight: 800;"/>
+        </VBox>
+
+        <!-- Số tiền cần nạp -->
+        <VBox spacing="6.0">
+            <Label text="Số tiền cần nạp (₫)"
+                   style="-fx-font-size: 12px; -fx-text-fill: #334155; -fx-font-weight: bold;"/>
+            <TextField fx:id="textAmount" prefHeight="44.0"
+                       promptText="VD: 5000"
+                       style="-fx-background-radius: 8; -fx-font-size: 15px;"/>
+        </VBox>
+
+        <!-- Lỗi -->
+        <Label fx:id="lblError" wrapText="true">
             <font><Font size="13.0"/></font>
         </Label>
+
+        <!-- Buttons bước 1 -->
+        <HBox alignment="CENTER_RIGHT" spacing="10.0">
+            <Button fx:id="btnCancel" mnemonicParsing="false" onAction="#handleCancel"
+                    prefHeight="42.0" prefWidth="90.0"
+                    styleClass="button-secondary" text="Hủy"/>
+            <Button fx:id="btnTopUp" defaultButton="true" mnemonicParsing="false"
+                    onAction="#handleTopUp"
+                    prefHeight="42.0" prefWidth="160.0"
+                    styleClass="button-primary" text="TIẾP THEO →"/>
+        </HBox>
     </VBox>
 
-    <!-- Box hiển thị số dư hiện tại -->
-    <VBox spacing="4.0"
-          style="-fx-background-color: #f0f9ff; -fx-background-radius: 8;
-                 -fx-border-color: #bae6fd; -fx-border-radius: 8; -fx-padding: 14;">
-        <Label text="Số dư hiện tại"
-               style="-fx-font-size: 12px; -fx-text-fill: #475569; -fx-font-weight: bold;"/>
-        <Label fx:id="lblCurrentBalance" text="\$0.00"
-               style="-fx-font-size: 22px; -fx-text-fill: #0369a1; -fx-font-weight: 800;"/>
+    <!-- ===== BƯỚC 2: QR chuyển khoản ===== -->
+    <VBox fx:id="stepQrPane" managed="false" visible="false" spacing="14.0">
+
+        <!-- Tiêu đề bước 2 -->
+        <VBox spacing="4.0">
+            <Label styleClass="label-header" text="Chuyển khoản ngân hàng">
+                <font><Font name="System Bold" size="20.0"/></font>
+            </Label>
+            <Label fx:id="lblQrInstruction"
+                   text="Mở ứng dụng ngân hàng, quét mã QR và hoàn tất giao dịch trước khi xác nhận."
+                   textFill="#64748b" wrapText="true">
+                <font><Font size="13.0"/></font>
+            </Label>
+        </VBox>
+
+        <!-- QR Code -->
+        <HBox alignment="CENTER">
+            <ImageView fx:id="imgQr" fitHeight="170.0" fitWidth="170.0"
+                       preserveRatio="true" smooth="true"
+                       style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 8, 0, 0, 2);"/>
+        </HBox>
+
+        <Separator/>
+
+        <!-- Thông tin chuyển khoản -->
+        <VBox spacing="6.0"
+              style="-fx-background-color: #f8fafc; -fx-background-radius: 8;
+                     -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 12;">
+            <HBox spacing="8.0">
+                <Label text="Ngân hàng:" style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-min-width: 105;"/>
+                <Label text="BIDV" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            </HBox>
+            <HBox spacing="8.0">
+                <Label text="Số tài khoản:" style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-min-width: 105;"/>
+                <Label text="4411622942" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            </HBox>
+            <HBox spacing="8.0">
+                <Label text="Chủ tài khoản:" style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-min-width: 105;"/>
+                <Label text="Nguyễn Trung Hiếu" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            </HBox>
+            <HBox spacing="8.0">
+                <Label text="Số tiền:" style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-min-width: 105;"/>
+                <Label fx:id="lblQrAmount" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0369a1;"/>
+            </HBox>
+            <HBox spacing="8.0">
+                <Label text="Nội dung CK:" style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-min-width: 105;"/>
+                <Label fx:id="lblRefCode"
+                       style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #7c3aed;
+                              -fx-background-color: #ede9fe; -fx-background-radius: 4; -fx-padding: 2 6;"/>
+            </HBox>
+        </VBox>
+
+        <!-- Loading indicator (khi gửi request) -->
+        <HBox fx:id="paneLoading" alignment="CENTER" spacing="10.0" managed="false" visible="false">
+            <ProgressIndicator prefHeight="18.0" prefWidth="18.0"/>
+            <Label text="Đang gửi yêu cầu..." textFill="#64748b"/>
+        </HBox>
+
+        <!-- Buttons bước 2 -->
+        <HBox alignment="CENTER_RIGHT" spacing="10.0">
+            <Button fx:id="btnBack" mnemonicParsing="false" onAction="#handleBack"
+                    prefHeight="42.0" prefWidth="120.0"
+                    styleClass="button-secondary" text="← Quay lại"/>
+            <Button fx:id="btnConfirmTransfer" defaultButton="true" mnemonicParsing="false"
+                    onAction="#handleConfirmTransfer"
+                    prefHeight="42.0" prefWidth="175.0"
+                    styleClass="button-primary" text="✓ Đã chuyển tiền"/>
+        </HBox>
     </VBox>
 
-    <!-- Số tiền cần nạp -->
-    <VBox spacing="6.0">
-        <Label text="Số tiền cần nạp (\$)"
-               style="-fx-font-size: 12px; -fx-text-fill: #334155; -fx-font-weight: bold;"/>
-        <TextField fx:id="textAmount" prefHeight="44.0"
-                   promptText="VD: 5000"
-                   style="-fx-background-radius: 8; -fx-font-size: 15px;"/>
-    </VBox>
-
-    <!-- Thông báo lỗi -->
-    <Label fx:id="lblError" wrapText="true">
-        <font><Font size="13.0"/></font>
-    </Label>
-
-    <!-- Loading indicator -->
-    <HBox alignment="CENTER" spacing="10.0">
-        <ProgressIndicator fx:id="progressIndicator" prefHeight="22.0" prefWidth="22.0" managed="false" visible="false"/>
-        <Label text="Đang xử lý giao dịch..." textFill="#64748b" managed="false"/>
-    </HBox>
-
-    <!-- Buttons -->
-    <HBox alignment="CENTER_RIGHT" spacing="10.0">
-        <Button fx:id="btnCancel" mnemonicParsing="false" onAction="#handleCancel"
-                prefHeight="42.0" prefWidth="90.0"
-                styleClass="button-secondary" text="Hủy"/>
-        <Button fx:id="btnTopUp" defaultButton="true" mnemonicParsing="false"
-                onAction="#handleTopUp"
-                prefHeight="42.0" prefWidth="140.0"
-                styleClass="button-primary" text="NẠP NGAY"/>
-    </HBox>
 </VBox>

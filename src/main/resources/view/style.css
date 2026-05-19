@@ -1392,9 +1392,10 @@
 .role-admin  { -fx-background-color: #EF4444; } /* Red */
 .role-seller { -fx-background-color: #8B5CF6; } /* Purple */
 .role-bidder { -fx-background-color: #10B981; } /* Emerald */
-.role-pending { -fx-background-color: #F59E0B; } /* Orange */
-.role-hosting { -fx-background-color: #3B82F6; } /* Blue — đang mở phiên RUNNING */
-.role-leading { -fx-background-color: #14B8A6; } /* Teal — đang dẫn đầu giá */
+.role-pending  { -fx-background-color: #F59E0B; } /* Orange */
+.role-hosting  { -fx-background-color: #3B82F6; } /* Blue — đang mở phiên RUNNING */
+.role-leading  { -fx-background-color: #14B8A6; } /* Teal — đang dẫn đầu giá */
+.role-deposit  { -fx-background-color: #EC4899; } /* Pink — chờ nạp tiền */
 
 .status-badge-flow {
     -fx-hgap: 6;

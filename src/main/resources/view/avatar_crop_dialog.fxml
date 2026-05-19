@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefWidth="506.0" spacing="16.0" styleClass="card"
+      stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.AvatarCropController">
+    <padding><Insets top="28.0" right="28.0" bottom="24.0" left="28.0"/></padding>
+
+    <!-- Title -->
+    <VBox spacing="4.0">
+        <Label styleClass="label-header" text="Chỉnh sửa ảnh đại diện">
+            <font><Font name="System Bold" size="20.0"/></font>
+        </Label>
+        <Label text="Kéo để điều chỉnh vị trí  •  Cuộn chuột để phóng to / thu nhỏ"
+               style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
+    </VBox>
+
+    <!-- Display area: dark background Pane with ImageView + Canvas overlay -->
+    <Pane fx:id="displayPane" prefWidth="450.0" prefHeight="330.0"
+          style="-fx-background-color: #1a1a2e; -fx-background-radius: 10;">
+        <ImageView fx:id="imgDisplay" smooth="true" preserveRatio="false"/>
+        <Canvas fx:id="overlayCanvas" width="450.0" height="330.0"/>
+    </Pane>
+
+    <!-- Preview row -->
+    <HBox spacing="14.0" alignment="CENTER_LEFT">
+        <Label text="Xem trước:"
+               style="-fx-font-size: 12px; -fx-text-fill: #475569; -fx-font-weight: bold;"/>
+        <StackPane style="-fx-background-color: #f1f5f9; -fx-background-radius: 32;">
+            <Canvas fx:id="previewCanvas" width="64.0" height="64.0"/>
+        </StackPane>
+        <Label text="Ảnh sẽ hiển thị dưới dạng hình tròn trong ứng dụng"
+               style="-fx-font-size: 12px; -fx-text-fill: #94a3b8;" wrapText="true">
+            <HBox.margin><Insets left="4.0"/></HBox.margin>
+        </Label>
+    </HBox>
+
+    <!-- Buttons -->
+    <HBox alignment="CENTER_RIGHT" spacing="10.0">
+        <Button fx:id="btnCancel" mnemonicParsing="false" onAction="#handleCancel"
+                prefHeight="42.0" prefWidth="90.0"
+                styleClass="button-secondary" text="Hủy"/>
+        <Button fx:id="btnSave" defaultButton="true" mnemonicParsing="false" onAction="#handleSave"
+                prefHeight="42.0" prefWidth="175.0"
+                styleClass="button-primary" text="Lưu ảnh đại diện"/>
+    </HBox>
+</VBox>

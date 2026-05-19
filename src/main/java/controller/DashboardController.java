@@ -328,6 +328,19 @@ public class DashboardController {
         refreshBalanceLabel();
     }
 
+    private void refreshSidebarAvatar() {
+        User user = AppState.getInstance().getCurrentUser();
+        if (user == null || imgSidebarAvatar == null) return;
+        if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
+            String uri = utils.ImageStorageService.toFileUri(user.getAvatarPath());
+            if (uri != null) {
+                imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri, true));
+                imgSidebarAvatar.setVisible(true);
+                if (lblSidebarAvatar != null) lblSidebarAvatar.setVisible(false);
+            }
+        }
+    }
+
     /**
      * Cập nhật label hiển thị số dư khả dụng và số dư bị khóa.
      * Gọi sau khi nạp tiền, bid hoặc thanh toán xong để UI khớp với DB.
@@ -337,10 +350,10 @@ public class DashboardController {
         if (user == null) return;
         
         if (lblBalance != null) {
-            lblBalance.setText(String.format("$%,.2f", user.getBalance()));
+            lblBalance.setText(String.format("%,.0f ₫", user.getBalance()));
         }
         if (lblLockedBalance != null) {
-            lblLockedBalance.setText(String.format("$%,.2f", user.getLockedBalance()));
+            lblLockedBalance.setText(String.format("%,.0f ₫", user.getLockedBalance()));
         }
     }
 
@@ -462,7 +475,8 @@ public class DashboardController {
             
             UserDetailsController controller = loader.getController();
             controller.setUserData(AppState.getInstance().getCurrentUser());
-            
+            controller.setOnAvatarChanged(this::refreshSidebarAvatar);
+
             Stage stage = new Stage();
             stage.setTitle("Thông tin cá nhân");
             stage.setScene(new Scene(root));
@@ -568,8 +582,8 @@ public class DashboardController {
         User user = AppState.getInstance().getCurrentUser();
         if (user == null) return;
 
-        lblWalletBalance.setText(String.format("$%,.2f", user.getBalance()));
-        lblWalletLocked.setText(String.format("$%,.2f", user.getLockedBalance()));
+        lblWalletBalance.setText(String.format("%,.0f ₫", user.getBalance()));
+        lblWalletLocked.setText(String.format("%,.0f ₫", user.getLockedBalance()));
         
         // Cập nhật trạng thái tài khoản
         if (paneAccountStatus != null) {
@@ -689,7 +703,7 @@ public class DashboardController {
         Region spacer = new Region();
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         
-        Label lblAmount = new Label(String.format("%s$%,.2f", symbol, tx.getAmount()));
+        Label lblAmount = new Label(String.format("%s%,.0f ₫", symbol, tx.getAmount()));
         lblAmount.getStyleClass().add("bid-feed-amount");
         
         if (tx.getAmount() < 0) {

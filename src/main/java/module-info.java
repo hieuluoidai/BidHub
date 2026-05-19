@@ -9,6 +9,7 @@ module online.auction.system {
 
     // Thư viện băm mật khẩu BCrypt (Tính năng bảo mật của Hiếu)
     requires jbcrypt;
+    requires java.desktop;
 
     // Cho phép JavaFX truy cập vào các class trong package để hiển thị dữ liệu lên bảng (Table) và load FXML
     opens model.auction to javafx.base;

@@ -23,7 +23,7 @@
             <StackPane>
                <children>
                   <Circle fill="#EFF6FF" radius="32.0" stroke="#DBEAFE" strokeWidth="2.0" />
-                  <Label text="\$" textFill="#3B82F6" style="-fx-font-size: 32px; -fx-font-weight: 900;" />
+                  <Label text="₫" textFill="#3B82F6" style="-fx-font-size: 32px; -fx-font-weight: 900;" />
                </children>
             </StackPane>
 
@@ -38,18 +38,18 @@
                <children>
                   <HBox spacing="8.0" alignment="CENTER_LEFT">
                      <Label styleClass="form-label" text="Số tiền cần trả:" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-                     <Label fx:id="amountDueLabel" text="\$0.00" style="-fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-font-size: 16px;" />
+                     <Label fx:id="amountDueLabel" text="0 ₫" style="-fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-font-size: 16px;" />
                   </HBox>
                   <HBox spacing="8.0" alignment="CENTER_LEFT">
                      <Label styleClass="form-label" text="Số dư hiện có:" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-                     <Label fx:id="currentBalanceLabel" text="\$0.00" style="-fx-text-fill: #64748B; -fx-font-weight: bold;" />
+                     <Label fx:id="currentBalanceLabel" text="0 ₫" style="-fx-text-fill: #64748B; -fx-font-weight: bold;" />
                   </HBox>
                   
                   <Separator />
                   
                   <HBox spacing="8.0" alignment="CENTER_LEFT">
                      <Label fx:id="resultStatusLabel" styleClass="form-label" text="Sau thanh toán, số dư còn:" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-                     <Label fx:id="resultAmountLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
+                     <Label fx:id="resultAmountLabel" text="0 ₫" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
                   </HBox>
                </children>
             </VBox>

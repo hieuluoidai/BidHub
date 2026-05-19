@@ -36,7 +36,7 @@ public class BidResult implements Serializable {
     /** Bid thành công — bidder đang dẫn đầu. */
     public static BidResult success(String auctionId, double amount, String winnerUsername) {
         return new BidResult(Status.SUCCESS, auctionId, amount, amount,
-                String.format("✅ Đặt giá $%.2f thành công! Bạn đang dẫn đầu.", amount),
+                String.format("✅ Đặt giá %,.0f ₫ thành công! Bạn đang dẫn đầu.", amount),
                 winnerUsername);
     }
 

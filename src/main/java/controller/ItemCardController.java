@@ -53,7 +53,7 @@ public class ItemCardController {
         this.onQuickBid = onQuickBid;
 
         lblName.setText(auction.getItemName());
-        lblPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
+        lblPrice.setText(String.format("%,.0f ₫", auction.getCurrentPrice()));
         lblCategory.setText(auction.getItem() != null ? auction.getItem().getItemType().toUpperCase() : "GENERAL");
         
         String status = auction.getStatus();

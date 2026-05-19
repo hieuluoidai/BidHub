@@ -28,10 +28,13 @@ public class Notification implements Serializable {
         SELLER_APPROVED,
         SELLER_REVOKED,
 
+        DEPOSIT_REJECTED,        // Yêu cầu nạp tiền bị từ chối
+
         // ===== Admin-only =====
         ADMIN_NEW_USER,
         ADMIN_NEW_SELLER_REQUEST,
-        ADMIN_NEW_AUCTION
+        ADMIN_NEW_AUCTION,
+        ADMIN_DEPOSIT_REQUEST    // Yêu cầu nạp tiền mới từ user
     }
 
     private String notificationId;

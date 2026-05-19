@@ -21,12 +21,17 @@ import javafx.scene.control.ToggleGroup;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
+import model.auction.DepositRequest;
 import model.manager.AppState;
 import model.user.User;
+import database.DepositRequestDAO;
 import database.UserDAO;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AdminController {
 
@@ -66,11 +71,26 @@ public class AdminController {
     @FXML private Label labelTotalBidders;
     @FXML private Label labelTotalSellers;
 
+    @FXML private TableView<DepositRequest> depositTable;
+    @FXML private TableColumn<DepositRequest, String> colDepositRefCode;
+    @FXML private TableColumn<DepositRequest, String> colDepositUsername;
+    @FXML private TableColumn<DepositRequest, String> colDepositAmount;
+    @FXML private TableColumn<DepositRequest, String> colDepositTime;
+    @FXML private TableColumn<DepositRequest, String> colDepositAction;
+    @FXML private javafx.scene.layout.VBox paneEmptyDeposits;
+    @FXML private Label lblDepositCount;
+
     @FXML private TabPane mainTabPane;
     @FXML private Button navAuctionsBtn;
     @FXML private Button navUsersBtn;
+    @FXML private Button navDepositsBtn;
     @FXML private Label pageTitleLabel;
     @FXML private Label pageSubtitleLabel;
+
+    private final ObservableList<DepositRequest> depositList = FXCollections.observableArrayList();
+    private Set<String> pendingDepositUserIds = new HashSet<>();
+
+    private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @FXML
     public void initialize() {
@@ -109,10 +129,14 @@ public class AdminController {
             if (msg.equals("USERS_UPDATED") || msg.startsWith("NEW_SELLER_REQUEST:")) {
                 javafx.application.Platform.runLater(this::loadUserData);
             }
+            if (msg.startsWith("NEW_DEPOSIT_REQUEST:") || msg.equals("USERS_UPDATED")) {
+                javafx.application.Platform.runLater(this::loadDepositData);
+            }
         });
 
         setupUserTable();
         setupAuctionFiltering();
+        setupDepositTable();
 
         // Bind vào ObservableList từ AppState — tự động cập nhật theo socket
         ObservableList<Auction> auctions = AppState.getInstance().getAuctionList();
@@ -127,6 +151,7 @@ public class AdminController {
         });
 
         loadUserData();
+        loadDepositData();
         updateAuctionStats();
         // renderAuctions(); // Sẽ được gọi thông qua listener của filteredAuctions
 
@@ -287,6 +312,50 @@ public class AdminController {
 
         colUserId  .setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUserId()));
         colUsername.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
+        colUsername.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String username, boolean empty) {
+                super.updateItem(username, empty);
+                if (empty || username == null) { setGraphic(null); return; }
+                User u = getTableRow().getItem();
+
+                // Avatar circle (36×36)
+                javafx.scene.layout.StackPane avatar = new javafx.scene.layout.StackPane();
+                avatar.setMinSize(36, 36); avatar.setMaxSize(36, 36);
+
+                String color = (u instanceof model.user.Admin)  ? "#3B82F6"
+                             : (u instanceof model.user.Seller) ? "#8B5CF6"
+                             : "#10B981";
+
+                // Fallback: chữ cái đầu
+                javafx.scene.control.Label lblInit = new javafx.scene.control.Label(
+                        username.isEmpty() ? "?" : username.substring(0, 1).toUpperCase());
+                lblInit.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;");
+                avatar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 50%;");
+                avatar.getChildren().add(lblInit);
+
+                // Ảnh avatar nếu có
+                if (u != null && u.getAvatarPath() != null && !u.getAvatarPath().isEmpty()) {
+                    String uri = utils.ImageStorageService.toFileUri(u.getAvatarPath());
+                    if (uri != null) {
+                        javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(
+                                new javafx.scene.image.Image(uri, 36, 36, true, true));
+                        iv.setFitWidth(36); iv.setFitHeight(36);
+                        javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(18, 18, 18);
+                        iv.setClip(clip);
+                        avatar.getChildren().add(iv);
+                    }
+                }
+
+                javafx.scene.control.Label lblName = new javafx.scene.control.Label(username);
+                lblName.setStyle("-fx-font-size: 13px;");
+
+                javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(10, avatar, lblName);
+                box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                setGraphic(box);
+                setText(null);
+            }
+        });
         colEmail   .setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getEmail()));
 
         // Gán Style Class để căn lề Header (đồng bộ với CSS)
@@ -347,7 +416,7 @@ public class AdminController {
         // Balance Column với định dạng tiền tệ
         if (colBalance != null) {
             colBalance.setCellValueFactory(d -> new SimpleStringProperty(
-                    String.format("$%,.2f", d.getValue().getBalance())));
+                    String.format("%,.0f ₫", d.getValue().getBalance())));
             colBalance.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(String balance, boolean empty) {
@@ -357,7 +426,7 @@ public class AdminController {
                         getStyleClass().remove("balance-cell-positive");
                     } else {
                         setText(balance);
-                        if (!balance.startsWith("$0.00")) {
+                        if (!balance.startsWith("0 ₫")) {
                             getStyleClass().add("balance-cell-positive");
                         } else {
                             getStyleClass().remove("balance-cell-positive");
@@ -373,6 +442,10 @@ public class AdminController {
 
         if (user.isPendingSeller()) {
             badges.add(makeBadge("CHỜ DUYỆT SELLER", "role-pending"));
+        }
+
+        if (pendingDepositUserIds.contains(user.getUserId())) {
+            badges.add(makeBadge("CHỜ NẠP TIỀN", "role-deposit"));
         }
 
         String uid = user.getUserId();
@@ -416,6 +489,7 @@ public class AdminController {
 
     private void loadUserData() {
         try {
+            pendingDepositUserIds = new HashSet<>(new DepositRequestDAO().getPendingUserIds());
             List<User> allUsers = new UserDAO().findAll();
             masterUsers.setAll(allUsers);
 
@@ -486,7 +560,7 @@ public class AdminController {
     @FXML
     void handleNavAuctions() {
         if (mainTabPane != null) mainTabPane.getSelectionModel().select(0);
-        setActiveNav(navAuctionsBtn, navUsersBtn);
+        setActiveNav(navAuctionsBtn, navUsersBtn, navDepositsBtn);
         if (pageTitleLabel != null) pageTitleLabel.setText("Phiên đấu giá");
         if (pageSubtitleLabel != null) pageSubtitleLabel.setText("Tổng quan toàn bộ phiên đấu giá trong hệ thống");
     }
@@ -494,7 +568,7 @@ public class AdminController {
     @FXML
     void handleNavUsers() {
         if (mainTabPane != null) mainTabPane.getSelectionModel().select(1);
-        setActiveNav(navUsersBtn, navAuctionsBtn);
+        setActiveNav(navUsersBtn, navAuctionsBtn, navDepositsBtn);
         if (pageTitleLabel != null) pageTitleLabel.setText("Quản lý người dùng");
         if (pageSubtitleLabel != null) pageSubtitleLabel.setText("Danh sách tất cả tài khoản trong hệ thống");
     }
@@ -561,5 +635,149 @@ public class AdminController {
             }
         }
         return fallback;
+    }
+
+    // =========== DEPOSIT MANAGEMENT ===========
+
+    private void setupDepositTable() {
+        if (depositTable == null) return;
+        depositTable.setItems(depositList);
+        depositTable.setPlaceholder(new Label(""));
+
+        depositList.addListener((javafx.collections.ListChangeListener<DepositRequest>) c -> {
+            boolean isEmpty = depositList.isEmpty();
+            if (paneEmptyDeposits != null) {
+                paneEmptyDeposits.setVisible(isEmpty);
+                paneEmptyDeposits.setManaged(isEmpty);
+            }
+        });
+
+        colDepositAction.getStyleClass().add("centered-column");
+
+        colDepositRefCode.setCellValueFactory(d ->
+                new SimpleStringProperty(d.getValue().getRequestId()));
+
+        colDepositUsername.setCellValueFactory(d ->
+                new SimpleStringProperty(d.getValue().getUsername()));
+
+        colDepositAmount.setCellValueFactory(d ->
+                new SimpleStringProperty(String.format("%,.0f ₫", d.getValue().getAmount())));
+        colDepositAmount.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String v, boolean empty) {
+                super.updateItem(v, empty);
+                if (empty || v == null) { setText(null); } else {
+                    setText(v);
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #0369a1;");
+                }
+            }
+        });
+
+        colDepositTime.setCellValueFactory(d -> {
+            String txt = d.getValue().getCreatedAt() != null
+                    ? d.getValue().getCreatedAt().format(DT_FMT) : "";
+            return new SimpleStringProperty(txt);
+        });
+
+        colDepositAction.setCellFactory(col -> new TableCell<>() {
+            private final Button btnApprove = new Button("✓ Duyệt");
+            private final Button btnReject  = new Button("✗ Từ chối");
+            {
+                btnApprove.setStyle("-fx-background-color: #10B981; -fx-text-fill: white; "
+                        + "-fx-background-radius: 6; -fx-font-size: 12px; -fx-padding: 4 10;");
+                btnReject.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; "
+                        + "-fx-background-radius: 6; -fx-font-size: 12px; -fx-padding: 4 10;");
+                btnApprove.setOnAction(e -> {
+                    DepositRequest dr = getTableView().getItems().get(getIndex());
+                    handleDepositApprove(dr);
+                });
+                btnReject.setOnAction(e -> {
+                    DepositRequest dr = getTableView().getItems().get(getIndex());
+                    handleDepositReject(dr);
+                });
+            }
+            @Override protected void updateItem(String v, boolean empty) {
+                super.updateItem(v, empty);
+                setStyle("-fx-alignment: CENTER; -fx-padding: 0;");
+                if (empty) { setGraphic(null); } else {
+                    javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(8, btnApprove, btnReject);
+                    box.setAlignment(javafx.geometry.Pos.CENTER);
+                    box.setMaxWidth(Double.MAX_VALUE);
+                    setGraphic(box);
+                }
+            }
+        });
+    }
+
+    private void loadDepositData() {
+        try {
+            List<DepositRequest> pending = new DepositRequestDAO().findPending();
+            depositList.setAll(pending);
+            if (lblDepositCount != null) {
+                lblDepositCount.setText(String.valueOf(pending.size()));
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi load deposit requests: " + e.getMessage());
+        }
+    }
+
+    private void handleDepositApprove(DepositRequest dr) {
+        AppState.getInstance().getClient().setStringMessageCallback(msg -> {
+            if (!msg.startsWith("DEPOSIT_REVIEW_OK") && !msg.startsWith("DEPOSIT_REVIEW_FAILED")) return;
+            AppState.getInstance().getClient().setStringMessageCallback(null);
+            javafx.application.Platform.runLater(() -> {
+                if (msg.startsWith("DEPOSIT_REVIEW_OK")) {
+                    loadDepositData();
+                    loadUserData();
+                    utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                            "Đã duyệt yêu cầu nạp " + String.format("%,.0f ₫", dr.getAmount())
+                                    + " cho " + dr.getUsername());
+                } else {
+                    utils.AlertHelper.show(utils.AlertHelper.Type.ERROR,
+                            "Lỗi: " + msg.substring("DEPOSIT_REVIEW_FAILED:".length()));
+                }
+            });
+        });
+        AppState.getInstance().getClient().send(
+                "DEPOSIT_REVIEW:" + dr.getRequestId() + ":APPROVED:");
+    }
+
+    private void handleDepositReject(DepositRequest dr) {
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        dialog.setTitle("Từ chối yêu cầu nạp tiền");
+        dialog.setHeaderText("Từ chối nạp " + String.format("%,.0f ₫", dr.getAmount()) + " của " + dr.getUsername());
+        dialog.setContentText("Lý do từ chối (tùy chọn):");
+        dialog.showAndWait().ifPresent(note -> {
+            AppState.getInstance().getClient().setStringMessageCallback(msg -> {
+                if (!msg.startsWith("DEPOSIT_REVIEW_OK") && !msg.startsWith("DEPOSIT_REVIEW_FAILED")) return;
+                AppState.getInstance().getClient().setStringMessageCallback(null);
+                javafx.application.Platform.runLater(() -> {
+                    if (msg.startsWith("DEPOSIT_REVIEW_OK")) {
+                        loadDepositData();
+                        loadUserData();
+                        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                                "Đã từ chối yêu cầu nạp tiền của " + dr.getUsername());
+                    } else {
+                        utils.AlertHelper.show(utils.AlertHelper.Type.ERROR,
+                                "Lỗi: " + msg.substring("DEPOSIT_REVIEW_FAILED:".length()));
+                    }
+                });
+            });
+            AppState.getInstance().getClient().send(
+                    "DEPOSIT_REVIEW:" + dr.getRequestId() + ":REJECTED:" + note);
+        });
+    }
+
+    @FXML
+    void handleNavDeposits() {
+        if (mainTabPane != null) mainTabPane.getSelectionModel().select(2);
+        setActiveNav(navDepositsBtn, navAuctionsBtn, navUsersBtn);
+        if (pageTitleLabel != null) pageTitleLabel.setText("Yêu cầu nạp tiền");
+        if (pageSubtitleLabel != null) pageSubtitleLabel.setText("Duyệt yêu cầu chuyển khoản ngân hàng từ người dùng");
+    }
+
+    @FXML
+    void handleRefreshDeposits() {
+        loadDepositData();
+        loadUserData();
     }
 }
