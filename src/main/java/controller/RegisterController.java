@@ -419,6 +419,11 @@ public class RegisterController {
             return;
         }
 
+        // Thông báo cho server để gửi notification tới các Admin online
+        try {
+            AppState.getInstance().getClient().send("NEW_USER_REGISTERED:" + userId);
+        } catch (Exception ignore) { /* Server có thể chưa connect — bỏ qua */ }
+
         AlertHelper.show(
                 AlertHelper.Type.SUCCESS,
                 "Đăng ký thành công",

@@ -50,29 +50,40 @@
 
          <Region VBox.vgrow="ALWAYS" />
 
-         <!-- Beautiful User Profile Widget -->
-         <VBox fx:id="paneUserProfile" alignment="CENTER_LEFT" onMouseClicked="#handleViewProfile" pickOnBounds="true" spacing="10.0" style="-fx-cursor: hand; -fx-padding: 15; -fx-background-radius: 12; -fx-background-color: rgba(255,255,255,0.08); -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 12; -fx-border-width: 1;">
+         <!-- Profile + Notification Bell -->
+         <HBox alignment="CENTER" spacing="8.0">
+            <VBox.margin><Insets bottom="10.0" /></VBox.margin>
             <children>
-               <HBox alignment="CENTER_LEFT" spacing="12.0">
+               <VBox fx:id="paneUserProfile" alignment="CENTER_LEFT" onMouseClicked="#handleViewProfile" pickOnBounds="true" spacing="10.0" HBox.hgrow="ALWAYS" style="-fx-cursor: hand; -fx-padding: 15; -fx-background-radius: 12; -fx-background-color: rgba(255,255,255,0.08); -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 12; -fx-border-width: 1;">
                   <children>
-                     <StackPane prefWidth="40" prefHeight="40">
-                         <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="A" />
-                         <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
-                     </StackPane>
-                     <VBox spacing="1.0">
+                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <children>
-                           <Label fx:id="lblSidebarUsername" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;" text="Admin Name" />
-                           <Label fx:id="lblSidebarRole" style="-fx-text-fill: #94A3B8; -fx-font-size: 11;" text="ADMIN" />
+                           <StackPane prefWidth="40" prefHeight="40">
+                              <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="A" />
+                              <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                           </StackPane>
+                           <VBox spacing="1.0">
+                              <children>
+                                 <Label fx:id="lblSidebarUsername" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;" text="Admin Name" />
+                                 <Label fx:id="lblSidebarRole" style="-fx-text-fill: #94A3B8; -fx-font-size: 11;" text="ADMIN" />
+                              </children>
+                           </VBox>
                         </children>
-                     </VBox>
+                     </HBox>
                   </children>
-               </HBox>
+               </VBox>
+
+               <StackPane fx:id="bellNotif">
+                  <children>
+                     <Label text="🔔" styleClass="notif-bell" />
+                     <Label fx:id="lblNotifBadge" styleClass="notif-badge" managed="false" visible="false" StackPane.alignment="TOP_RIGHT">
+                        <StackPane.margin><Insets top="-2.0" right="-4.0" /></StackPane.margin>
+                     </Label>
+                  </children>
+               </StackPane>
             </children>
-            <VBox.margin>
-               <Insets bottom="10.0" />
-            </VBox.margin>
-         </VBox>
-         
+         </HBox>
+
          <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#handleLogout" styleClass="sidebar-logout" text="Đăng xuất" />
       </VBox>
    </left>
@@ -240,7 +251,7 @@
                                     <TableColumn fx:id="colUsername" prefWidth="160" text="Username" />
                                     <TableColumn fx:id="colEmail" prefWidth="240" text="Địa chỉ Email" />
                                     <TableColumn fx:id="colRole" prefWidth="120" style="-fx-alignment: CENTER;" text="Vai trò" />
-                                    <TableColumn fx:id="colStatus" prefWidth="150" style="-fx-alignment: CENTER;" text="Trạng thái" />
+                                    <TableColumn fx:id="colStatus" prefWidth="300" minWidth="240" style="-fx-alignment: CENTER;" text="Trạng thái" />
                                     <TableColumn fx:id="colBalance" prefWidth="150" style="-fx-alignment: CENTER_RIGHT;" text="Số dư khả dụng" />
                                  </columns>
                                  <columnResizePolicy>

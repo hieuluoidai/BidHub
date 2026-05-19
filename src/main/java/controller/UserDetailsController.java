@@ -36,6 +36,7 @@ public class UserDetailsController {
     @FXML private Button btnEditProfile;
     @FXML private Button btnChangePassword;
     @FXML private Button btnApproveSeller;
+    @FXML private Button btnRevokeSeller;
     @FXML private Label lblPendingStatusLabel;
     @FXML private Label lblPendingStatus;
     
@@ -82,6 +83,15 @@ public class UserDetailsController {
             btnApproveSeller.setManaged(canApprove);
         }
 
+        // Nút "Hủy quyền Seller": chỉ hiện khi Admin xem 1 user đang là Seller
+        // (không cho phép tự hủy của chính mình; Admin không có vai trò Seller).
+        if (btnRevokeSeller != null) {
+            boolean isSelf = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
+            boolean canRevoke = isAdmin && !isSelf && (user instanceof model.user.Seller);
+            btnRevokeSeller.setVisible(canRevoke);
+            btnRevokeSeller.setManaged(canRevoke);
+        }
+
         setupAvatarEffects();
         refreshBalanceLabels();
         refreshAvatar();
@@ -114,6 +124,32 @@ public class UserDetailsController {
 
             utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công", "Đã phê duyệt người dùng làm Seller!");
         }
+    }
+
+    @FXML
+    void handleRevokeSeller() {
+        if (user == null) return;
+
+        boolean confirm = utils.AlertHelper.showConfirm(
+            "Xác nhận hủy quyền Seller",
+            "Bạn có chắc chắn muốn hủy quyền Seller của \"" + user.getUsername() + "\"?\n\n"
+                + "• Tài khoản sẽ chuyển về vai trò BIDDER.\n"
+                + "• Các phiên đấu giá / sản phẩm đã đăng trước đó vẫn được giữ nguyên.\n"
+                + "• Người dùng sẽ phải gửi lại yêu cầu nâng cấp nếu muốn trở thành Seller."
+        );
+
+        if (!confirm) return;
+
+        String cmd = "REVOKE_SELLER:" + user.getUserId();
+        AppState.getInstance().getClient().send(cmd);
+
+        // Cập nhật UI tạm thời — bảng admin sẽ được refresh khi nhận USERS_UPDATED
+        btnRevokeSeller.setVisible(false);
+        btnRevokeSeller.setManaged(false);
+        lblRoleBadge.setText("BIDDER");
+
+        utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Thành công",
+                "Đã hủy quyền Seller của \"" + user.getUsername() + "\".");
     }
 
     private void setupAvatarEffects() {

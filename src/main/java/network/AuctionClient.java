@@ -16,6 +16,8 @@ import model.auction.BidResult;
 public class AuctionClient {
     private final List<Consumer<BidResult>> bidResultListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<String>> stringMessageListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.notification.Notification.Bundle>> notificationBundleListeners = new CopyOnWriteArrayList<>();
+    private final List<Runnable> notificationRefreshListeners = new CopyOnWriteArrayList<>();
 
     private Socket socket;
     private ObjectOutputStream out;
@@ -42,6 +44,14 @@ public class AuctionClient {
 
     public void removeStringMessageListener(Consumer<String> listener) {
         stringMessageListeners.remove(listener);
+    }
+
+    public void addNotificationBundleListener(Consumer<model.notification.Notification.Bundle> l) {
+        if (l != null) notificationBundleListeners.add(l);
+    }
+
+    public void addNotificationRefreshListener(Runnable l) {
+        if (l != null) notificationRefreshListeners.add(l);
     }
 
     /** Legacy support - overwrites/sets a primary listener if needed, 
@@ -116,7 +126,15 @@ public class AuctionClient {
                 System.out.println(">>> [CLIENT] Cập nhật phiên: " + updatedAuction.getAuctionId());
                 updateSingleAuction(updatedAuction);
 
-            // 4. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
+            // 4. Notification.Bundle — danh sách thông báo trả về cho FETCH_NOTIFICATIONS
+            } else if (data instanceof model.notification.Notification.Bundle bundle) {
+                for (var l : notificationBundleListeners) l.accept(bundle);
+
+            // 5. Notification.RefreshSignal — server báo có thông báo mới, client fetch lại
+            } else if (data instanceof model.notification.Notification.RefreshSignal) {
+                for (Runnable l : notificationRefreshListeners) l.run();
+
+            // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {
                 System.out.println(">>> [CLIENT] Server message: " + msg);
                 for (Consumer<String> listener : stringMessageListeners) {

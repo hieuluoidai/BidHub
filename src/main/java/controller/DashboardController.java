@@ -53,6 +53,8 @@ public class DashboardController {
     @FXML private Label lblSidebarUsername;
     @FXML private Label lblSidebarRole;
     @FXML private javafx.scene.layout.VBox paneUserProfile;
+    @FXML private javafx.scene.layout.StackPane bellNotif;
+    @FXML private Label lblNotifBadge;
 
     // View Navigation
     @FXML private Button btnNavAuctions;
@@ -150,7 +152,12 @@ public class DashboardController {
         // Kích hoạt các thiết lập bổ trợ cho giao diện
         setupPermissions();
         loadAuctionData();
-        
+
+        // Gắn Notification Center (bell + popup)
+        if (bellNotif != null && lblNotifBadge != null) {
+            utils.NotificationCenter.attach(bellNotif, lblNotifBadge);
+        }
+
         // Render lần đầu
         renderAuctions();
     }
@@ -331,6 +338,7 @@ public class DashboardController {
 
     @FXML
     void handleLogout() {
+        utils.NotificationCenter.reset();
         AppState.getInstance().setCurrentUser(null);
         AppState.getInstance().getSceneManager().showLogin();
     }

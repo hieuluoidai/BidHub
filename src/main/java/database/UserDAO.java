@@ -500,6 +500,19 @@ public class UserDAO {
         }
     }
 
+    /** Hạ quyền SELLER → BIDDER. Không xóa items/auctions cũ (giữ lịch sử). */
+    public boolean revokeSeller(String userId) {
+        String sql = "UPDATE users SET role = 'BIDDER', pending_seller = 0 WHERE user_id = ? AND role = 'SELLER'";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi hủy quyền seller: " + e.getMessage());
+            return false;
+        }
+    }
+
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";

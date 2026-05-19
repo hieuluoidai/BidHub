@@ -47,6 +47,8 @@ public class AdminController {
     @FXML private javafx.scene.image.ImageView imgSidebarAvatar;
     @FXML private Label lblSidebarUsername;
     @FXML private Label lblSidebarRole;
+    @FXML private javafx.scene.layout.StackPane bellNotif;
+    @FXML private Label lblNotifBadge;
 
     @FXML private Label labelTotalAuctions;
     @FXML private Label labelRunningAuctions;
@@ -108,6 +110,8 @@ public class AdminController {
         auctions.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
             javafx.application.Platform.runLater(() -> {
                 updateAuctionStats();
+                // Refresh để badge "ĐANG MỞ PHIÊN" / "DẪN ĐẦU" cập nhật theo bid mới
+                if (userTable != null) userTable.refresh();
                 // Không cần gọi renderAuctions() ở đây nữa vì FilteredList sẽ lo việc đó
             });
         });
@@ -140,6 +144,11 @@ public class AdminController {
             AppState.getInstance().getClient().send("REFRESH_DATA");
         } catch (Exception e) {
             System.err.println("Không thể yêu cầu refresh: " + e.getMessage());
+        }
+
+        // Gắn Notification Center (bell + popup)
+        if (bellNotif != null && lblNotifBadge != null) {
+            utils.NotificationCenter.attach(bellNotif, lblNotifBadge);
         }
     }
 
@@ -293,25 +302,30 @@ public class AdminController {
             }
         });
 
-        // 2. Status Column: Tách riêng trạng thái xét duyệt
-        colStatus.setCellValueFactory(d -> new SimpleStringProperty(
-                d.getValue().isPendingSeller() ? "PENDING" : "NORMAL"));
+        // 2. Status Column: Có thể chứa nhiều badge cùng lúc
+        //    - CHỜ DUYỆT SELLER  (pendingSeller flag)
+        //    - ĐANG MỞ PHIÊN     (user là seller của >=1 auction RUNNING)
+        //    - DẪN ĐẦU           (user đang giữ highest bid của >=1 auction RUNNING)
+        colStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUserId()));
         colStatus.setCellFactory(column -> new TableCell<>() {
             @Override
-            protected void updateItem(String status, boolean empty) {
-                super.updateItem(status, empty);
-                if (empty || status == null) {
+            protected void updateItem(String userId, boolean empty) {
+                super.updateItem(userId, empty);
+                if (empty || userId == null || getTableRow() == null || getTableRow().getItem() == null) {
                     setGraphic(null);
+                    return;
+                }
+                User user = (User) getTableRow().getItem();
+                java.util.List<javafx.scene.Node> badges = buildStatusBadges(user);
+                if (badges.isEmpty()) {
+                    Label label = new Label("Bình thường");
+                    label.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 13px;");
+                    setGraphic(label);
                 } else {
-                    if ("PENDING".equals(status)) {
-                        Label badge = new Label("CHỜ DUYỆT SELLER");
-                        badge.getStyleClass().addAll("role-badge", "role-pending");
-                        setGraphic(badge);
-                    } else {
-                        Label label = new Label("Bình thường");
-                        label.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 13px;");
-                        setGraphic(label);
-                    }
+                    javafx.scene.layout.FlowPane flow = new javafx.scene.layout.FlowPane();
+                    flow.getStyleClass().add("status-badge-flow");
+                    flow.getChildren().addAll(badges);
+                    setGraphic(flow);
                 }
             }
         });
@@ -338,6 +352,39 @@ public class AdminController {
                 }
             });
         }
+    }
+
+    private java.util.List<javafx.scene.Node> buildStatusBadges(User user) {
+        java.util.List<javafx.scene.Node> badges = new java.util.ArrayList<>();
+
+        if (user.isPendingSeller()) {
+            badges.add(makeBadge("CHỜ DUYỆT SELLER", "role-pending"));
+        }
+
+        String uid = user.getUserId();
+        boolean hosting = false;
+        boolean leading = false;
+        for (Auction a : AppState.getInstance().getAuctionList()) {
+            if (!"RUNNING".equals(a.getStatus())) continue;
+            if (!hosting && uid.equals(a.getSellerId())) hosting = true;
+            if (!leading && a.getHighestBid() != null
+                    && a.getHighestBid().getBidder() != null
+                    && uid.equals(a.getHighestBid().getBidder().getUserId())) {
+                leading = true;
+            }
+            if (hosting && leading) break;
+        }
+
+        if (hosting) badges.add(makeBadge("ĐANG MỞ PHIÊN", "role-hosting"));
+        if (leading) badges.add(makeBadge("DẪN ĐẦU", "role-leading"));
+
+        return badges;
+    }
+
+    private Label makeBadge(String text, String colorClass) {
+        Label badge = new Label(text);
+        badge.getStyleClass().addAll("role-badge", colorClass);
+        return badge;
     }
 
     private void updateAuctionStats() {
@@ -449,6 +496,7 @@ public class AdminController {
 
     @FXML
     void handleLogout() {
+        utils.NotificationCenter.reset();
         AppState.getInstance().setCurrentUser(null);
         AppState.getInstance().getSceneManager().showLogin();
     }

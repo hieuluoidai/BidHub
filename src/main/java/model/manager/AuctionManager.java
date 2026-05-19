@@ -117,6 +117,39 @@ public class AuctionManager {
                             System.out.println(">>> [KẾT THÚC] Phiên " + auction.getAuctionId()
                                     + " - Người thắng: " + winner);
                             changedAuctions.add(auction);
+
+                            // ====== NOTIFICATIONS ======
+                            String itemName = (auction.getItem() != null) ? auction.getItem().getItemName() : auction.getAuctionId();
+                            String sellerId = auction.getSellerId();
+                            if (auction.getHighestBid() != null && auction.getHighestBid().getBidder() != null) {
+                                String winnerId = auction.getHighestBid().getBidder().getUserId();
+                                double price = auction.getHighestBid().getBidAmount();
+
+                                utils.NotificationService.notifyUser(server, winnerId,
+                                    model.notification.Notification.Type.AUCTION_WON,
+                                    "Bạn đã thắng phiên đấu giá!",
+                                    String.format(java.util.Locale.US,
+                                        "Bạn đã thắng \"%s\" với giá $%,.2f. Vào ví để thanh toán.",
+                                        itemName, price)
+                                );
+                                if (sellerId != null) {
+                                    utils.NotificationService.notifyUser(server, sellerId,
+                                        model.notification.Notification.Type.AUCTION_ENDED_SOLD,
+                                        "Phiên của bạn đã kết thúc — có người thắng",
+                                        String.format(java.util.Locale.US,
+                                            "Phiên \"%s\" kết thúc. Người thắng: %s, giá $%,.2f. Chờ thanh toán.",
+                                            itemName, auction.getHighestBid().getBidder().getUsername(), price)
+                                    );
+                                }
+                            } else {
+                                if (sellerId != null) {
+                                    utils.NotificationService.notifyUser(server, sellerId,
+                                        model.notification.Notification.Type.AUCTION_ENDED_NO_BID,
+                                        "Phiên của bạn kết thúc — không có bid",
+                                        String.format("Phiên \"%s\" kết thúc nhưng không có ai đặt giá.", itemName)
+                                    );
+                                }
+                            }
                         }
                     }
                 }

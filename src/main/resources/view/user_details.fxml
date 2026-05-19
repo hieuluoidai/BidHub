@@ -81,6 +81,7 @@
       </GridPane>
       
       <Button fx:id="btnApproveSeller" onAction="#handleApproveSeller" maxWidth="Infinity" styleClass="button-primary" style="-fx-background-color: #059669;" text="✅ Phê duyệt làm Seller" />
+      <Button fx:id="btnRevokeSeller" onAction="#handleRevokeSeller" maxWidth="Infinity" styleClass="button-primary" style="-fx-background-color: #DC2626;" text="⛔ Hủy quyền Seller" managed="false" visible="false" />
       <Button fx:id="btnChangePassword" onAction="#handleChangePassword" maxWidth="Infinity" styleClass="button-change-password" text="🛡 Thay đổi mật khẩu" />
    </VBox>
 
