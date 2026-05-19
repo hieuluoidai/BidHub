@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Popup;
 import model.manager.AppState;
 import model.notification.Notification;
@@ -23,7 +22,7 @@ import java.util.List;
  */
 public class NotificationCenter {
 
-    private static final List<Notification> cache = new ArrayList<>();
+    private static final List<Notification> CACHE = new ArrayList<>();
     private static int unreadCount = 0;
     private static Label badgeRef;
     private static Popup currentPopup;
@@ -49,12 +48,16 @@ public class NotificationCenter {
         if (client == null) return;
 
         client.addNotificationBundleListener(bundle -> {
-            cache.clear();
-            for (Notification n : bundle.items) if (n != null) cache.add(n);
-            unreadCount = (int) cache.stream().filter(n -> !n.isRead()).count();
+            CACHE.clear();
+            for (Notification n : bundle.items) {
+                if (n != null) {
+                    CACHE.add(n);
+                }
+            }
+            unreadCount = (int) CACHE.stream().filter(n -> !n.isRead()).count();
             Platform.runLater(() -> {
                 updateBadge();
-                if (popupController != null) popupController.setData(new ArrayList<>(cache));
+                if (popupController != null) popupController.setData(new ArrayList<>(CACHE));
             });
         });
 
@@ -93,7 +96,7 @@ public class NotificationCenter {
             FXMLLoader loader = new FXMLLoader(NotificationCenter.class.getResource("/view/notification_popup.fxml"));
             javafx.scene.Parent root = loader.load();
             popupController = loader.getController();
-            popupController.setData(new ArrayList<>(cache));
+            popupController.setData(new ArrayList<>(CACHE));
             popupController.setOnMarkAll(NotificationCenter::markAllRead);
             popupController.setOnMarkOne(NotificationCenter::markOneRead);
 
@@ -119,17 +122,19 @@ public class NotificationCenter {
         n.setRead(true);
         unreadCount = Math.max(0, unreadCount - 1);
         updateBadge();
-        if (popupController != null) popupController.setData(new ArrayList<>(cache));
+        if (popupController != null) popupController.setData(new ArrayList<>(CACHE));
         try {
             AppState.getInstance().getClient().send("MARK_NOTIFICATION_READ:" + n.getNotificationId());
         } catch (Exception ignore) {}
     }
 
     private static void markAllRead() {
-        for (Notification n : cache) n.setRead(true);
+        for (Notification n : CACHE) {
+            n.setRead(true);
+        }
         unreadCount = 0;
         updateBadge();
-        if (popupController != null) popupController.setData(new ArrayList<>(cache));
+        if (popupController != null) popupController.setData(new ArrayList<>(CACHE));
         try {
             var user = AppState.getInstance().getCurrentUser();
             if (user != null) AppState.getInstance().getClient().send("MARK_ALL_NOTIFICATIONS_READ:" + user.getUserId());
@@ -138,7 +143,7 @@ public class NotificationCenter {
 
     /** Gọi khi logout để reset state — tránh leak data sang user khác trên cùng app instance. */
     public static void reset() {
-        cache.clear();
+        CACHE.clear();
         unreadCount = 0;
         badgeRef = null;
         if (currentPopup != null) {

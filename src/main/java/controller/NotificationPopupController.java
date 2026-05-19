@@ -56,8 +56,12 @@ public class NotificationPopupController {
         btnMarkAll.setDisable(unread == 0);
     }
 
-    public void setOnMarkAll(Runnable r) { this.onMarkAll = r; }
-    public void setOnMarkOne(java.util.function.Consumer<Notification> c) { this.onMarkOne = c; }
+    public void setOnMarkAll(Runnable r) {
+        this.onMarkAll = r;
+    }
+    public void setOnMarkOne(java.util.function.Consumer<Notification> c) {
+        this.onMarkOne = c;
+    }
 
     @FXML
     void handleMarkAllRead() {

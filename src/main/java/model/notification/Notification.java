@@ -55,21 +55,49 @@ public class Notification implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public String getNotificationId() { return notificationId; }
-    public String getUserId()         { return userId; }
-    public Type getType()             { return type; }
-    public String getTitle()          { return title; }
-    public String getMessage()        { return message; }
-    public boolean isRead()           { return read; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getNotificationId() {
+        return notificationId;
+    }
+    public String getUserId() {
+        return userId;
+    }
+    public Type getType() {
+        return type;
+    }
+    public String getTitle() {
+        return title;
+    }
+    public String getMessage() {
+        return message;
+    }
+    public boolean isRead() {
+        return read;
+    }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-    public void setNotificationId(String v) { this.notificationId = v; }
-    public void setUserId(String v) { this.userId = v; }
-    public void setType(Type v)     { this.type = v; }
-    public void setTitle(String v)  { this.title = v; }
-    public void setMessage(String v){ this.message = v; }
-    public void setRead(boolean v)  { this.read = v; }
-    public void setCreatedAt(LocalDateTime v) { this.createdAt = v; }
+    public void setNotificationId(String v) {
+        this.notificationId = v;
+    }
+    public void setUserId(String v) {
+        this.userId = v;
+    }
+    public void setType(Type v) {
+        this.type = v;
+    }
+    public void setTitle(String v) {
+        this.title = v;
+    }
+    public void setMessage(String v) {
+        this.message = v;
+    }
+    public void setRead(boolean v) {
+        this.read = v;
+    }
+    public void setCreatedAt(LocalDateTime v) {
+        this.createdAt = v;
+    }
 
     /** Wrapper signal: client nhận object này → fetch lại danh sách thông báo. */
     public static final class RefreshSignal implements Serializable {
@@ -80,6 +108,8 @@ public class Notification implements Serializable {
     public static final class Bundle implements Serializable {
         private static final long serialVersionUID = 1L;
         public final java.util.List<Notification> items;
-        public Bundle(java.util.List<Notification> items) { this.items = items; }
+        public Bundle(java.util.List<Notification> items) {
+            this.items = items;
+        }
     }
 }

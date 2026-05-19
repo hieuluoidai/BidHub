@@ -2,7 +2,11 @@ package database;
 
 import model.notification.Notification;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +42,9 @@ public class NotificationDAO {
             stmt.setString(1, userId);
             stmt.setInt(2, limit);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) list.add(map(rs));
+                while (rs.next()) {
+                    list.add(map(rs));
+                }
             }
         } catch (SQLException e) {
             System.err.println("Lỗi load notifications: " + e.getMessage());

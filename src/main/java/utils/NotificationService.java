@@ -19,13 +19,13 @@ import java.util.List;
  */
 public class NotificationService {
 
-    private static final NotificationDAO dao = new NotificationDAO();
+    private static final NotificationDAO DAO = new NotificationDAO();
 
     /** Tạo notification cho 1 user cụ thể + push tín hiệu refresh nếu online. */
     public static void notifyUser(AuctionServer server, String userId,
                                   Notification.Type type, String title, String message) {
         if (userId == null) return;
-        String id = dao.insert(userId, type, title, message);
+        String id = DAO.insert(userId, type, title, message);
         if (id != null && server != null) {
             server.sendToUser(userId, new Notification.RefreshSignal());
         }

@@ -105,7 +105,8 @@ public class AuctionManager {
                             auction.setStatus("FINISHED");
                             auctionDao.updateStatus(auction.getAuctionId(), "FINISHED");
 
-                            // Giải phóng lock của phiên đã đóng để không giữ tài nguyên (Logic của Hiếu)
+                            // Giải phóng lock của phiên đã đóng
+                            // để không giữ tài nguyên (Logic của Hiếu)
                             ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
 
                             // Dọn dẹp Auto-Bidding (Logic mới: giải phóng tiền bị khóa của những người thua)
@@ -119,7 +120,8 @@ public class AuctionManager {
                             changedAuctions.add(auction);
 
                             // ====== NOTIFICATIONS ======
-                            String itemName = (auction.getItem() != null) ? auction.getItem().getItemName() : auction.getAuctionId();
+                            String itemName = (auction.getItem() != null)
+                                    ? auction.getItem().getItemName() : auction.getAuctionId();
                             String sellerId = auction.getSellerId();
                             if (auction.getHighestBid() != null && auction.getHighestBid().getBidder() != null) {
                                 String winnerId = auction.getHighestBid().getBidder().getUserId();

@@ -17,7 +17,8 @@ import model.auction.BidResult;
 public class AuctionClient {
     private final List<Consumer<BidResult>> bidResultListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<String>> stringMessageListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<model.notification.Notification.Bundle>> notificationBundleListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.notification.Notification.Bundle>> notificationBundleListeners =
+            new CopyOnWriteArrayList<>();
     private final List<Runnable> notificationRefreshListeners = new CopyOnWriteArrayList<>();
 
     private Socket socket;
@@ -129,11 +130,15 @@ public class AuctionClient {
 
             // 4. Notification.Bundle — danh sách thông báo trả về cho FETCH_NOTIFICATIONS
             } else if (data instanceof model.notification.Notification.Bundle bundle) {
-                for (var l : notificationBundleListeners) l.accept(bundle);
+                for (var l : notificationBundleListeners) {
+                    l.accept(bundle);
+                }
 
             // 5. Notification.RefreshSignal — server báo có thông báo mới, client fetch lại
             } else if (data instanceof model.notification.Notification.RefreshSignal) {
-                for (Runnable l : notificationRefreshListeners) l.run();
+                for (Runnable l : notificationRefreshListeners) {
+                    l.run();
+                }
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {

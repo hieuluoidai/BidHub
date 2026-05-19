@@ -6,7 +6,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.List;
 import model.auction.Auction;
 import model.auction.BidResult;
 import model.manager.AuctionManager;
@@ -86,9 +85,8 @@ public class ClientHandler implements Runnable {
             }
             // Smart Broadcast: Chỉ gửi phiên vừa thay đổi/tạo mới
             server.broadcast(incomingAuction);
-        } 
         // TRƯỜNG HỢP 2: Nhận lệnh dạng chuỗi văn bản (String)
-        else if (request instanceof String msg) {
+        } else if (request instanceof String msg) {
             handleStringRequest(msg);
         }
     }
@@ -99,59 +97,44 @@ public class ClientHandler implements Runnable {
             if (msg.startsWith("BID:")) {
                 if (parts.length >= 4) this.currentUserId = parts[3];
                 handleConcurrentBid(msg);
-            }
-            else if (msg.startsWith("DELETE_AUCTION:")) {
+            } else if (msg.startsWith("DELETE_AUCTION:")) {
                 if (parts.length >= 3) this.currentUserId = parts[2];
                 handleDeleteAuction(msg);
-            }
-            else if (msg.startsWith("CANCEL_AUCTION:")) {
+            } else if (msg.startsWith("CANCEL_AUCTION:")) {
                 if (parts.length >= 3) this.currentUserId = parts[2];
                 handleCancelAuction(msg);
-            }
-            else if (msg.startsWith("PAY_AUCTION:")) {
+            } else if (msg.startsWith("PAY_AUCTION:")) {
                 if (parts.length >= 3) this.currentUserId = parts[2];
                 handlePayAuction(msg);
-            }
-            else if (msg.startsWith("TOPUP:")) {
+            } else if (msg.startsWith("TOPUP:")) {
                 if (parts.length >= 2) this.currentUserId = parts[1];
                 handleTopUp(msg);
-            }
-            else if (msg.startsWith("SET_AUTOBID:")) {
+            } else if (msg.startsWith("SET_AUTOBID:")) {
                 if (parts.length >= 3) this.currentUserId = parts[2];
                 handleSetAutoBid(msg);
-            }
-            else if (msg.startsWith("CANCEL_AUTOBID:")) {
+            } else if (msg.startsWith("CANCEL_AUTOBID:")) {
                 if (parts.length >= 3) this.currentUserId = parts[2];
                 handleCancelAutoBid(msg);
-            }
-            else if (msg.startsWith("IDENTIFY:")) {
+            } else if (msg.startsWith("IDENTIFY:")) {
                 if (parts.length >= 2) {
                     this.currentUserId = parts[1];
                     System.out.println(">>> [SERVER] Connection tagged as user: " + currentUserId);
                 }
-            }
-            else if (msg.equals("REFRESH_DATA")) {
+            } else if (msg.equals("REFRESH_DATA")) {
                 send(AuctionManager.getInstance().getAllAuctions());
-            }
-            else if (msg.startsWith("GET_MY_AUTOBID:")) {
+            } else if (msg.startsWith("GET_MY_AUTOBID:")) {
                 handleGetMyAutoBid(msg);
-            }
-            else if (msg.startsWith("UPDATE_PROFILE:")) {
+            } else if (msg.startsWith("UPDATE_PROFILE:")) {
                 handleUpdateProfile(msg);
-            }
-            else if (msg.startsWith("UPDATE_AVATAR:")) {
+            } else if (msg.startsWith("UPDATE_AVATAR:")) {
                 handleUpdateAvatar(msg);
-            }
-            else if (msg.startsWith("CHANGE_PASSWORD:")) {
+            } else if (msg.startsWith("CHANGE_PASSWORD:")) {
                 handleChangePassword(msg);
-            }
-            else if (msg.startsWith("RELOAD_AUCTION:")) {
+            } else if (msg.startsWith("RELOAD_AUCTION:")) {
                 handleReloadAuction(msg);
-            }
-            else if (msg.startsWith("REQUEST_SELLER:")) {
+            } else if (msg.startsWith("REQUEST_SELLER:")) {
                 handleRequestSeller(msg);
-            }
-            else if (msg.startsWith("APPROVE_SELLER:")) {
+            } else if (msg.startsWith("APPROVE_SELLER:")) {
                 handleApproveSeller(msg);
             }
         } catch (Exception e) {
@@ -279,7 +262,10 @@ public class ClientHandler implements Runnable {
                 return;
             }
             int result = new AuctionDAO().deleteIfOwner(auctionId, requesterId);
-            if (result == 0) { send("DELETE_FAILED: Bạn không có quyền xóa phiên này"); return; }
+            if (result == 0) {
+                send("DELETE_FAILED: Bạn không có quyền xóa phiên này");
+                return;
+            }
             ok = (result == 1);
         }
 
@@ -744,7 +730,8 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             if (prevBidderId != null && !prevBidderId.equals(bidderId)) {
                 double availPrev = userDao.getBalance(prevBidderId);
                 double lockedPrev = userDao.getLockedBalance(prevBidderId);
-                server.sendToUser(prevBidderId, String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availPrev, lockedPrev));
+                String balanceMsg = String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availPrev, lockedPrev);
+                server.sendToUser(prevBidderId, balanceMsg);
             }
 
             // 3. Smart Broadcast: Chỉ gửi phiên vừa thay đổi
@@ -817,5 +804,6 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
             // Re-broadcast all auctions to update role-based UI if needed
             server.broadcast(AuctionManager.getInstance().getAllAuctions());
-        }    }
+        }
+    }
 }
