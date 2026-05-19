@@ -11,6 +11,7 @@ import javafx.scene.layout.VBox;
 import model.auction.Auction;
 import model.manager.AppState;
 import model.user.Bidder;
+import model.user.User;
 import utils.ImageStorageService;
 
 import java.util.function.Consumer;
@@ -28,18 +29,27 @@ public class ItemCardController {
     @FXML private Label lblStatus;
     @FXML private Button btnQuickBid;
     @FXML private Label lblAutoBadge;
+    @FXML private Label lblOwnerBadge;
+    @FXML private Button btnStar;
 
     private Auction auction;
     private Consumer<Auction> onViewDetails;
     private Consumer<Auction> onQuickBid;
     private SetChangeListener<String> autoBidListener;
+    private SetChangeListener<String> starListener;
 
     @FXML
     private void initialize() {
         cardRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene == null && autoBidListener != null) {
-                AppState.getInstance().getMyAutoBidIds().removeListener(autoBidListener);
-                autoBidListener = null;
+            if (newScene == null) {
+                if (autoBidListener != null) {
+                    AppState.getInstance().getMyAutoBidIds().removeListener(autoBidListener);
+                    autoBidListener = null;
+                }
+                if (starListener != null) {
+                    AppState.getInstance().getStarredAuctionIds().removeListener(starListener);
+                    starListener = null;
+                }
             }
         });
     }
@@ -99,12 +109,17 @@ public class ItemCardController {
         }
 
         // Quyền hạn cho nút Quick Bid
-        model.user.User cu = AppState.getInstance().getCurrentUser();
+        User cu = AppState.getInstance().getCurrentUser();
         boolean isOwnAuction = cu != null && cu.getUserId().equals(auction.getSellerId());
         boolean isBidder = (cu instanceof Bidder) && !isOwnAuction;
         boolean isRunning = "RUNNING".equals(status);
         btnQuickBid.setVisible(isBidder && isRunning);
         btnQuickBid.setManaged(isBidder && isRunning);
+
+        if (lblOwnerBadge != null) {
+            lblOwnerBadge.setVisible(isOwnAuction);
+            lblOwnerBadge.setManaged(isOwnAuction);
+        }
 
         // Badge Auto-Bid: hiển thị real-time khi user bật/tắt Auto-Bid
         if (lblAutoBadge != null) {
@@ -121,6 +136,22 @@ public class ItemCardController {
             };
             AppState.getInstance().getMyAutoBidIds().addListener(autoBidListener);
         }
+
+        // Star Button: hiển thị trạng thái yêu thích
+        if (btnStar != null) {
+            refreshStarButton();
+            if (starListener != null) {
+                AppState.getInstance().getStarredAuctionIds().removeListener(starListener);
+            }
+            String auctionId = auction.getAuctionId();
+            starListener = change -> {
+                if (auctionId.equals(change.getElementAdded())
+                        || auctionId.equals(change.getElementRemoved())) {
+                    Platform.runLater(this::refreshStarButton);
+                }
+            };
+            AppState.getInstance().getStarredAuctionIds().addListener(starListener);
+        }
     }
 
     public String getAuctionId() {
@@ -131,6 +162,17 @@ public class ItemCardController {
         boolean hasAuto = AppState.getInstance().hasMyAutoBid(auction.getAuctionId());
         lblAutoBadge.setVisible(hasAuto);
         lblAutoBadge.setManaged(hasAuto);
+    }
+
+    private void refreshStarButton() {
+        boolean isStarred = AppState.getInstance().isStarred(auction.getAuctionId());
+        btnStar.getStyleClass().remove("star-button-active");
+        if (isStarred) {
+            btnStar.getStyleClass().add("star-button-active");
+            btnStar.setText("★");
+        } else {
+            btnStar.setText("☆");
+        }
     }
 
     private void setPlaceholder() {
@@ -155,5 +197,13 @@ public class ItemCardController {
         if (onQuickBid != null) {
             onQuickBid.accept(auction);
         }
+    }
+
+    @FXML
+    private void handleStarClick(javafx.event.ActionEvent event) {
+        event.consume();
+        if (auction == null) return;
+        boolean currentState = AppState.getInstance().isStarred(auction.getAuctionId());
+        AppState.getInstance().setStarred(auction.getAuctionId(), !currentState);
     }
 }

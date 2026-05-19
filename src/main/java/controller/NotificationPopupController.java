@@ -26,6 +26,7 @@ public class NotificationPopupController {
     private final ObservableList<Notification> items = FXCollections.observableArrayList();
     private Runnable onMarkAll;
     private java.util.function.Consumer<Notification> onMarkOne;
+    private java.util.function.Consumer<Notification> onAction;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
@@ -62,6 +63,9 @@ public class NotificationPopupController {
     public void setOnMarkOne(java.util.function.Consumer<Notification> c) {
         this.onMarkOne = c;
     }
+    public void setOnAction(java.util.function.Consumer<Notification> c) {
+        this.onAction = c;
+    }
 
     @FXML
     void handleMarkAllRead() {
@@ -97,8 +101,9 @@ public class NotificationPopupController {
 
         row.getChildren().addAll(top, msg);
 
-        // Click → mark read
+        // Click → mark read + trigger action
         row.setOnMouseClicked(e -> {
+            if (onAction != null) onAction.accept(n);
             if (!n.isRead() && onMarkOne != null) {
                 onMarkOne.accept(n);
             }

@@ -13,7 +13,13 @@
       <StackPane prefHeight="200.0" prefWidth="280.0" styleClass="card-image-container">
          <children>
             <ImageView fx:id="imgItem" fitHeight="180.0" fitWidth="240.0" pickOnBounds="true" preserveRatio="true" />
+            <Button fx:id="btnStar" mnemonicParsing="false" onAction="#handleStarClick" styleClass="star-button" text="★" StackPane.alignment="TOP_LEFT">
+               <StackPane.margin>
+                  <Insets left="8.0" top="8.0" />
+               </StackPane.margin>
+            </Button>
             <Label fx:id="lblAutoBadge" managed="false" StackPane.alignment="TOP_RIGHT" styleClass="auto-bid-badge" text="AUTO" visible="false" />
+            <Label fx:id="lblOwnerBadge" managed="false" StackPane.alignment="TOP_RIGHT" styleClass="owner-badge" text="PHIÊN CỦA BẠN" visible="false" />
          </children>
       </StackPane>
       

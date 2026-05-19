@@ -33,7 +33,8 @@
       "PowerShell(Test-NetConnection *)",
       "Bash(powershell *)",
       "Bash(scp *)",
-      "Bash(mvn help:all-profiles)"
+      "Bash(mvn help:all-profiles)",
+      "Bash(mvn -q -DskipTests compile)"
     ]
   }
 }

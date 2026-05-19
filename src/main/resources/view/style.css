@@ -1566,6 +1566,16 @@
     -fx-effect: dropshadow(three-pass-box, rgba(99, 102, 241, 0.5), 6, 0, 0, 2);
 }
 
+.owner-badge {
+    -fx-background-color: #F59E0B;
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-padding: 5 9 5 9;
+    -fx-background-radius: 0 14px 0 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(245, 158, 11, 0.5), 6, 0, 0, 2);
+}
+
 /* ===================================================================
    FEATURE: ANTI-SNIPE NOTIFICATION BANNER
    =================================================================== */
@@ -1582,4 +1592,41 @@
     -fx-text-fill: #92400E;
     -fx-font-weight: 800;
     -fx-font-size: 14px;
+}
+
+/* ===================================================================
+   FEATURE: STAR/WATCHLIST (Item Card)
+   =================================================================== */
+.star-button {
+    -fx-background-color: rgba(255, 255, 255, 0.85);
+    -fx-background-radius: 50%;
+    -fx-min-width: 34px;
+    -fx-min-height: 34px;
+    -fx-max-width: 34px;
+    -fx-max-height: 34px;
+    -fx-font-size: 18px;
+    -fx-text-fill: #94A3B8; /* Gray by default */
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 5, 0, 0, 1);
+}
+.star-button:hover {
+    -fx-background-color: white;
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+.star-button-active {
+    -fx-text-fill: #FACC15; /* Gold */
+}
+
+/* --- ENDED AUCTIONS SEPARATOR --- */
+.ended-section-header {
+    -fx-padding: 30 0 10 0;
+}
+.ended-section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #64748B;
+    -fx-text-transform: uppercase;
+    -fx-letter-spacing: 1px;
 }

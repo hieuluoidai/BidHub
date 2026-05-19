@@ -27,6 +27,9 @@ public class AppState {
     // Theo dõi các phiên mà user hiện tại đang có Auto-Bid hoạt động
     private final ObservableSet<String> myAutoBidIds = FXCollections.observableSet(new HashSet<>());
 
+    // Theo dõi các phiên mà user đã đánh dấu sao (watchlist)
+    private final ObservableSet<String> starredAuctionIds = FXCollections.observableSet(new HashSet<>());
+
     private AppState() {
         this.client = new AuctionClient();
     }
@@ -56,6 +59,7 @@ public class AppState {
     public void setCurrentUser(User user) {
         if (user == null) {
             myAutoBidIds.clear();
+            starredAuctionIds.clear();
         }
         this.currentUser = user;
         // Thông báo cho Server biết User nào đang ở connection này (để push real-time)
@@ -77,6 +81,10 @@ public class AppState {
         return myAutoBidIds;
     }
 
+    public ObservableSet<String> getStarredAuctionIds() {
+        return starredAuctionIds;
+    }
+
     /** Kiểm tra user hiện tại có Auto-Bid đang hoạt động cho phiên này không. */
     public boolean hasMyAutoBid(String auctionId) {
         return myAutoBidIds.contains(auctionId);
@@ -88,6 +96,20 @@ public class AppState {
             myAutoBidIds.add(auctionId);
         } else {
             myAutoBidIds.remove(auctionId);
+        }
+    }
+
+    /** Kiểm tra phiên có được đánh dấu sao không. */
+    public boolean isStarred(String auctionId) {
+        return starredAuctionIds.contains(auctionId);
+    }
+
+    /** Đánh dấu/Bỏ đánh dấu sao. */
+    public void setStarred(String auctionId, boolean starred) {
+        if (starred) {
+            starredAuctionIds.add(auctionId);
+        } else {
+            starredAuctionIds.remove(auctionId);
         }
     }
 }
