@@ -23,12 +23,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>26</version>
+            <version>21.0.5</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>26</version>
+            <version>21.0.5</version>
         </dependency>
 
 
@@ -205,25 +205,25 @@
                 <dependency>
                     <groupId>org.openjfx</groupId>
                     <artifactId>javafx-controls</artifactId>
-                    <version>26</version>
+                    <version>21.0.5</version>
                     <classifier>win</classifier>
                 </dependency>
                 <dependency>
                     <groupId>org.openjfx</groupId>
                     <artifactId>javafx-fxml</artifactId>
-                    <version>26</version>
+                    <version>21.0.5</version>
                     <classifier>win</classifier>
                 </dependency>
                 <dependency>
                     <groupId>org.openjfx</groupId>
                     <artifactId>javafx-graphics</artifactId>
-                    <version>26</version>
+                    <version>21.0.5</version>
                     <classifier>win</classifier>
                 </dependency>
                 <dependency>
                     <groupId>org.openjfx</groupId>
                     <artifactId>javafx-base</artifactId>
-                    <version>26</version>
+                    <version>21.0.5</version>
                     <classifier>win</classifier>
                 </dependency>
             </dependencies>
