@@ -24,9 +24,11 @@ import java.util.Set;
  */
 public final class ImageStorageService {
 
-    /** Thư mục chứa ảnh, nằm ở root của project. */
-    public static final String STORAGE_DIR = "uploads/items";
-    public static final String AVATAR_DIR = "uploads/avatars";
+    /** Thư mục chứa ảnh, nằm trong home directory của user — tránh phụ thuộc working directory. */
+    private static final String BASE_DIR = System.getProperty("user.home")
+            + File.separator + "bidhub" + File.separator + "uploads";
+    public static final String STORAGE_DIR = BASE_DIR + File.separator + "items";
+    public static final String AVATAR_DIR  = BASE_DIR + File.separator + "avatars";
 
     /** Prefix dùng trong DB image_path — sau "items/" là filename. */
     public static final String DB_PATH_PREFIX = "items/";

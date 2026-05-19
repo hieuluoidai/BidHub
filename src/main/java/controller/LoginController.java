@@ -2,6 +2,9 @@ package controller;
 
 import database.UserDAO;
 import exception.AuthenticationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -16,6 +19,23 @@ public class LoginController {
     @FXML private TextField     usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Label         messageLabel;
+
+    private static final String SERVER_HOST;
+    private static final int    SERVER_PORT;
+
+    static {
+        Properties props = new Properties();
+        try (InputStream in = LoginController.class
+                .getResourceAsStream("/server.properties")) {
+            if (in != null) {
+                props.load(in);
+            }
+        } catch (IOException ignored) {
+            // fallback to defaults below
+        }
+        SERVER_HOST = props.getProperty("server.host", "localhost");
+        SERVER_PORT = Integer.parseInt(props.getProperty("server.port", "1234"));
+    }
 
     @FXML
     void handleLogin() {
@@ -37,7 +57,7 @@ public class LoginController {
                 throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không chính xác!");
             }
 
-            AppState.getInstance().getClient().connect("localhost", 1234);
+            AppState.getInstance().getClient().connect(SERVER_HOST, SERVER_PORT);
             AppState.getInstance().setCurrentUser(foundUser);
 
             // Gửi lệnh IDENTIFY để Server gắn ID người dùng vào connection này (cực kỳ quan trọng cho real-time push)
