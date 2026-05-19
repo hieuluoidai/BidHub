@@ -5,7 +5,6 @@ import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
 import model.manager.AppState;
 import utils.AlertHelper;
-import utils.PasswordUtils;
 
 public class ChangePasswordController {
 

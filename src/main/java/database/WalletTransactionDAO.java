@@ -1,7 +1,10 @@
 package database;
 
 import model.auction.WalletTransaction;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +13,8 @@ import java.util.UUID;
 public class WalletTransactionDAO {
 
     public boolean save(String userId, double amount, WalletTransaction.TransactionType type, String description) {
-        String sql = "INSERT INTO wallet_transactions (wallet_tx_id, user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO wallet_transactions "
+                + "(wallet_tx_id, user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, UUID.randomUUID().toString());

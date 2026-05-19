@@ -8,7 +8,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.auction.Auction;
@@ -70,7 +79,8 @@ public class AdminController {
             if (lblSidebarUsername != null) lblSidebarUsername.setText(currentUser.getUsername());
             if (lblSidebarRole != null) lblSidebarRole.setText("ADMIN");
             if (lblSidebarAvatar != null) {
-                String firstChar = currentUser.getUsername().isEmpty() ? "A" : currentUser.getUsername().substring(0, 1).toUpperCase();
+                String firstChar = currentUser.getUsername().isEmpty()
+                        ? "A" : currentUser.getUsername().substring(0, 1).toUpperCase();
                 lblSidebarAvatar.setText(firstChar);
                 
                 if (imgSidebarAvatar != null) {
@@ -186,7 +196,9 @@ public class AdminController {
             if (statusFilter.equals("TẤT CẢ")) return true;
             if (statusFilter.equals("SẮP DIỄN RA")) return "OPEN".equals(auction.getStatus());
             if (statusFilter.equals("ĐANG DIỄN RA")) return "RUNNING".equals(auction.getStatus());
-            if (statusFilter.equals("ĐÃ KẾT THÚC")) return !"OPEN".equals(auction.getStatus()) && !"RUNNING".equals(auction.getStatus());
+            if (statusFilter.equals("ĐÃ KẾT THÚC")) {
+                return !"OPEN".equals(auction.getStatus()) && !"RUNNING".equals(auction.getStatus());
+            }
 
             return true;
         });
@@ -240,7 +252,9 @@ public class AdminController {
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupUserTable() {
@@ -523,7 +537,8 @@ public class AdminController {
         } catch (Exception e) {
             System.err.println("Lỗi mở user details: " + e.getMessage());
             e.printStackTrace();
-            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR, "Không thể mở chi tiết người dùng: " + e.getMessage());
+            utils.AlertHelper.show(utils.AlertHelper.Type.ERROR,
+                    "Không thể mở chi tiết người dùng: " + e.getMessage());
         }
     }
 

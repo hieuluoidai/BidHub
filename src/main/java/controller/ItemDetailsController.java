@@ -1,7 +1,6 @@
 package controller;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,6 +15,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -41,6 +41,8 @@ import model.item.Electronics;
 import model.item.Vehicle;
 import model.manager.AppState;
 import model.user.Bidder;
+import model.user.Seller;
+import model.user.User;
 import utils.AlertHelper;
 import utils.ImageStorageService;
 import utils.SessionPermission;
@@ -79,6 +81,7 @@ public class ItemDetailsController {
 
     @FXML private VBox biddingContent;
     @FXML private VBox paneNoPermission;
+    @FXML private Label lblNoPermission;
     @FXML private VBox paneStatusMessage;
     @FXML private Label lblStatusMessage;
 
@@ -103,11 +106,17 @@ public class ItemDetailsController {
     @FXML private Button btnDelete;
     @FXML private Button btnCancel;
 
+    @FXML private ProgressBar progressTimeBar;
+    @FXML private VBox paneAntiSnipeNotif;
+
     private final ObservableList<BidTransaction> bidRows = FXCollections.observableArrayList();
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private Auction auction;
     private String autoBidCheckedAuctionId;
     private javafx.animation.Timeline countdownTimeline;
+    private javafx.animation.ScaleTransition pulseAnimation;
+    private double lastDisplayedPrice = -1.0;
+    private java.util.function.Consumer<String> antiSnipeListener;
 
     @FXML
     private void initialize() {
@@ -140,6 +149,18 @@ public class ItemDetailsController {
      * Khởi tạo hoặc refresh dữ liệu của phiên đang mở.
      */
     public void setItemData(Auction auction) {
+        // Đăng ký listener anti-snipe một lần duy nhất khi cửa sổ mở lần đầu
+        if (antiSnipeListener == null) {
+            antiSnipeListener = msg -> {
+                if (!msg.startsWith("ANTI_SNIPE_EXTENDED:")) return;
+                String extId = msg.substring("ANTI_SNIPE_EXTENDED:".length());
+                if (this.auction != null && extId.equals(this.auction.getAuctionId())) {
+                    Platform.runLater(this::showAntiSnipeNotification);
+                }
+            };
+            AppState.getInstance().getClient().addStringMessageListener(antiSnipeListener);
+        }
+
         this.auction = auction;
         refreshUI();
         setupPermissions();
@@ -156,6 +177,7 @@ public class ItemDetailsController {
         if (countdownTimeline != null) {
             countdownTimeline.stop();
         }
+        stopPulseAnimation();
         if (auction == null || lblCountdown == null) return;
 
         countdownTimeline = new javafx.animation.Timeline(
@@ -168,37 +190,35 @@ public class ItemDetailsController {
 
     private void updateCountdownLabel() {
         if (auction == null || lblCountdown == null) return;
-        
+
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime start = auction.getStartTime();
         java.time.LocalDateTime end = auction.getEndTime();
         String status = auction.getStatus();
-        
+
         if (status.equals("FINISHED") || status.equals("PAID") || status.equals("CANCELED") || now.isAfter(end)) {
             lblCountdown.setText("Đã kết thúc");
             lblCountdown.getStyleClass().remove("countdown-urgent");
+            stopPulseAnimation();
+            setProgressBar(0.0, false);
             if (countdownTimeline != null) countdownTimeline.stop();
             return;
         }
 
         if (status.equals("OPEN") && now.isBefore(start)) {
             java.time.Duration duration = java.time.Duration.between(now, start);
-            long hours = duration.toHours();
-            long minutes = duration.toMinutesPart();
-            long seconds = duration.toSecondsPart();
-            lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
-            // Thêm tiền tố nhỏ nếu cần, hoặc cứ để timer chạy
+            lblCountdown.setText(String.format("%02d:%02d:%02d",
+                    duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+            stopPulseAnimation();
+            setProgressBar(1.0, false);
             return;
         }
 
         java.time.Duration duration = java.time.Duration.between(now, end);
-        long hours = duration.toHours();
-        long minutes = duration.toMinutesPart();
-        long seconds = duration.toSecondsPart();
+        lblCountdown.setText(String.format("%02d:%02d:%02d",
+                duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
 
-        lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
-
-        // Kích hoạt hiệu ứng FOMO nếu còn dưới 5 phút
+        // FOMO effect khi còn dưới 5 phút
         if (duration.toMinutes() < 5) {
             if (!lblCountdown.getStyleClass().contains("countdown-urgent")) {
                 lblCountdown.getStyleClass().add("countdown-urgent");
@@ -206,6 +226,88 @@ public class ItemDetailsController {
         } else {
             lblCountdown.getStyleClass().remove("countdown-urgent");
         }
+
+        // Pulse animation khi còn dưới 30 giây
+        if (duration.toSeconds() >= 0 && duration.toSeconds() < 30) {
+            if (pulseAnimation == null) {
+                pulseAnimation = new javafx.animation.ScaleTransition(
+                        javafx.util.Duration.millis(500), lblCountdown);
+                pulseAnimation.setFromX(1.0);
+                pulseAnimation.setToX(1.1);
+                pulseAnimation.setFromY(1.0);
+                pulseAnimation.setToY(1.1);
+                pulseAnimation.setAutoReverse(true);
+                pulseAnimation.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                pulseAnimation.play();
+            }
+        } else {
+            stopPulseAnimation();
+        }
+
+        // Progress bar: tỉ lệ thời gian còn lại / tổng thời gian
+        if (start != null && end != null) {
+            long totalSeconds = java.time.Duration.between(start, end).toSeconds();
+            double progress = totalSeconds > 0
+                    ? Math.max(0.0, (double) duration.toSeconds() / totalSeconds)
+                    : 0.0;
+            setProgressBar(progress, progress < 0.1);
+        }
+    }
+
+    private void stopPulseAnimation() {
+        if (pulseAnimation != null) {
+            pulseAnimation.stop();
+            pulseAnimation = null;
+        }
+        if (lblCountdown != null) {
+            lblCountdown.setScaleX(1.0);
+            lblCountdown.setScaleY(1.0);
+        }
+    }
+
+    private void setProgressBar(double progress, boolean urgent) {
+        if (progressTimeBar == null) return;
+        progressTimeBar.setProgress(progress);
+        progressTimeBar.getStyleClass().remove("time-progress-urgent");
+        if (urgent) {
+            progressTimeBar.getStyleClass().add("time-progress-urgent");
+        }
+    }
+
+    private void flashPriceLabel() {
+        if (lblCurrentPrice == null) return;
+        javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(200), lblCurrentPrice);
+        st.setFromX(1.0); st.setToX(1.15);
+        st.setFromY(1.0); st.setToY(1.15);
+        st.setAutoReverse(true); st.setCycleCount(2);
+        st.play();
+    }
+
+    private void showAntiSnipeNotification() {
+        if (paneAntiSnipeNotif == null) return;
+        paneAntiSnipeNotif.setOpacity(0);
+        paneAntiSnipeNotif.setVisible(true);
+        paneAntiSnipeNotif.setManaged(true);
+
+        javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(400), paneAntiSnipeNotif);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+
+        javafx.animation.Timeline hideTimer = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(5), e -> {
+                    javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                            javafx.util.Duration.millis(600), paneAntiSnipeNotif);
+                    fadeOut.setFromValue(1); fadeOut.setToValue(0);
+                    fadeOut.setOnFinished(ev -> {
+                        paneAntiSnipeNotif.setVisible(false);
+                        paneAntiSnipeNotif.setManaged(false);
+                    });
+                    fadeOut.play();
+                })
+        );
+        fadeIn.setOnFinished(e -> hideTimer.play());
+        fadeIn.play();
     }
 
     private void scrollToTop() {
@@ -348,7 +450,14 @@ public class ItemDetailsController {
         lblItemName.setText(auction.getItemName());
         lblCategory.setText(auction.getItem().getClass().getSimpleName());
         lblStartingPrice.setText(String.format("$%,.2f", auction.getItem().getStartingPrice()));
-        lblCurrentPrice.setText(String.format("$%,.2f", auction.getCurrentPrice()));
+
+        double newPrice = auction.getCurrentPrice();
+        lblCurrentPrice.setText(String.format("$%,.2f", newPrice));
+        if (lastDisplayedPrice >= 0 && newPrice > lastDisplayedPrice) {
+            flashPriceLabel();
+        }
+        lastDisplayedPrice = newPrice;
+
         txtDescription.setText(auction.getItem().getDescription());
 
         // Cập nhật Property Chips
@@ -457,9 +566,14 @@ public class ItemDetailsController {
         configureXAxis(visibleHistory.size());
 
         bidChart.getData().clear();
-        if (visibleHistory.isEmpty()) return;
 
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
+
+        // Điểm 0: giá khởi điểm khi tạo phiên
+        XYChart.Data<Number, Number> startPoint = new XYChart.Data<>(0, startingPrice);
+        startPoint.setNode(createStartingPoint(startingPrice));
+        series.getData().add(startPoint);
+
         for (int i = 0; i < visibleHistory.size(); i++) {
             BidTransaction bid = visibleHistory.get(i);
             XYChart.Data<Number, Number> point = new XYChart.Data<>(i + 1, bid.getBidAmount());
@@ -480,8 +594,8 @@ public class ItemDetailsController {
     }
 
     private void configureXAxis(int bidCount) {
-        bidXAxis.setLowerBound(1);
-        bidXAxis.setUpperBound(Math.max(2, bidCount));
+        bidXAxis.setLowerBound(0);
+        bidXAxis.setUpperBound(Math.max(1, bidCount));
         bidXAxis.setTickUnit(1);
     }
 
@@ -524,6 +638,18 @@ public class ItemDetailsController {
         return Math.ceil(value / step) * step;
     }
 
+    private StackPane createStartingPoint(double startingPrice) {
+        StackPane point = new StackPane();
+        point.getStyleClass().add("start-point");
+        point.setPrefSize(10, 10);
+        point.setMinSize(10, 10);
+        point.setMaxSize(10, 10);
+        Tooltip.install(point, new Tooltip(
+                "Giá khởi điểm\n" + String.format("$%,.2f", startingPrice)
+        ));
+        return point;
+    }
+
     private StackPane createBidPoint(BidTransaction bid) {
         StackPane point = new StackPane();
         point.getStyleClass().add("bid-point");
@@ -545,7 +671,10 @@ public class ItemDetailsController {
      * Kiểm tra quyền để hiển thị các nút chức năng.
      */
     private void setupPermissions() {
-        boolean isBidder = (AppState.getInstance().getCurrentUser() instanceof Bidder);
+        User currentUser = AppState.getInstance().getCurrentUser();
+        boolean isOwnAuction = currentUser != null
+                && currentUser.getUserId().equals(auction.getSellerId());
+        boolean isBidder = (currentUser instanceof Bidder) && !isOwnAuction;
         String status = auction.getStatus();
         boolean canBid = isBidder && "RUNNING".equals(status);
         boolean canEdit = SessionPermission.canEdit(auction);
@@ -560,6 +689,15 @@ public class ItemDetailsController {
                 paneNoPermission.setManaged(true);
                 paneStatusMessage.setVisible(false);
                 paneStatusMessage.setManaged(false);
+                if (lblNoPermission != null) {
+                    if (currentUser instanceof Seller && isOwnAuction) {
+                        lblNoPermission.setText(
+                                "Bạn không thể đặt giá cho sản phẩm của chính mình.");
+                    } else {
+                        lblNoPermission.setText(
+                                "Chỉ người mua (Bidder) mới có quyền tham gia đấu giá tại phiên này.");
+                    }
+                }
             } else {
                 paneNoPermission.setVisible(false);
                 paneNoPermission.setManaged(false);
@@ -685,16 +823,19 @@ public class ItemDetailsController {
                     } catch (NumberFormatException ignore) {
                     }
                 }
+                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
                 AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", "Đã thiết lập đấu giá tự động!");
                 updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText());
 
             } else if (msg.startsWith("MY_AUTOBID:")) {
                 String[] parts = msg.split(":");
                 if (parts.length >= 4) {
+                    AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
                     updateAutoBidUI(true, parts[2], parts[3]);
                 }
 
             } else if (msg.startsWith("MY_AUTOBID_NONE")) {
+                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
                 updateAutoBidUI(false, "", "");
 
             } else if (msg.startsWith("CANCEL_AUTOBID_OK")) {
@@ -706,6 +847,7 @@ public class ItemDetailsController {
                     } catch (NumberFormatException ignore) {
                     }
                 }
+                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
                 AlertHelper.show(AlertHelper.Type.INFO, "Đã hủy",
                         "Đã hủy đấu giá tự động và hoàn lại tiền khóa.");
                 updateAutoBidUI(false, "", "");
@@ -944,6 +1086,11 @@ public class ItemDetailsController {
     }
 
     private void closeWindow() {
+        if (antiSnipeListener != null) {
+            AppState.getInstance().getClient().removeStringMessageListener(antiSnipeListener);
+            antiSnipeListener = null;
+        }
+        stopPulseAnimation();
         if (lblItemName != null && lblItemName.getScene() != null) {
             Stage stage = (Stage) lblItemName.getScene().getWindow();
             stage.close();

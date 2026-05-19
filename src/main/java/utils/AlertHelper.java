@@ -174,21 +174,33 @@ public class AlertHelper {
         // ── Nút Cancel ──
         Button btnCancel = new Button("Hủy");
         btnCancel.setPrefWidth(80);
-        btnCancel.setStyle("-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
-        btnCancel.setOnAction(e -> { confirmResult = false; stage.close(); });
+        btnCancel.setStyle(
+                "-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-weight: bold;"
+                + " -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnCancel.setOnAction(e -> {
+            confirmResult = false;
+            stage.close();
+        });
 
         // ── Nút Confirm ──
         Button btnConfirm = new Button("Xác nhận");
         btnConfirm.setPrefWidth(100);
-        btnConfirm.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
-        btnConfirm.setOnAction(e -> { confirmResult = true; stage.close(); });
+        btnConfirm.setStyle(
+                "-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold;"
+                + " -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnConfirm.setOnAction(e -> {
+            confirmResult = true;
+            stage.close();
+        });
 
         HBox buttonBox = new HBox(12, btnCancel, btnConfirm);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
         buttonBox.setPadding(new Insets(0, 24, 20, 24));
 
         VBox root = new VBox(contentBox, buttonBox);
-        root.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-border-color: #E2E8F0; -fx-border-width: 1px; -fx-border-radius: 12px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 4);");
+        root.setStyle("-fx-background-color: white; -fx-background-radius: 12px;"
+                + " -fx-border-color: #E2E8F0; -fx-border-width: 1px; -fx-border-radius: 12px;"
+                + " -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 4);");
 
         StackPane wrapper = new StackPane(root);
         wrapper.setPadding(new Insets(10));

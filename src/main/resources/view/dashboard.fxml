@@ -151,8 +151,8 @@
                                     <javafx.scene.shape.SVGPath content="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" fill="TRANSPARENT" scaleX="3.5" scaleY="3.5" stroke="#CBD5E1" strokeWidth="1.5" />
                                  </children>
                               </StackPane>
-                              <Label styleClass="empty-state-title" text="Không tìm thấy phiên đấu giá nào" />
-                              <Label styleClass="empty-state-subtitle" text="Thử thay đổi từ khóa hoặc bộ lọc của bạn" />
+                              <Label fx:id="lblEmptyTitle" styleClass="empty-state-title" text="Không tìm thấy phiên đấu giá nào" />
+                              <Label fx:id="lblEmptySubtitle" styleClass="empty-state-subtitle" text="Thử thay đổi từ khóa hoặc bộ lọc của bạn" />
                            </children>
                         </VBox>
                      </children>

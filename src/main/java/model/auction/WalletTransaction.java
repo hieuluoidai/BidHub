@@ -20,7 +20,8 @@ public class WalletTransaction {
     private String description;
     private LocalDateTime createdAt;
 
-    public WalletTransaction(String transactionId, String userId, double amount, TransactionType type, String description, LocalDateTime createdAt) {
+    public WalletTransaction(String transactionId, String userId, double amount,
+            TransactionType type, String description, LocalDateTime createdAt) {
         this.transactionId = transactionId;
         this.userId = userId;
         this.amount = amount;
@@ -30,10 +31,27 @@ public class WalletTransaction {
     }
 
     // Getters
-    public String getTransactionId() { return transactionId; }
-    public String getUserId() { return userId; }
-    public double getAmount() { return amount; }
-    public TransactionType getType() { return type; }
-    public String getDescription() { return description; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }

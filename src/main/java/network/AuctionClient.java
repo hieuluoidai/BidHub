@@ -1,8 +1,9 @@
 package network;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -195,6 +196,15 @@ public class AuctionClient {
                 boolean statusChanged = !existing.getStatus().equals(updated.getStatus());
                 boolean bidHistoryChanged = existing.getBidHistory().size() != updated.getBidHistory().size();
                 boolean highestBidAppeared = existing.getHighestBid() == null && updated.getHighestBid() != null;
+
+                // Phát hiện gia hạn thời gian do Anti-Sniping
+                if ("RUNNING".equals(updated.getStatus())
+                        && updated.getEndTime() != null && existing.getEndTime() != null
+                        && updated.getEndTime().isAfter(existing.getEndTime())) {
+                    for (Consumer<String> listener : stringMessageListeners) {
+                        listener.accept("ANTI_SNIPE_EXTENDED:" + updated.getAuctionId());
+                    }
+                }
 
                 if (priceChanged || statusChanged || bidHistoryChanged || highestBidAppeared) {
                     list.set(i, updated);

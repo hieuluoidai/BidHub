@@ -25,6 +25,7 @@ public class ItemCardController {
     @FXML private Label lblPrice;
     @FXML private Label lblStatus;
     @FXML private Button btnQuickBid;
+    @FXML private Label lblAutoBadge;
 
     private Auction auction;
     private Consumer<Auction> onViewDetails;
@@ -85,10 +86,19 @@ public class ItemCardController {
         }
 
         // Quyền hạn cho nút Quick Bid
-        boolean isBidder = AppState.getInstance().getCurrentUser() instanceof Bidder;
+        model.user.User cu = AppState.getInstance().getCurrentUser();
+        boolean isOwnAuction = cu != null && cu.getUserId().equals(auction.getSellerId());
+        boolean isBidder = (cu instanceof Bidder) && !isOwnAuction;
         boolean isRunning = "RUNNING".equals(status);
         btnQuickBid.setVisible(isBidder && isRunning);
         btnQuickBid.setManaged(isBidder && isRunning);
+
+        // Badge Auto-Bid: hiển thị khi user đang có Auto-Bid hoạt động trên phiên này
+        if (lblAutoBadge != null) {
+            boolean hasAuto = AppState.getInstance().hasMyAutoBid(auction.getAuctionId());
+            lblAutoBadge.setVisible(hasAuto);
+            lblAutoBadge.setManaged(hasAuto);
+        }
     }
 
     public String getAuctionId() {

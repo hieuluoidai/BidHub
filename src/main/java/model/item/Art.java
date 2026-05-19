@@ -13,7 +13,11 @@ public class Art extends Item {
     }
 
     @Override
-    public String getItemType() { return "Art"; }
+    public String getItemType() {
+        return "Art";
+    }
 
-    public String getArtist() { return artist; }
+    public String getArtist() {
+        return artist;
+    }
 }

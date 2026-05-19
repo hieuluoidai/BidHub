@@ -80,39 +80,13 @@ public class ClientHandler implements Runnable {
                 // để đảm bảo restart không mất dữ liệu.
                 new database.ItemDAO().save(incomingAuction.getItem(), incomingAuction.getSellerId());
                 new database.AuctionDAO().save(incomingAuction);
-
+                
                 AuctionManager.getInstance().addAuction(incomingAuction);
                 System.out.println(">>> [SERVER] Đã tiếp nhận và lưu phiên mới: " + incomingAuction.getAuctionId());
-
-                // ====== NOTIFICATIONS ======
-                String sellerId = incomingAuction.getSellerId();
-                String itemName = (incomingAuction.getItem() != null)
-                        ? incomingAuction.getItem().getItemName() : incomingAuction.getAuctionId();
-
-                // Báo cho SELLER: phiên đã đăng thành công
-                if (sellerId != null) {
-                    utils.NotificationService.notifyUser(server, sellerId,
-                        model.notification.Notification.Type.ITEM_POSTED,
-                        "Đăng phiên thành công",
-                        String.format("Phiên \"%s\" của bạn đã được tạo và sẽ chạy theo thời gian quy định.", itemName)
-                    );
-                }
-
-                // Báo cho tất cả ADMIN
-                String sellerName = "Người dùng";
-                if (sellerId != null) {
-                    User su = new UserDAO().findById(sellerId);
-                    if (su != null) sellerName = su.getUsername();
-                }
-                utils.NotificationService.notifyAdmins(server,
-                    model.notification.Notification.Type.ADMIN_NEW_AUCTION,
-                    "Phiên đấu giá mới",
-                    String.format("%s vừa tạo phiên \"%s\".", sellerName, itemName)
-                );
             }
             // Smart Broadcast: Chỉ gửi phiên vừa thay đổi/tạo mới
             server.broadcast(incomingAuction);
-        }
+        } 
         // TRƯỜNG HỢP 2: Nhận lệnh dạng chuỗi văn bản (String)
         else if (request instanceof String msg) {
             handleStringRequest(msg);
@@ -179,21 +153,6 @@ public class ClientHandler implements Runnable {
             }
             else if (msg.startsWith("APPROVE_SELLER:")) {
                 handleApproveSeller(msg);
-            }
-            else if (msg.startsWith("REVOKE_SELLER:")) {
-                handleRevokeSeller(msg);
-            }
-            else if (msg.startsWith("NEW_USER_REGISTERED:")) {
-                handleNewUserRegistered(msg);
-            }
-            else if (msg.startsWith("FETCH_NOTIFICATIONS:")) {
-                handleFetchNotifications(msg);
-            }
-            else if (msg.startsWith("MARK_NOTIFICATION_READ:")) {
-                handleMarkNotificationRead(msg);
-            }
-            else if (msg.startsWith("MARK_ALL_NOTIFICATIONS_READ:")) {
-                handleMarkAllRead(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
@@ -652,20 +611,6 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         server.sendToUser(sellerId, String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", sellerAvail, sellerLocked));
 
         server.broadcast(AuctionManager.getInstance().getAllAuctions());
-
-        // ====== NOTIFICATIONS ======
-        utils.NotificationService.notifyUser(server, winnerId,
-            model.notification.Notification.Type.WALLET_PAYMENT,
-            "Thanh toán thành công",
-            String.format(java.util.Locale.US, "Bạn đã thanh toán -$%,.2f cho \"%s\". Số dư còn $%,.2f.",
-                    finalPrice, itemName, newBalance)
-        );
-        utils.NotificationService.notifyUser(server, sellerId,
-            model.notification.Notification.Type.WALLET_EARNING,
-            "Nhận tiền bán hàng",
-            String.format(java.util.Locale.US, "Buyer đã thanh toán +$%,.2f cho \"%s\". Số dư mới: $%,.2f.",
-                    finalPrice, itemName, sellerAvail)
-        );
     }
 
     /**
@@ -733,18 +678,10 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             System.out.printf(">>> [TOPUP] %s nạp $%.2f thành công | balance: $%.2f → $%.2f%n",
                     user.getUsername(), amount, current, newBalance);
             send("TOPUP_OK:" + newBalance);
-
+            
             // Push thêm Balance Update chi tiết
             double locked = userDao.getLockedBalance(userId);
             send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
-
-            // Notification: nạp tiền thành công
-            utils.NotificationService.notifyUser(server, userId,
-                model.notification.Notification.Type.WALLET_TOPUP,
-                "Nạp tiền thành công",
-                String.format(java.util.Locale.US, "Bạn đã nạp +$%,.2f vào ví. Số dư khả dụng: $%,.2f.",
-                        amount, newBalance)
-            );
         } else {
             send("TOPUP_FAILED: Lỗi cập nhật số dư");
         }
@@ -779,9 +716,8 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
         // Trước khi bid, lấy thông tin người đang dẫn đầu để notify nếu họ bị outbid
         Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
-        String prevBidderId = (auction != null && auction.getHighestBid() != null)
+        String prevBidderId = (auction != null && auction.getHighestBid() != null) 
                                 ? auction.getHighestBid().getBidder().getUserId() : null;
-        int prevExtCount = (auction != null) ? auction.getExtensionCount() : 0;
 
         // Tích hợp luồng lưu DB Atomic của Hiếu
         BidTransactionDAO bidDao = new BidTransactionDAO();
@@ -814,48 +750,6 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             // 3. Smart Broadcast: Chỉ gửi phiên vừa thay đổi
             Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
             if (updated != null) server.broadcast(updated);
-
-            // ====== NOTIFICATIONS ======
-            String itemName = (updated != null && updated.getItem() != null)
-                    ? updated.getItem().getItemName() : auctionId;
-            String sellerId = (updated != null) ? updated.getSellerId() : null;
-
-            // 4a. Báo cho SELLER có người vừa bid (nếu seller khác bidder)
-            if (sellerId != null && !sellerId.equals(bidderId)) {
-                utils.NotificationService.notifyUser(server, sellerId,
-                    model.notification.Notification.Type.AUCTION_NEW_BID,
-                    "Có bid mới cho phiên của bạn",
-                    String.format(java.util.Locale.US, "%s vừa đặt $%,.2f cho \"%s\".",
-                            bidder.getUsername(), amount, itemName)
-                );
-            }
-
-            // 4b. Báo cho người vừa bị OUTBID
-            if (prevBidderId != null && !prevBidderId.equals(bidderId)) {
-                utils.NotificationService.notifyUser(server, prevBidderId,
-                    model.notification.Notification.Type.AUCTION_OUTBID,
-                    "Bạn đã bị vượt giá",
-                    String.format(java.util.Locale.US, "Phiên \"%s\" đã có người trả $%,.2f, cao hơn giá của bạn.",
-                            itemName, amount)
-                );
-            }
-
-            // 4c. Anti-snipe extension — báo cho mọi bidder đã từng tham gia + seller
-            if (updated != null && updated.getExtensionCount() > prevExtCount) {
-                java.util.Set<String> uniqueIds = new java.util.HashSet<>();
-                for (var tx : updated.getBidHistory()) {
-                    if (tx.getBidder() != null) uniqueIds.add(tx.getBidder().getUserId());
-                }
-                if (sellerId != null) uniqueIds.add(sellerId);
-                String extMsg = String.format("Phiên \"%s\" được gia hạn (lần %d). Hết hạn mới: %s",
-                        itemName, updated.getExtensionCount(), updated.getEndTime());
-                for (String uid : uniqueIds) {
-                    utils.NotificationService.notifyUser(server, uid,
-                        model.notification.Notification.Type.AUCTION_EXTENDED,
-                        "Phiên được gia hạn",
-                        extMsg);
-                }
-            }
         }
     }
 
@@ -908,15 +802,6 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             System.out.println(">>> [SELLER_REQ] User " + userId + " requested to become Seller.");
             // Thông báo cho Admin nếu đang online
             server.broadcastToRole("ADMIN", "NEW_SELLER_REQUEST:" + userId);
-
-            // Notification: gửi cho tất cả admin (lưu DB)
-            User u = userDao.findById(userId);
-            String uname = (u != null) ? u.getUsername() : userId;
-            utils.NotificationService.notifyAdmins(server,
-                model.notification.Notification.Type.ADMIN_NEW_SELLER_REQUEST,
-                "Yêu cầu nâng cấp Seller",
-                String.format("Người dùng \"%s\" muốn trở thành Seller. Vui lòng xét duyệt.", uname)
-            );
         }
     }
 
@@ -932,65 +817,5 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
             // Re-broadcast all auctions to update role-based UI if needed
             server.broadcast(AuctionManager.getInstance().getAllAuctions());
-
-            // Notification: báo cho user vừa được duyệt
-            utils.NotificationService.notifyUser(server, userId,
-                model.notification.Notification.Type.SELLER_APPROVED,
-                "Yêu cầu Seller đã được duyệt",
-                "Bạn đã có quyền đăng phiên đấu giá. Hãy đăng nhập lại để cập nhật vai trò."
-            );
-        }
-    }
-
-    private void handleRevokeSeller(String msg) {
-        String userId = msg.split(":")[1];
-        UserDAO userDao = new UserDAO();
-        if (userDao.revokeSeller(userId)) {
-            System.out.println(">>> [SELLER_REV] User " + userId + " revoked from Seller role.");
-            server.sendToUser(userId, "SELLER_REVOKED");
-            server.broadcastToRole("ADMIN", "USERS_UPDATED");
-            server.broadcast(AuctionManager.getInstance().getAllAuctions());
-
-            // Notification: thông báo cho user bị hạ quyền
-            utils.NotificationService.notifyUser(server, userId,
-                model.notification.Notification.Type.SELLER_REVOKED,
-                "Quyền Seller đã bị thu hồi",
-                "Admin đã hạ quyền tài khoản của bạn về BIDDER. Bạn không thể đăng phiên mới."
-            );
-        }
-    }
-
-    // ========================================================================
-    //  NOTIFICATION HANDLERS
-    // ========================================================================
-
-    private void handleNewUserRegistered(String msg) {
-        String userId = msg.split(":")[1];
-        User u = new UserDAO().findById(userId);
-        if (u == null) return;
-        utils.NotificationService.notifyAdmins(server,
-            model.notification.Notification.Type.ADMIN_NEW_USER,
-            "Người dùng mới",
-            String.format("Tài khoản \"%s\" (%s) vừa được tạo.", u.getUsername(), u.getEmail())
-        );
-    }
-
-    private void handleFetchNotifications(String msg) {
-        String userId = msg.split(":")[1];
-        java.util.List<model.notification.Notification> list =
-                new database.NotificationDAO().findRecent(userId, 50);
-        // Loại bỏ phần tử null (type không hợp lệ)
-        list.removeIf(java.util.Objects::isNull);
-        send(new model.notification.Notification.Bundle(list));
-    }
-
-    private void handleMarkNotificationRead(String msg) {
-        String notifId = msg.split(":")[1];
-        new database.NotificationDAO().markAsRead(notifId);
-    }
-
-    private void handleMarkAllRead(String msg) {
-        String userId = msg.split(":")[1];
-        new database.NotificationDAO().markAllAsRead(userId);
-    }
+        }    }
 }

@@ -13,6 +13,7 @@
       <StackPane prefHeight="200.0" prefWidth="280.0" styleClass="card-image-container">
          <children>
             <ImageView fx:id="imgItem" fitHeight="180.0" fitWidth="240.0" pickOnBounds="true" preserveRatio="true" />
+            <Label fx:id="lblAutoBadge" managed="false" StackPane.alignment="TOP_RIGHT" styleClass="auto-bid-badge" text="AUTO" visible="false" />
          </children>
       </StackPane>
       

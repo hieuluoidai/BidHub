@@ -26,20 +26,45 @@ public class AutoBid implements Serializable {
     }
 
     // --- Getters & Setters ---
-    public String getAutoBidId()   { return autoBidId; }
-    public String getAuctionId()   { return auctionId; }
-    public String getUserId()      { return userId; }
-    public double getMaxBid()      { return maxBid; }
-    public double getIncrement()   { return increment; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getAutoBidId() {
+        return autoBidId;
+    }
 
-    public void setMaxBid(double maxBid)       { this.maxBid = maxBid; }
-    public void setIncrement(double increment) { this.increment = increment; }
-    public void setCreatedAt(LocalDateTime t)  { this.createdAt = t; }
+    public String getAuctionId() {
+        return auctionId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public double getMaxBid() {
+        return maxBid;
+    }
+
+    public double getIncrement() {
+        return increment;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setMaxBid(double maxBid) {
+        this.maxBid = maxBid;
+    }
+
+    public void setIncrement(double increment) {
+        this.increment = increment;
+    }
+
+    public void setCreatedAt(LocalDateTime t) {
+        this.createdAt = t;
+    }
 
     @Override
     public String toString() {
-        return String.format("AutoBid[ID=%s, User=%s, Max=$%.2f, Inc=$%.2f]", 
+        return String.format("AutoBid[ID=%s, User=%s, Max=$%.2f, Inc=$%.2f]",
             autoBidId, userId, maxBid, increment);
     }
 }

@@ -31,13 +31,32 @@ public abstract class Item extends Entity implements Serializable {
     public abstract String getItemType();
 
     // --- Getters & Setters ---
-    public String getItemId()        { return super.getId(); }
-    public double getStartingPrice() { return startingPrice; }
-    public String getItemName()      { return itemName; }
-    public String getDescription()   { return description; }
-    public String getImagePath()     { return imagePath; }
+    public String getItemId() {
+        return super.getId();
+    }
+
+    public double getStartingPrice() {
+        return startingPrice;
+    }
+
+    public String getItemName() {
+        return itemName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
 
     // Update giá hiện tại (thường dùng khi có người Bid mới)
-    public void setStartingPrice(double price) { this.startingPrice = price; }
-    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+    public void setStartingPrice(double price) {
+        this.startingPrice = price;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
 }

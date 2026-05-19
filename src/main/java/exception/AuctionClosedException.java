@@ -11,6 +11,11 @@ public class AuctionClosedException extends RuntimeException {
         this.status = status;
     }
 
-    public String getAuctionId() { return auctionId; }
-    public String getStatus() { return status; }
+    public String getAuctionId() {
+        return auctionId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
 }
