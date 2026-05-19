@@ -2,11 +2,17 @@ package utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -39,6 +45,19 @@ public final class ImageStorageService {
 
     /** Giới hạn dung lượng tối đa 10MB — tránh user upload file khổng lồ. */
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+
+    /** Host và port của HTTP image server — đọc từ server.properties. */
+    private static final String IMAGE_SERVER_HOST;
+    private static final int IMAGE_SERVER_PORT;
+
+    static {
+        Properties props = new Properties();
+        try (InputStream in = ImageStorageService.class.getResourceAsStream("/server.properties")) {
+            if (in != null) props.load(in);
+        } catch (IOException ignored) { }
+        IMAGE_SERVER_HOST = props.getProperty("server.host", "localhost");
+        IMAGE_SERVER_PORT = Integer.parseInt(props.getProperty("server.image.port", "8080"));
+    }
 
     private ImageStorageService() { /* utility class */ }
 
@@ -171,6 +190,74 @@ public final class ImageStorageService {
             return null;
         }
         return target.toUri().toString();
+    }
+
+    /**
+     * Lưu ảnh item từ mảng byte (gọi từ HTTP handler phía server).
+     */
+    public static String saveImageFromBytes(byte[] bytes, String itemId, String ext) throws IOException {
+        return saveFileFromBytes(bytes, itemId, ext, STORAGE_DIR, DB_PATH_PREFIX);
+    }
+
+    /**
+     * Lưu avatar từ mảng byte (gọi từ HTTP handler phía server).
+     */
+    public static String saveAvatarFromBytes(byte[] bytes, String userId, String ext) throws IOException {
+        return saveFileFromBytes(bytes, userId, ext, AVATAR_DIR, DB_AVATAR_PREFIX);
+    }
+
+    private static String saveFileFromBytes(byte[] bytes, String id, String ext,
+            String targetDir, String prefix) throws IOException {
+        Path storageDir = Paths.get(targetDir);
+        Files.createDirectories(storageDir);
+        String filename = id + "." + ext;
+        Path target = storageDir.resolve(filename);
+        Files.write(target, bytes);
+        System.out.println(">>> [IMAGE] Lưu từ bytes: " + target.toAbsolutePath());
+        return prefix + filename;
+    }
+
+    /**
+     * Upload ảnh từ file local lên HTTP image server.
+     * Gọi từ client trên background thread.
+     *
+     * @param imageFile file ảnh cần upload
+     * @param itemId    ID item, dùng làm tên file trên server
+     * @return dbPath trả về từ server (vd: "items/ITEM_123.jpg")
+     * @throws IOException nếu lỗi mạng hoặc server lỗi
+     */
+    public static String uploadToServer(File imageFile, String itemId) throws IOException {
+        String ext = getExtension(imageFile.getName());
+        String urlStr = "http://" + IMAGE_SERVER_HOST + ":" + IMAGE_SERVER_PORT
+                + "/upload?id=" + itemId + "&ext=" + ext + "&prefix=items";
+        HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(30_000);
+
+        byte[] bytes = Files.readAllBytes(imageFile.toPath());
+        conn.setFixedLengthStreamingMode(bytes.length);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = conn.getResponseCode();
+        if (code != 200) {
+            throw new IOException("HTTP " + code + " khi upload ảnh");
+        }
+        try (InputStream is = conn.getInputStream()) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * Trả về HTTP URL để mọi client tải ảnh từ server.
+     * Ví dụ: "http://206.189.37.5:8080/items/ITEM_123.jpg"
+     */
+    public static String toImageUrl(String dbPath) {
+        if (dbPath == null || dbPath.isBlank()) return null;
+        return "http://" + IMAGE_SERVER_HOST + ":" + IMAGE_SERVER_PORT + "/" + dbPath;
     }
 
     /**

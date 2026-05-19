@@ -1,10 +1,13 @@
 package network;
 
+import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import model.auction.Auction;
 import model.manager.AuctionManager;
 
@@ -120,9 +123,18 @@ public class AuctionServer {
         System.out.println(">>> Đã nạp " + savedAuctions.size() + " phiên đấu giá.");
 
         AuctionServer server = new AuctionServer(1234);
-
-        // Chỉ một lifecycle monitor duy nhất, dùng cái chuẩn trong AuctionManager
         AuctionManager.getInstance().startAutoClosureService(server);
+
+        // HTTP image server — phục vụ và nhận ảnh từ tất cả client
+        try {
+            HttpServer httpServer = HttpServer.create(new InetSocketAddress(8080), 0);
+            httpServer.createContext("/", new ImageHttpHandler());
+            httpServer.setExecutor(Executors.newFixedThreadPool(4));
+            httpServer.start();
+            System.out.println(">>> HTTP image server đang chạy trên port 8080...");
+        } catch (IOException e) {
+            System.err.println(">>> Không thể khởi động HTTP image server: " + e.getMessage());
+        }
 
         server.start();
     }

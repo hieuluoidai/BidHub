@@ -73,8 +73,8 @@ public class ItemCardController {
             default -> lblStatus.getStyleClass().add("stat-blue");
         }
 
-        // Xử lý ảnh
-        String imageUri = ImageStorageService.toFileUri(auction.getItem().getImagePath());
+        // Xử lý ảnh — tải từ HTTP server để mọi client đều thấy
+        String imageUri = ImageStorageService.toImageUrl(auction.getItem().getImagePath());
         if (imageUri != null) {
             try {
                 imgItem.setImage(new Image(imageUri, true)); // true = background loading

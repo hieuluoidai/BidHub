@@ -1,10 +1,10 @@
 package controller;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -158,42 +158,53 @@ public class CreateSessionController {
             String itemId = "ITEM_" + System.currentTimeMillis();
             Item newItem = ItemFactory.createItem(type, itemId, name, desc, startingPrice, extraInfo);
 
-            // 4b. Nếu user có chọn ảnh, copy vào uploads/ và set imagePath
-            if (selectedImageFile != null) {
-                try {
-                    String imagePath = ImageStorageService.saveImage(selectedImageFile, itemId);
-                    newItem.setImagePath(imagePath);
-                } catch (IOException | IllegalArgumentException ex) {
-                    showError("Lỗi lưu ảnh: " + ex.getMessage());
-                    return;
-                }
-            }
-
             String auctionId = "AUC_" + System.currentTimeMillis();
             Auction newAuction = new Auction(auctionId, newItem, startTime, endTime);
             String sellerId = AppState.getInstance().getCurrentUser().getUserId();
             newAuction.setSellerId(sellerId);
 
-            // 5. Lưu DB
-            new database.ItemDAO().save(newItem, sellerId);
-            new database.AuctionDAO().save(newAuction);
-
-            // 6. Broadcast cho mọi client
-            AppState.getInstance().getClient().send(newAuction);
-
-            // Phiên mới được tạo → cache permission cũ đã không còn đúng
-            utils.SessionPermission.invalidateCache();
-
-            System.out.println(">>> Đã tạo phiên: " + auctionId
-                    + " | kết thúc: " + endTime
-                    + " | ảnh: " + (newItem.getImagePath() != null ? newItem.getImagePath() : "(không có)"));
-            closeWindow();
+            // 4b. Upload ảnh lên server rồi mới lưu DB & broadcast
+            if (selectedImageFile != null) {
+                btnChooseImage.setDisable(true);
+                if (lblImageStatus != null) {
+                    lblImageStatus.setText("Đang tải ảnh lên server...");
+                }
+                File fileToUpload = selectedImageFile;
+                Task<String> uploadTask = new Task<>() {
+                    @Override
+                    protected String call() throws Exception {
+                        return ImageStorageService.uploadToServer(fileToUpload, itemId);
+                    }
+                };
+                uploadTask.setOnSucceeded(e -> {
+                    newItem.setImagePath(uploadTask.getValue());
+                    finishCreation(newItem, newAuction, sellerId);
+                });
+                uploadTask.setOnFailed(e -> {
+                    btnChooseImage.setDisable(false);
+                    showError("Lỗi tải ảnh: " + uploadTask.getException().getMessage());
+                });
+                new Thread(uploadTask).start();
+            } else {
+                finishCreation(newItem, newAuction, sellerId);
+            }
 
         } catch (NumberFormatException e) {
             showError("Lỗi: Giá tiền phải là một con số hợp lệ!");
         } catch (IllegalArgumentException e) {
             showError("Lỗi: Không nhận diện được loại sản phẩm!");
         }
+    }
+
+    private void finishCreation(Item item, Auction auction, String sellerId) {
+        new database.ItemDAO().save(item, sellerId);
+        new database.AuctionDAO().save(auction);
+        AppState.getInstance().getClient().send(auction);
+        utils.SessionPermission.invalidateCache();
+        System.out.println(">>> Đã tạo phiên: " + auction.getAuctionId()
+                + " | kết thúc: " + auction.getEndTime()
+                + " | ảnh: " + (item.getImagePath() != null ? item.getImagePath() : "(không có)"));
+        closeWindow();
     }
 
     /**

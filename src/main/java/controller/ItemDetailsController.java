@@ -517,7 +517,7 @@ public class ItemDetailsController {
 
         String imgPath = auction.getItem().getImagePath();
         if (imgPath != null && !imgPath.isBlank()) {
-            String uri = ImageStorageService.toFileUri(imgPath);
+            String uri = ImageStorageService.toImageUrl(imgPath);
             if (uri != null) {
                 itemImageView.setImage(new Image(uri, 360, 0, true, true));
                 itemImageView.setVisible(true);

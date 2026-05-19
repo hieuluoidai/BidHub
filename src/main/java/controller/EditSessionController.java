@@ -1,8 +1,8 @@
 package controller;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
+import javafx.concurrent.Task;
 
 import database.AuctionDAO;
 import database.ItemDAO;
@@ -111,10 +111,10 @@ public class EditSessionController {
             textExtraInfo.setText(v.getBrand());
         }
 
-        // Load ảnh hiện có (nếu có)
+        // Load ảnh hiện có (nếu có) — tải qua HTTP server
         originalImagePath = item.getImagePath();
         if (originalImagePath != null && !originalImagePath.isBlank()) {
-            String uri = ImageStorageService.toFileUri(originalImagePath);
+            String uri = ImageStorageService.toImageUrl(originalImagePath);
             if (uri != null && imagePreview != null) {
                 imagePreview.setImage(new Image(uri, 200, 0, true, true));
                 if (lblImageStatus != null) lblImageStatus.setText("Ảnh hiện tại");
@@ -178,57 +178,37 @@ public class EditSessionController {
             );
 
             // 2b. Xử lý ảnh — 3 case:
-            //   A. User chọn ảnh mới → copy vào uploads, set imagePath mới
-            //   B. User nhấn "Bỏ chọn" với ảnh sẵn có → xóa file cũ, imagePath = null
+            //   A. User chọn ảnh mới → upload lên server
+            //   B. User nhấn "Bỏ chọn" → imagePath = null (file trên server giữ nguyên)
             //   C. Không đổi gì → giữ nguyên originalImagePath
-            String finalImagePath;
             if (selectedImageFile != null) {
-                try {
-                    finalImagePath = ImageStorageService.saveImage(selectedImageFile, itemId);
-                } catch (IOException | IllegalArgumentException ex) {
-                    showError("Lỗi lưu ảnh: " + ex.getMessage());
-                    return;
+                btnChooseImage.setDisable(true);
+                if (lblImageStatus != null) {
+                    lblImageStatus.setText("Đang tải ảnh lên server...");
                 }
-            } else if (userRemovedOriginal && originalImagePath != null) {
-                ImageStorageService.deleteImage(originalImagePath);
-                finalImagePath = null;
+                File fileToUpload = selectedImageFile;
+                Item finalUpdatedItem = updatedItem;
+                LocalDateTime finalEndTime = newEndTime;
+                Task<String> uploadTask = new Task<>() {
+                    @Override
+                    protected String call() throws Exception {
+                        return ImageStorageService.uploadToServer(fileToUpload, itemId);
+                    }
+                };
+                uploadTask.setOnSucceeded(e -> {
+                    finalUpdatedItem.setImagePath(uploadTask.getValue());
+                    finishEdit(finalUpdatedItem, finalEndTime);
+                });
+                uploadTask.setOnFailed(e -> {
+                    btnChooseImage.setDisable(false);
+                    showError("Lỗi tải ảnh: " + uploadTask.getException().getMessage());
+                });
+                new Thread(uploadTask).start();
             } else {
-                finalImagePath = originalImagePath;
+                String finalImagePath = userRemovedOriginal ? null : originalImagePath;
+                updatedItem.setImagePath(finalImagePath);
+                finishEdit(updatedItem, newEndTime);
             }
-            updatedItem.setImagePath(finalImagePath);
-
-            // 3. Update DB — phân biệt theo role để không cho seller "tampering"
-            User currentUser = AppState.getInstance().getCurrentUser();
-            ItemDAO itemDao = new ItemDAO();
-            boolean itemOk;
-            if (currentUser instanceof Admin) {
-                itemOk = itemDao.updateAsAdmin(updatedItem);
-            } else {
-                itemOk = itemDao.update(updatedItem, currentUser.getUserId());
-            }
-
-            if (!itemOk) {
-                showError("Không thể cập nhật sản phẩm. Có thể bạn không phải chủ phiên này.");
-                return;
-            }
-
-            // 4. Update end_time của phiên (chỉ áp dụng được khi status = OPEN, AuctionDAO tự kiểm tra)
-            new AuctionDAO().updateTime(
-                    auction.getAuctionId(),
-                    auction.getStartTime(),
-                    newEndTime
-            );
-
-            // 5. Báo server reload phiên này từ DB và broadcast cho mọi client
-            AppState.getInstance().getClient()
-                    .send("RELOAD_AUCTION:" + auction.getAuctionId());
-
-            System.out.println(">>> Đã gửi RELOAD_AUCTION cho phiên " + auction.getAuctionId());
-
-            AlertHelper.show(AlertHelper.Type.SUCCESS, "Đã cập nhật phiên đấu giá!");
-
-            if (onSavedCallback != null) onSavedCallback.run();
-            closeWindow();
 
         } catch (IllegalArgumentException e) {
             showError("Lỗi tạo sản phẩm: " + e.getMessage());
@@ -236,6 +216,27 @@ public class EditSessionController {
             showError("Lỗi không xác định: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void finishEdit(Item updatedItem, LocalDateTime newEndTime) {
+        User currentUser = AppState.getInstance().getCurrentUser();
+        ItemDAO itemDao = new ItemDAO();
+        boolean itemOk;
+        if (currentUser instanceof Admin) {
+            itemOk = itemDao.updateAsAdmin(updatedItem);
+        } else {
+            itemOk = itemDao.update(updatedItem, currentUser.getUserId());
+        }
+        if (!itemOk) {
+            showError("Không thể cập nhật sản phẩm. Có thể bạn không phải chủ phiên này.");
+            return;
+        }
+        new AuctionDAO().updateTime(auction.getAuctionId(), auction.getStartTime(), newEndTime);
+        AppState.getInstance().getClient().send("RELOAD_AUCTION:" + auction.getAuctionId());
+        System.out.println(">>> Đã gửi RELOAD_AUCTION cho phiên " + auction.getAuctionId());
+        AlertHelper.show(AlertHelper.Type.SUCCESS, "Đã cập nhật phiên đấu giá!");
+        if (onSavedCallback != null) onSavedCallback.run();
+        closeWindow();
     }
 
     @FXML
@@ -292,8 +293,8 @@ public class EditSessionController {
             // User vừa chọn ảnh mới rồi đổi ý → hủy chọn, có thể vẫn còn ảnh gốc
             selectedImageFile = null;
             if (originalImagePath != null && !originalImagePath.isBlank()) {
-                // Quay lại hiển thị ảnh gốc
-                String uri = ImageStorageService.toFileUri(originalImagePath);
+                // Quay lại hiển thị ảnh gốc qua HTTP server
+                String uri = ImageStorageService.toImageUrl(originalImagePath);
                 if (uri != null) {
                     imagePreview.setImage(new Image(uri, 200, 0, true, true));
                 }

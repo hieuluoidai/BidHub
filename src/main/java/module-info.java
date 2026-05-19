@@ -3,6 +3,7 @@ module online.auction.system {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;
+    requires jdk.httpserver;
     requires mysql.connector.j;
     requires com.zaxxer.hikari;
 
