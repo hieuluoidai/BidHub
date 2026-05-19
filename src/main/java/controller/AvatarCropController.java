@@ -185,7 +185,9 @@ public class AvatarCropController {
     }
 
     @FXML
-    void handleCancel() { close(); }
+    void handleCancel() {
+        close();
+    }
 
     private void close() {
         javafx.application.Platform.runLater(() -> {

@@ -69,8 +69,14 @@ public class AlertHelper {
 
         Button btnCancel  = makeButton("Hủy",      "#94A3B8", false, 80);
         Button btnConfirm = makeButton("Xác nhận", "#3B82F6", true,  100);
-        btnCancel .setOnAction(e -> { confirmResult = false; stage.close(); });
-        btnConfirm.setOnAction(e -> { confirmResult = true;  stage.close(); });
+        btnCancel .setOnAction(e -> {
+            confirmResult = false;
+            stage.close();
+        });
+        btnConfirm.setOnAction(e -> {
+            confirmResult = true;
+            stage.close();
+        });
 
         HBox card = buildCard(Type.INFO, title, message, btnCancel, btnConfirm);
         showAnimated(stage, card, true);

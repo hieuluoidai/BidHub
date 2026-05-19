@@ -59,7 +59,9 @@ public class DepositRequestDAO {
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
         } catch (SQLException e) {
             System.err.println("[DepositRequestDAO.findPending] " + e.getMessage());
         }
@@ -86,7 +88,9 @@ public class DepositRequestDAO {
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) ids.add(rs.getString("user_id"));
+            while (rs.next()) {
+                ids.add(rs.getString("user_id"));
+            }
         } catch (SQLException e) {
             System.err.println("[DepositRequestDAO.getPendingUserIds] " + e.getMessage());
         }

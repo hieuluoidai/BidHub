@@ -316,7 +316,10 @@ public class AdminController {
             @Override
             protected void updateItem(String username, boolean empty) {
                 super.updateItem(username, empty);
-                if (empty || username == null) { setGraphic(null); return; }
+                if (empty || username == null) {
+                    setGraphic(null);
+                    return;
+                }
                 User u = getTableRow().getItem();
 
                 // Avatar circle (36×36)
@@ -665,7 +668,9 @@ public class AdminController {
         colDepositAmount.setCellFactory(col -> new TableCell<>() {
             @Override protected void updateItem(String v, boolean empty) {
                 super.updateItem(v, empty);
-                if (empty || v == null) { setText(null); } else {
+                if (empty || v == null) {
+                    setText(null);
+                } else {
                     setText(v);
                     setStyle("-fx-font-weight: bold; -fx-text-fill: #0369a1;");
                 }
@@ -698,7 +703,9 @@ public class AdminController {
             @Override protected void updateItem(String v, boolean empty) {
                 super.updateItem(v, empty);
                 setStyle("-fx-alignment: CENTER; -fx-padding: 0;");
-                if (empty) { setGraphic(null); } else {
+                if (empty) {
+                    setGraphic(null);
+                } else {
                     javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(8, btnApprove, btnReject);
                     box.setAlignment(javafx.geometry.Pos.CENTER);
                     box.setMaxWidth(Double.MAX_VALUE);
