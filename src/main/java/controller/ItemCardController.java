@@ -1,5 +1,7 @@
 package controller;
 
+import javafx.application.Platform;
+import javafx.collections.SetChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -30,6 +32,17 @@ public class ItemCardController {
     private Auction auction;
     private Consumer<Auction> onViewDetails;
     private Consumer<Auction> onQuickBid;
+    private SetChangeListener<String> autoBidListener;
+
+    @FXML
+    private void initialize() {
+        cardRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null && autoBidListener != null) {
+                AppState.getInstance().getMyAutoBidIds().removeListener(autoBidListener);
+                autoBidListener = null;
+            }
+        });
+    }
 
     /**
      * Nạp dữ liệu vào thẻ.
@@ -93,16 +106,31 @@ public class ItemCardController {
         btnQuickBid.setVisible(isBidder && isRunning);
         btnQuickBid.setManaged(isBidder && isRunning);
 
-        // Badge Auto-Bid: hiển thị khi user đang có Auto-Bid hoạt động trên phiên này
+        // Badge Auto-Bid: hiển thị real-time khi user bật/tắt Auto-Bid
         if (lblAutoBadge != null) {
-            boolean hasAuto = AppState.getInstance().hasMyAutoBid(auction.getAuctionId());
-            lblAutoBadge.setVisible(hasAuto);
-            lblAutoBadge.setManaged(hasAuto);
+            refreshAutoBadge();
+            if (autoBidListener != null) {
+                AppState.getInstance().getMyAutoBidIds().removeListener(autoBidListener);
+            }
+            String auctionId = auction.getAuctionId();
+            autoBidListener = change -> {
+                if (auctionId.equals(change.getElementAdded())
+                        || auctionId.equals(change.getElementRemoved())) {
+                    Platform.runLater(this::refreshAutoBadge);
+                }
+            };
+            AppState.getInstance().getMyAutoBidIds().addListener(autoBidListener);
         }
     }
 
     public String getAuctionId() {
         return auction != null ? auction.getAuctionId() : "";
+    }
+
+    private void refreshAutoBadge() {
+        boolean hasAuto = AppState.getInstance().hasMyAutoBid(auction.getAuctionId());
+        lblAutoBadge.setVisible(hasAuto);
+        lblAutoBadge.setManaged(hasAuto);
     }
 
     private void setPlaceholder() {

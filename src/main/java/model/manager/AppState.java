@@ -2,13 +2,13 @@ package model.manager;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import model.auction.Auction;
 import model.user.User;
 import network.AuctionClient;
 import utils.SceneManager;
 
 import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Quản lý trạng thái toàn cục của ứng dụng phía Client (áp dụng Singleton Pattern).
@@ -25,7 +25,7 @@ public class AppState {
     private final ObservableList<Auction> auctionList = FXCollections.observableArrayList();
 
     // Theo dõi các phiên mà user hiện tại đang có Auto-Bid hoạt động
-    private final Set<String> myAutoBidIds = new HashSet<>();
+    private final ObservableSet<String> myAutoBidIds = FXCollections.observableSet(new HashSet<>());
 
     private AppState() {
         this.client = new AuctionClient();
@@ -54,6 +54,9 @@ public class AppState {
     }
     
     public void setCurrentUser(User user) {
+        if (user == null) {
+            myAutoBidIds.clear();
+        }
         this.currentUser = user;
         // Thông báo cho Server biết User nào đang ở connection này (để push real-time)
         if (user != null && client != null) {
@@ -68,6 +71,10 @@ public class AppState {
 
     public ObservableList<Auction> getAuctionList() {
         return auctionList;
+    }
+
+    public ObservableSet<String> getMyAutoBidIds() {
+        return myAutoBidIds;
     }
 
     /** Kiểm tra user hiện tại có Auto-Bid đang hoạt động cho phiên này không. */

@@ -201,6 +201,45 @@
     <profiles>
         <profile>
             <id>package-client</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.akathist.maven.plugins.launch4j</groupId>
+                        <artifactId>launch4j-maven-plugin</artifactId>
+                        <version>2.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>wrap-client-exe</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>launch4j</goal>
+                                </goals>
+                                <configuration>
+                                    <headerType>gui</headerType>
+                                    <outfile>${project.build.directory}/BidHub.exe</outfile>
+                                    <jar>${project.build.directory}/bidhub-client.jar</jar>
+                                    <icon>${project.basedir}/src/main/resources/bidhub.ico</icon>
+                                    <jre>
+                                        <minVersion>21</minVersion>
+                                        <path>%JAVA_HOME%;%PATH%</path>
+                                    </jre>
+                                    <versionInfo>
+                                        <fileVersion>1.0.0.0</fileVersion>
+                                        <txtFileVersion>1.0.0</txtFileVersion>
+                                        <fileDescription>BidHub - Online Auction System</fileDescription>
+                                        <copyright>Group 6 - UET VNU</copyright>
+                                        <productVersion>1.0.0.0</productVersion>
+                                        <txtProductVersion>1.0.0</txtProductVersion>
+                                        <productName>BidHub</productName>
+                                        <internalName>BidHub</internalName>
+                                        <originalFilename>BidHub.exe</originalFilename>
+                                    </versionInfo>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
             <dependencies>
                 <dependency>
                     <groupId>org.openjfx</groupId>
