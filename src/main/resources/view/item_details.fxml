@@ -16,7 +16,10 @@
                         <Label fx:id="lblCategory" alignment="CENTER" minWidth="96.0" styleClass="details-category-chip" text="Item" />
                     </children>
                 </HBox>
-                <HBox fx:id="extraInfoContainer" spacing="10.0" alignment="CENTER_LEFT" />
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <HBox fx:id="extraInfoContainer" spacing="10.0" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" />
+                    <HBox fx:id="hboxSeller" spacing="6.0" alignment="CENTER_LEFT" />
+                </HBox>
             </children>
         </VBox>
 

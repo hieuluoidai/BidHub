@@ -69,6 +69,7 @@ public class ItemDetailsController {
     @FXML private ScrollPane detailsScrollPane;
     @FXML private Label lblCountdown;
     @FXML private HBox extraInfoContainer;
+    @FXML private HBox hboxSeller;
     @FXML private Label lblHighestBidder;
     @FXML private Label lblBidTime;
     @FXML private ImageView itemImageView;
@@ -169,6 +170,7 @@ public class ItemDetailsController {
         this.auction = auction;
         refreshUI();
         setupPermissions();
+        loadSellerInfo(auction.getSellerId());
         scrollToTop();
         startCountdown();
 
@@ -1112,6 +1114,43 @@ public class ItemDetailsController {
         String avatar = seller != null ? seller.getAvatarPath() : null;
         AppState.getInstance().requestOpenChat(sellerId, name, avatar);
         closeWindow();
+    }
+
+    private void loadSellerInfo(String sellerId) {
+        if (hboxSeller == null || sellerId == null) return;
+        hboxSeller.getChildren().clear();
+        new Thread(() -> {
+            model.user.User seller = new database.UserDAO().findById(sellerId);
+            Platform.runLater(() -> {
+                if (seller == null) return;
+
+                javafx.scene.layout.StackPane avatarPane = new javafx.scene.layout.StackPane();
+                avatarPane.setMinSize(22, 22); avatarPane.setMaxSize(22, 22);
+                String first = seller.getUsername() == null || seller.getUsername().isEmpty()
+                        ? "?" : seller.getUsername().substring(0, 1).toUpperCase();
+                Label initial = new Label(first);
+                initial.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 10;");
+                avatarPane.setStyle("-fx-background-color: #3B82F6; -fx-background-radius: 50%;");
+                avatarPane.getChildren().add(initial);
+                if (seller.getAvatarPath() != null && !seller.getAvatarPath().isEmpty()) {
+                    String uri = utils.ImageStorageService.toFileUri(seller.getAvatarPath());
+                    if (uri != null) {
+                        javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(
+                                new javafx.scene.image.Image(uri, 22, 22, true, true));
+                        iv.setFitWidth(22); iv.setFitHeight(22);
+                        iv.setClip(new javafx.scene.shape.Circle(11, 11, 11));
+                        avatarPane.getChildren().add(iv);
+                    }
+                }
+
+                Label prefix = new Label("Đăng bởi:");
+                prefix.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 12px;");
+                Label name = new Label(seller.getUsername());
+                name.setStyle("-fx-text-fill: #334155; -fx-font-size: 12px; -fx-font-weight: 600;");
+
+                hboxSeller.getChildren().addAll(avatarPane, prefix, name);
+            });
+        }).start();
     }
 
     private void sendFriendStatusRequest(String sellerId) {
