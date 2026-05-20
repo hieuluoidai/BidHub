@@ -105,6 +105,7 @@ public class ItemDetailsController {
     @FXML private Button btnEdit;
     @FXML private Button btnDelete;
     @FXML private Button btnCancel;
+    @FXML private Button btnChatSeller;
 
     @FXML private ProgressBar progressTimeBar;
     @FXML private VBox paneAntiSnipeNotif;
@@ -744,7 +745,15 @@ public class ItemDetailsController {
             btnCancel.setVisible(canCancel);
             btnCancel.setManaged(canCancel);
         }
-        
+
+        if (btnChatSeller != null) {
+            model.user.User cu = model.manager.AppState.getInstance().getCurrentUser();
+            String sellerId = auction.getSellerId();
+            boolean show = cu != null && sellerId != null && !cu.getUserId().equals(sellerId);
+            btnChatSeller.setVisible(show);
+            btnChatSeller.setManaged(show);
+        }
+
         if (panePayWinner != null) {
             panePayWinner.setVisible(canPay);
             panePayWinner.setManaged(canPay);
@@ -1082,6 +1091,17 @@ public class ItemDetailsController {
 
     @FXML
     void handleCancel() {
+        closeWindow();
+    }
+
+    @FXML
+    void handleChatSeller() {
+        if (auction == null || auction.getSellerId() == null) return;
+        String sellerId = auction.getSellerId();
+        model.user.User seller = new database.UserDAO().findById(sellerId);
+        String name = seller != null ? seller.getUsername() : sellerId;
+        String avatar = seller != null ? seller.getAvatarPath() : null;
+        AppState.getInstance().requestOpenChat(sellerId, name, avatar);
         closeWindow();
     }
 

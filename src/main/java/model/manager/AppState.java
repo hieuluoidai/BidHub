@@ -30,6 +30,10 @@ public class AppState {
     // Theo dõi các phiên mà user đã đánh dấu sao (watchlist)
     private final ObservableSet<String> starredAuctionIds = FXCollections.observableSet(new HashSet<>());
 
+    // Tổng số tin nhắn chưa đọc (badge sidebar "Tin nhắn")
+    private final javafx.beans.property.IntegerProperty totalUnreadChat =
+            new javafx.beans.property.SimpleIntegerProperty(0);
+
     private AppState() {
         this.client = new AuctionClient();
     }
@@ -60,6 +64,7 @@ public class AppState {
         if (user == null) {
             myAutoBidIds.clear();
             starredAuctionIds.clear();
+            totalUnreadChat.set(0);
         }
         this.currentUser = user;
         // Thông báo cho Server biết User nào đang ở connection này (để push real-time)
@@ -110,6 +115,31 @@ public class AppState {
             starredAuctionIds.add(auctionId);
         } else {
             starredAuctionIds.remove(auctionId);
+        }
+    }
+
+    public javafx.beans.property.IntegerProperty totalUnreadChatProperty() {
+        return totalUnreadChat;
+    }
+
+    public int getTotalUnreadChat() {
+        return totalUnreadChat.get();
+    }
+
+    public void setTotalUnreadChat(int v) {
+        totalUnreadChat.set(v);
+    }
+
+    /** Hook để mở chat từ bất kỳ controller nào (vd: item_details → mở tab Tin nhắn của dashboard). */
+    private java.util.function.Consumer<String[]> openChatHook;
+
+    public void setOpenChatHook(java.util.function.Consumer<String[]> hook) {
+        this.openChatHook = hook;
+    }
+
+    public void requestOpenChat(String partnerId, String partnerUsername, String partnerAvatarPath) {
+        if (openChatHook != null) {
+            openChatHook.accept(new String[]{partnerId, partnerUsername, partnerAvatarPath});
         }
     }
 }

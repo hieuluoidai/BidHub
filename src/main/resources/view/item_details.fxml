@@ -250,6 +250,7 @@
                 <Region HBox.hgrow="ALWAYS" />
                 <HBox spacing="10.0">
                     <children>
+                        <Button fx:id="btnChatSeller" managed="false" visible="false" mnemonicParsing="false" onAction="#handleChatSeller" prefHeight="40.0" styleClass="button-secondary" text="💬 Nhắn tin chủ phiên" />
                         <Button fx:id="btnEdit" managed="false" mnemonicParsing="false" onAction="#handleEdit" prefHeight="40.0" styleClass="button-secondary" text="Sửa" visible="false" />
                         <Button fx:id="btnCancel" managed="false" mnemonicParsing="false" onAction="#handleCancelAuction" prefHeight="40.0" styleClass="button-danger" text="Hủy phiên" visible="false" />
                         <Button fx:id="btnDelete" managed="false" mnemonicParsing="false" onAction="#handleOpenDelete" prefHeight="40.0" styleClass="button-danger-confirm" text="Xóa" visible="false" />

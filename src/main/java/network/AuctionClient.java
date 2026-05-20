@@ -20,6 +20,9 @@ public class AuctionClient {
     private final List<Consumer<model.notification.Notification.Bundle>> notificationBundleListeners =
             new CopyOnWriteArrayList<>();
     private final List<Runnable> notificationRefreshListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.chat.ChatMessage>> chatMessageListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.chat.ChatMessage.Bundle>> chatBundleListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.chat.ChatMessage.SummaryBundle>> chatSummaryListeners = new CopyOnWriteArrayList<>();
 
     private Socket socket;
     private ObjectOutputStream out;
@@ -54,6 +57,30 @@ public class AuctionClient {
 
     public void addNotificationRefreshListener(Runnable l) {
         if (l != null) notificationRefreshListeners.add(l);
+    }
+
+    public void addChatMessageListener(Consumer<model.chat.ChatMessage> l) {
+        if (l != null) chatMessageListeners.add(l);
+    }
+
+    public void removeChatMessageListener(Consumer<model.chat.ChatMessage> l) {
+        chatMessageListeners.remove(l);
+    }
+
+    public void addChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> l) {
+        if (l != null) chatBundleListeners.add(l);
+    }
+
+    public void removeChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> l) {
+        chatBundleListeners.remove(l);
+    }
+
+    public void addChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> l) {
+        if (l != null) chatSummaryListeners.add(l);
+    }
+
+    public void removeChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> l) {
+        chatSummaryListeners.remove(l);
     }
 
     /** Legacy support - overwrites/sets a primary listener if needed, 
@@ -139,6 +166,18 @@ public class AuctionClient {
                 for (Runnable l : notificationRefreshListeners) {
                     l.run();
                 }
+
+            // 5b. ChatMessage — tin nhắn mới hoặc cập nhật (read/like)
+            } else if (data instanceof model.chat.ChatMessage chatMsg) {
+                for (var l : chatMessageListeners) l.accept(chatMsg);
+
+            // 5c. ChatMessage.Bundle — lịch sử hội thoại
+            } else if (data instanceof model.chat.ChatMessage.Bundle chatBundle) {
+                for (var l : chatBundleListeners) l.accept(chatBundle);
+
+            // 5d. ChatMessage.SummaryBundle — danh sách hội thoại
+            } else if (data instanceof model.chat.ChatMessage.SummaryBundle sb) {
+                for (var l : chatSummaryListeners) l.accept(sb);
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {

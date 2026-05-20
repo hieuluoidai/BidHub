@@ -47,6 +47,14 @@
 
             <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" styleClass="sidebar-item, sidebar-item-active" text="Bảng điều khiển" />
             <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item" text="Ví &amp; Giao dịch" />
+            <StackPane>
+               <children>
+                  <Button fx:id="btnNavMessages" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item" text="Tin nhắn" />
+                  <Label fx:id="lblSidebarChatBadge" managed="false" visible="false" styleClass="sidebar-chat-badge" StackPane.alignment="CENTER_RIGHT">
+                     <StackPane.margin><Insets right="14.0" /></StackPane.margin>
+                  </Label>
+               </children>
+            </StackPane>
 
             <Region VBox.vgrow="ALWAYS" />
 
@@ -283,6 +291,16 @@
                         <ListView fx:id="listTransactions" styleClass="modern-bid-list" VBox.vgrow="ALWAYS" />
                      </children>
                   </VBox>
+               </children>
+            </VBox>
+
+            <!-- VIEW 3: MESSAGES -->
+            <VBox fx:id="viewMessages" managed="false" visible="false" styleClass="main-content" VBox.vgrow="ALWAYS">
+               <padding>
+                  <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />
+               </padding>
+               <children>
+                  <fx:include source="messages_view.fxml" fx:id="messagesView" />
                </children>
             </VBox>
          </children>

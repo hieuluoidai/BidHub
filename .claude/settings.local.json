@@ -34,7 +34,9 @@
       "Bash(powershell *)",
       "Bash(scp *)",
       "Bash(mvn help:all-profiles)",
-      "Bash(mvn -q -DskipTests compile)"
+      "Bash(mvn -q -DskipTests compile)",
+      "Bash(mvn -q -DskipTests test-compile)",
+      "Bash(mvn -q -DskipTests test)"
     ]
   }
 }

@@ -30,6 +30,9 @@ public class Notification implements Serializable {
 
         DEPOSIT_REJECTED,        // Yêu cầu nạp tiền bị từ chối
 
+        CHAT_NEW_MESSAGE,        // Nhận được tin nhắn mới
+        CHAT_LIKED,              // Tin nhắn của bạn được thả tim
+
         // ===== Admin-only =====
         ADMIN_NEW_USER,
         ADMIN_NEW_SELLER_REQUEST,

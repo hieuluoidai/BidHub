@@ -167,6 +167,16 @@ public class ClientHandler implements Runnable {
                 handleDepositRequest(msg);
             } else if (msg.startsWith("DEPOSIT_REVIEW:")) {
                 handleDepositReview(msg);
+            } else if (msg.startsWith("CHAT_SEND:")) {
+                handleChatSend(msg);
+            } else if (msg.startsWith("CHAT_FETCH:")) {
+                handleChatFetch(msg);
+            } else if (msg.startsWith("CHAT_FETCH_LIST:")) {
+                handleChatFetchList(msg);
+            } else if (msg.startsWith("CHAT_MARK_READ:")) {
+                handleChatMarkRead(msg);
+            } else if (msg.startsWith("CHAT_LIKE:")) {
+                handleChatLike(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
@@ -1109,5 +1119,110 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
         send("DEPOSIT_REVIEW_OK");
         server.broadcastToRole("ADMIN", "USERS_UPDATED");
+    }
+
+    /**
+     * Format: "CHAT_SEND:<senderId>:<receiverId>:<content...>"
+     * Content có thể chứa ':' và Unicode emoji.
+     */
+    private void handleChatSend(String msg) {
+        String[] parts = msg.split(":", 4);
+        if (parts.length < 4) {
+            send("CHAT_SEND_FAILED:Sai định dạng");
+            return;
+        }
+        String senderId = parts[1];
+        String receiverId = parts[2];
+        String content = parts[3];
+        if (content == null || content.trim().isEmpty()) {
+            send("CHAT_SEND_FAILED:Nội dung rỗng");
+            return;
+        }
+        if (content.length() > 2000) content = content.substring(0, 2000);
+
+        database.ChatMessageDAO dao = new database.ChatMessageDAO();
+        model.chat.ChatMessage saved = dao.insert(senderId, receiverId, content);
+        if (saved == null) {
+            send("CHAT_SEND_FAILED:Lỗi DB");
+            return;
+        }
+
+        // Echo lại cho sender (xác nhận đã gửi) + push cho receiver real-time
+        send(saved);
+        server.sendToUser(receiverId, saved);
+
+        // Notification cho receiver
+        UserDAO userDao = new UserDAO();
+        User sender = userDao.findById(senderId);
+        String senderName = sender != null ? sender.getUsername() : senderId;
+        String preview = content.length() > 80 ? content.substring(0, 77) + "..." : content;
+        NotificationService.notifyUser(server, receiverId,
+                Notification.Type.CHAT_NEW_MESSAGE,
+                "Tin nhắn mới từ " + senderName,
+                preview);
+    }
+
+    private void handleChatFetch(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) return;
+        String userId = parts[1];
+        String partnerId = parts[2];
+        java.util.List<model.chat.ChatMessage> list =
+                new database.ChatMessageDAO().findConversation(userId, partnerId, 200);
+        send(new model.chat.ChatMessage.Bundle(partnerId, list));
+    }
+
+    private void handleChatFetchList(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 2) return;
+        String userId = parts[1];
+        database.ChatMessageDAO dao = new database.ChatMessageDAO();
+        java.util.List<model.chat.ChatMessage.Summary> summaries = dao.findSummaries(userId);
+        int total = dao.getTotalUnread(userId);
+        send(new model.chat.ChatMessage.SummaryBundle(summaries, total));
+    }
+
+    private void handleChatMarkRead(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) return;
+        String userId = parts[1];
+        String partnerId = parts[2];
+        java.util.List<String> marked = new database.ChatMessageDAO()
+                .markConversationRead(userId, partnerId);
+        if (marked.isEmpty()) return;
+
+        // Báo cho sender (partner) biết tin nhắn của họ đã được đọc
+        server.sendToUser(partnerId, "CHAT_READ:" + userId + ":" + String.join(",", marked));
+        // Báo cho receiver biết unread đã giảm (refresh badge)
+        send("CHAT_UNREAD_UPDATED:" + userId);
+    }
+
+    private void handleChatLike(String msg) {
+        String[] parts = msg.split(":");
+        if (parts.length < 3) return;
+        String messageId = parts[1];
+        boolean liked = "1".equals(parts[2]);
+        database.ChatMessageDAO dao = new database.ChatMessageDAO();
+        if (!dao.setLiked(messageId, liked)) return;
+        model.chat.ChatMessage updated = dao.findById(messageId);
+        if (updated == null) return;
+
+        // Push cho cả 2 phía
+        server.sendToUser(updated.getSenderId(), updated);
+        server.sendToUser(updated.getReceiverId(), updated);
+
+        // Notification cho sender khi tin của họ được liked (chỉ khi liked=true)
+        if (liked && this.currentUserId != null
+                && !this.currentUserId.equals(updated.getSenderId())) {
+            UserDAO userDao = new UserDAO();
+            User liker = userDao.findById(this.currentUserId);
+            String likerName = liker != null ? liker.getUsername() : this.currentUserId;
+            String preview = updated.getContent();
+            if (preview != null && preview.length() > 60) preview = preview.substring(0, 57) + "...";
+            NotificationService.notifyUser(server, updated.getSenderId(),
+                    Notification.Type.CHAT_LIKED,
+                    likerName + " đã thích tin nhắn của bạn",
+                    preview);
+        }
     }
 }

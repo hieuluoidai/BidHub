@@ -148,6 +148,8 @@ public class NotificationPopupController {
             case ADMIN_NEW_AUCTION        -> "🆕";
             case ADMIN_DEPOSIT_REQUEST    -> "💳";
             case DEPOSIT_REJECTED         -> "❌";
+            case CHAT_NEW_MESSAGE         -> "💬";
+            case CHAT_LIKED               -> "❤️";
         };
     }
 
@@ -162,6 +164,8 @@ public class NotificationPopupController {
             case DEPOSIT_REJECTED -> "#EF4444";
             case ADMIN_NEW_USER, ADMIN_NEW_SELLER_REQUEST, ADMIN_NEW_AUCTION,
                  ADMIN_DEPOSIT_REQUEST -> "#8B5CF6";
+            case CHAT_NEW_MESSAGE -> "#0EA5E9";
+            case CHAT_LIKED       -> "#EC4899";
         };
     }
 }

@@ -67,8 +67,12 @@ public class DashboardController {
     // View Navigation
     @FXML private Button btnNavAuctions;
     @FXML private Button btnNavWallet;
+    @FXML private Button btnNavMessages;
+    @FXML private Label lblSidebarChatBadge;
     @FXML private javafx.scene.layout.VBox viewAuctions;
     @FXML private javafx.scene.layout.VBox viewWallet;
+    @FXML private javafx.scene.layout.VBox viewMessages;
+    @FXML private MessagesController messagesViewController;
 
     // Wallet Section
     @FXML private Label lblWalletBalance;
@@ -180,6 +184,18 @@ public class DashboardController {
         if (bellNotif != null && lblNotifBadge != null) {
             utils.NotificationCenter.attach(bellNotif, lblNotifBadge);
         }
+
+        // Wire chat badge → sidebar
+        utils.ChatCenter.init();
+        AppState.getInstance().totalUnreadChatProperty().addListener((obs, oldV, newV) -> {
+            javafx.application.Platform.runLater(() -> updateChatBadge(newV.intValue()));
+        });
+        updateChatBadge(AppState.getInstance().getTotalUnreadChat());
+
+        // Đăng ký hook để các controller khác có thể yêu cầu mở chat
+        AppState.getInstance().setOpenChatHook(args -> {
+            javafx.application.Platform.runLater(() -> openChatWith(args[0], args[1], args[2]));
+        });
 
         // Lắng nghe thay đổi "Star" để sắp xếp lại real-time
         AppState.getInstance().getStarredAuctionIds().addListener((javafx.collections.SetChangeListener<String>) c -> {
@@ -421,6 +437,7 @@ public class DashboardController {
     @FXML
     void handleLogout() {
         utils.NotificationCenter.reset();
+        utils.ChatCenter.reset();
         AppState.getInstance().setCurrentUser(null);
         AppState.getInstance().getSceneManager().showLogin();
     }
@@ -523,18 +540,46 @@ public class DashboardController {
         return fallback;
     }
 
-    @FXML void handleNavAuctions() { switchView(true); }
-    @FXML void handleNavWallet() { switchView(false); refreshWalletData(); }
+    @FXML void handleNavAuctions() { switchView("auctions"); }
+    @FXML void handleNavWallet() { switchView("wallet"); refreshWalletData(); }
+    @FXML void handleNavMessages() {
+        switchView("messages");
+        if (messagesViewController != null) messagesViewController.refreshSummaries();
+    }
 
-    private void switchView(boolean showAuctions) {
-        viewAuctions.setVisible(showAuctions);
-        viewAuctions.setManaged(showAuctions);
-        viewWallet.setVisible(!showAuctions);
-        viewWallet.setManaged(!showAuctions);
+    private void switchView(String which) {
+        boolean a = "auctions".equals(which);
+        boolean w = "wallet".equals(which);
+        boolean m = "messages".equals(which);
+        viewAuctions.setVisible(a); viewAuctions.setManaged(a);
+        viewWallet.setVisible(w); viewWallet.setManaged(w);
+        if (viewMessages != null) { viewMessages.setVisible(m); viewMessages.setManaged(m); }
         btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
         btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
-        if (showAuctions) btnNavAuctions.getStyleClass().add("sidebar-item-active");
-        else btnNavWallet.getStyleClass().add("sidebar-item-active");
+        if (btnNavMessages != null) btnNavMessages.getStyleClass().removeAll("sidebar-item-active");
+        if (a) btnNavAuctions.getStyleClass().add("sidebar-item-active");
+        else if (w) btnNavWallet.getStyleClass().add("sidebar-item-active");
+        else if (m && btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
+    }
+
+    private void updateChatBadge(int unread) {
+        if (lblSidebarChatBadge == null) return;
+        if (unread <= 0) {
+            lblSidebarChatBadge.setVisible(false);
+            lblSidebarChatBadge.setManaged(false);
+        } else {
+            lblSidebarChatBadge.setText(unread > 99 ? "99+" : String.valueOf(unread));
+            lblSidebarChatBadge.setVisible(true);
+            lblSidebarChatBadge.setManaged(true);
+        }
+    }
+
+    /** Public hook để mở chat với 1 user cụ thể (gọi từ item_details). */
+    public void openChatWith(String partnerId, String partnerUsername, String partnerAvatarPath) {
+        switchView("messages");
+        if (messagesViewController != null) {
+            messagesViewController.openChatWith(partnerId, partnerUsername, partnerAvatarPath);
+        }
     }
 
     private void refreshWalletData() {
