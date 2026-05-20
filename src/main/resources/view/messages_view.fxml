@@ -66,8 +66,8 @@
                <!-- MESSAGES SCROLL -->
                <ScrollPane fx:id="scrollMessages" fitToWidth="true" styleClass="chat-scroll" VBox.vgrow="ALWAYS">
                   <content>
-                     <VBox fx:id="messagesContainer" spacing="8.0" styleClass="chat-messages-container">
-                        <padding><Insets top="18.0" right="20.0" bottom="18.0" left="20.0" /></padding>
+                     <VBox fx:id="messagesContainer" spacing="4.0" styleClass="chat-messages-container">
+                        <padding><Insets top="16.0" right="16.0" bottom="16.0" left="16.0" /></padding>
                      </VBox>
                   </content>
                </ScrollPane>

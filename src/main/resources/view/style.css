@@ -1622,34 +1622,35 @@
 .chat-header { -fx-background-color: #FFFFFF; }
 .chat-partner-name { -fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0F172A; }
 .chat-partner-status { -fx-font-size: 11px; -fx-text-fill: #64748B; }
-.chat-scroll { -fx-background-color: #F9FAFB; -fx-background: transparent; }
-.chat-scroll .viewport { -fx-background-color: #F9FAFB; }
+.chat-scroll { -fx-background-color: #F0F2F5; -fx-background: transparent; }
+.chat-scroll .viewport { -fx-background-color: #F0F2F5; }
 .chat-messages-container { -fx-background-color: transparent; }
 
 .chat-bubble-mine {
-    -fx-background-color: linear-gradient(to right, #3B82F6, #2563EB);
+    -fx-background-color: #0084FF;
     -fx-text-fill: white;
-    -fx-padding: 10 14 10 14;
+    -fx-padding: 9 14 9 14;
     -fx-background-radius: 18 18 4 18;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
+    -fx-line-spacing: 1;
 }
 .chat-bubble-theirs {
-    -fx-background-color: white;
-    -fx-text-fill: #0F172A;
-    -fx-padding: 10 14 10 14;
+    -fx-background-color: #E4E6EB;
+    -fx-text-fill: #050505;
+    -fx-padding: 9 14 9 14;
     -fx-background-radius: 18 18 18 4;
-    -fx-border-color: #E5E7EB; -fx-border-radius: 18 18 18 4; -fx-border-width: 1;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
+    -fx-line-spacing: 1;
 }
 .chat-bubble-heart {
     -fx-background-color: white; -fx-text-fill: #EF4444;
-    -fx-font-size: 12px; -fx-padding: 2 6 2 6;
-    -fx-background-radius: 12px;
-    -fx-border-color: #FCA5A5; -fx-border-radius: 12px; -fx-border-width: 1;
+    -fx-font-size: 12px; -fx-padding: 2 5 2 5;
+    -fx-background-radius: 10px;
+    -fx-border-color: #FECACA; -fx-border-radius: 10px; -fx-border-width: 1;
 }
-.chat-bubble-time { -fx-font-size: 10px; -fx-text-fill: #94A3B8; }
-.chat-status-sent { -fx-font-size: 10px; -fx-text-fill: #94A3B8; }
-.chat-status-read { -fx-font-size: 10px; -fx-text-fill: #3B82F6; -fx-font-weight: 700; }
+.chat-bubble-time { -fx-font-size: 10px; -fx-text-fill: #65676B; }
+.chat-status-sent { -fx-font-size: 10px; -fx-text-fill: #65676B; }
+.chat-status-read { -fx-font-size: 10px; -fx-text-fill: #0084FF; -fx-font-weight: 700; }
 
 .chat-input-bar { -fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1 0 0 0; }
 .chat-emoji-btn {

@@ -286,16 +286,15 @@ public class MessagesController {
         User cu = AppState.getInstance().getCurrentUser();
         boolean isMine = cu != null && cu.getUserId().equals(m.getSenderId());
 
-        VBox col = new VBox(2);
-        col.setAlignment(isMine ? javafx.geometry.Pos.CENTER_RIGHT : javafx.geometry.Pos.CENTER_LEFT);
-
-        StackPane bubblePane = new StackPane();
+        // Bubble label — wraps at maxWidth, sized to content for short messages
         Label bubble = new Label(m.getContent());
         bubble.setWrapText(true);
-        bubble.setMaxWidth(420);
+        bubble.setMaxWidth(360);
         bubble.getStyleClass().add(isMine ? "chat-bubble-mine" : "chat-bubble-theirs");
-        bubblePane.getChildren().add(bubble);
 
+        // StackPane allows heart overlay without stretching the bubble
+        StackPane bubblePane = new StackPane(bubble);
+        bubblePane.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         if (m.isLiked()) {
             Label heart = new Label("❤");
             heart.getStyleClass().add("chat-bubble-heart");
@@ -304,8 +303,6 @@ public class MessagesController {
             heart.setTranslateX(isMine ? -8 : 8);
             bubblePane.getChildren().add(heart);
         }
-
-        // Double click → like toggle
         bubblePane.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                 toggleLike(m);
@@ -313,21 +310,33 @@ public class MessagesController {
         });
         bubblePane.setStyle("-fx-cursor: hand;");
 
-        HBox metaRow = new HBox(6);
+        HBox metaRow = new HBox(5);
         metaRow.setAlignment(isMine ? javafx.geometry.Pos.CENTER_RIGHT : javafx.geometry.Pos.CENTER_LEFT);
         Label time = new Label(m.getSentAt() == null ? "" : formatTime(m.getSentAt()));
         time.getStyleClass().add("chat-bubble-time");
         metaRow.getChildren().add(time);
-
         if (isMine) {
             Label status = new Label(m.getReadAt() != null ? "Đã xem" : "Đã gửi");
             status.getStyleClass().add(m.getReadAt() != null ? "chat-status-read" : "chat-status-sent");
             metaRow.getChildren().add(status);
         }
 
+        // col stays as narrow as its widest child (setFillWidth=false)
+        VBox col = new VBox(3);
+        col.setFillWidth(false);
+        col.setAlignment(isMine ? javafx.geometry.Pos.TOP_RIGHT : javafx.geometry.Pos.TOP_LEFT);
         col.getChildren().addAll(bubblePane, metaRow);
-        VBox.setMargin(col, new javafx.geometry.Insets(0, 0, 4, 0));
-        return col;
+
+        // Full-width row pushes col to the correct side via spacer
+        HBox row = new HBox();
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        if (isMine) {
+            row.getChildren().addAll(spacer, col);
+        } else {
+            row.getChildren().addAll(col, spacer);
+        }
+        return row;
     }
 
     private void toggleLike(ChatMessage m) {
