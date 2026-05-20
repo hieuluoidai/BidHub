@@ -628,6 +628,9 @@ public class AdminController {
             stage.setTitle("Chi tiết phiên: " + auction.getAuctionId());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(1120, screenBounds.getWidth() * 0.96));
+            stage.setHeight(Math.min(880, screenBounds.getHeight() * 0.96));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
