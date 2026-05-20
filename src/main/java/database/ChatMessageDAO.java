@@ -33,7 +33,7 @@ public class ChatMessageDAO {
                 + "INDEX idx_pair_ab (sender_id, receiver_id),"
                 + "INDEX idx_pair_ba (receiver_id, sender_id),"
                 + "INDEX idx_receiver_unread (receiver_id, read_at)"
-                + ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                + ")";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement()) {
             st.executeUpdate(ddl);
