@@ -143,5 +143,6 @@ public class NotificationCenter {
         CACHE.clear(); unreadCount = 0; badgeRef = null;
         if (currentPopup != null) currentPopup.hide();
         currentPopup = null; popupController = null;
+        wiredOnClient = false;
     }
 }

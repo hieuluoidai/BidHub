@@ -105,21 +105,31 @@ public class ChatMessageDAO {
     /** Danh sách conversations của 1 user: 1 dòng cho mỗi partner, kèm tin gần nhất + unread. */
     public List<ChatMessage.Summary> findSummaries(String userId) {
         List<ChatMessage.Summary> list = new ArrayList<>();
-        String sql = "SELECT u.user_id AS partner_id, u.username, u.avatar_path, "
-                + "       m.content, m.sent_at, m.sender_id, "
-                + "       (SELECT COUNT(*) FROM chat_messages "
-                + "         WHERE receiver_id = ? AND sender_id = u.user_id AND read_at IS NULL) AS unread "
-                + "FROM users u "
-                + "JOIN chat_messages m ON m.message_id = ("
-                + "    SELECT message_id FROM chat_messages "
-                + "    WHERE (sender_id = ? AND receiver_id = u.user_id) "
-                + "       OR (sender_id = u.user_id AND receiver_id = ?) "
-                + "    ORDER BY sent_at DESC, message_id DESC LIMIT 1) "
-                + "WHERE u.user_id <> ? "
-                + "  AND EXISTS (SELECT 1 FROM chat_messages c "
-                + "              WHERE (c.sender_id = ? AND c.receiver_id = u.user_id) "
-                + "                 OR (c.sender_id = u.user_id AND c.receiver_id = ?)) "
-                + "ORDER BY m.sent_at DESC";
+        // Dùng ROW_NUMBER() để lấy tin nhắn mới nhất mỗi conversation — tránh correlated subquery
+        // trong điều kiện JOIN vốn gây lỗi âm thầm trên một số cấu hình MySQL.
+        String sql = "SELECT ranked.partner_id, u.username, u.avatar_path,"
+                + " ranked.content, ranked.sent_at, ranked.sender_id,"
+                + " COALESCE(unread_tbl.unread_count, 0) AS unread"
+                + " FROM ("
+                + "   SELECT"
+                + "     CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS partner_id,"
+                + "     content, sent_at, sender_id,"
+                + "     ROW_NUMBER() OVER ("
+                + "       PARTITION BY CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END"
+                + "       ORDER BY sent_at DESC, message_id DESC"
+                + "     ) AS rn"
+                + "   FROM chat_messages"
+                + "   WHERE sender_id = ? OR receiver_id = ?"
+                + " ) ranked"
+                + " JOIN users u ON u.user_id = ranked.partner_id"
+                + " LEFT JOIN ("
+                + "   SELECT sender_id AS partner_id, COUNT(*) AS unread_count"
+                + "   FROM chat_messages"
+                + "   WHERE receiver_id = ? AND read_at IS NULL"
+                + "   GROUP BY sender_id"
+                + " ) unread_tbl ON unread_tbl.partner_id = ranked.partner_id"
+                + " WHERE ranked.rn = 1"
+                + " ORDER BY ranked.sent_at DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, userId);
@@ -127,7 +137,6 @@ public class ChatMessageDAO {
             stmt.setString(3, userId);
             stmt.setString(4, userId);
             stmt.setString(5, userId);
-            stmt.setString(6, userId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String pid = rs.getString("partner_id");

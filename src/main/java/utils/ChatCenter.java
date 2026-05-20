@@ -22,6 +22,12 @@ public final class ChatCenter {
     private static final List<Consumer<ChatMessage.SummaryBundle>> SUMMARY_LISTENERS = new ArrayList<>();
     private static final List<Consumer<String>> READ_RECEIPT_LISTENERS = new ArrayList<>();
 
+    // Lưu tham chiếu lambda để gỡ khỏi AuctionClient khi reset (tránh listener trùng lặp khi đăng nhập lại)
+    private static Consumer<ChatMessage> clientMsgListener;
+    private static Consumer<ChatMessage.Bundle> clientBundleListener;
+    private static Consumer<ChatMessage.SummaryBundle> clientSummaryListener;
+    private static Consumer<String> clientStringListener;
+
     private ChatCenter() {}
 
     public static synchronized void init() {
@@ -29,28 +35,33 @@ public final class ChatCenter {
         AuctionClient client = AppState.getInstance().getClient();
         if (client == null) return;
 
-        client.addChatMessageListener(m -> Platform.runLater(() -> {
+        clientMsgListener = m -> Platform.runLater(() -> {
             for (var l : MESSAGE_LISTENERS) {
                 l.accept(m);
             }
             User cu = AppState.getInstance().getCurrentUser();
-            // Nếu là tin tới mình và chưa đọc → refresh badge
             if (cu != null && cu.getUserId().equals(m.getReceiverId()) && !m.isRead()) {
                 fetchSummariesForBadge();
             }
-        }));
-        client.addChatBundleListener(b -> Platform.runLater(() -> {
+        });
+        client.addChatMessageListener(clientMsgListener);
+
+        clientBundleListener = b -> Platform.runLater(() -> {
             for (var l : BUNDLE_LISTENERS) {
                 l.accept(b);
             }
-        }));
-        client.addChatSummaryListener(sb -> Platform.runLater(() -> {
+        });
+        client.addChatBundleListener(clientBundleListener);
+
+        clientSummaryListener = sb -> Platform.runLater(() -> {
             AppState.getInstance().setTotalUnreadChat(sb.totalUnread);
             for (var l : SUMMARY_LISTENERS) {
                 l.accept(sb);
             }
-        }));
-        client.addStringMessageListener(msg -> {
+        });
+        client.addChatSummaryListener(clientSummaryListener);
+
+        clientStringListener = msg -> {
             if (msg.startsWith("CHAT_READ:")) {
                 Platform.runLater(() -> {
                     for (var l : READ_RECEIPT_LISTENERS) {
@@ -60,7 +71,8 @@ public final class ChatCenter {
             } else if (msg.startsWith("CHAT_UNREAD_UPDATED:")) {
                 fetchSummariesForBadge();
             }
-        });
+        };
+        client.addStringMessageListener(clientStringListener);
 
         wired = true;
         fetchSummariesForBadge();
@@ -112,6 +124,20 @@ public final class ChatCenter {
         SUMMARY_LISTENERS.clear();
         READ_RECEIPT_LISTENERS.clear();
         AppState.getInstance().setTotalUnreadChat(0);
+
+        if (wired) {
+            AuctionClient client = AppState.getInstance().getClient();
+            if (client != null) {
+                if (clientMsgListener != null) client.removeChatMessageListener(clientMsgListener);
+                if (clientBundleListener != null) client.removeChatBundleListener(clientBundleListener);
+                if (clientSummaryListener != null) client.removeChatSummaryListener(clientSummaryListener);
+                if (clientStringListener != null) client.removeStringMessageListener(clientStringListener);
+            }
+        }
+        clientMsgListener = null;
+        clientBundleListener = null;
+        clientSummaryListener = null;
+        clientStringListener = null;
         wired = false;
     }
 }
