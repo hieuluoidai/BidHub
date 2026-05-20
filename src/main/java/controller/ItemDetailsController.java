@@ -697,12 +697,12 @@ public class ItemDetailsController {
                 paneStatusMessage.setVisible(false);
                 paneStatusMessage.setManaged(false);
                 if (lblNoPermission != null) {
-                    if (currentUser instanceof Seller && isOwnAuction) {
-                        lblNoPermission.setText(
-                                "Bạn không thể đặt giá cho sản phẩm của chính mình.");
+                    if (currentUser instanceof model.user.Admin) {
+                        lblNoPermission.setText("Admin không có quyền tham gia đấu giá.");
+                    } else if (currentUser instanceof Seller && isOwnAuction) {
+                        lblNoPermission.setText("Bạn không thể đặt giá cho sản phẩm của chính mình.");
                     } else {
-                        lblNoPermission.setText(
-                                "Chỉ người mua (Bidder) mới có quyền tham gia đấu giá tại phiên này.");
+                        lblNoPermission.setText("Chỉ người mua (Bidder) mới có quyền tham gia đấu giá tại phiên này.");
                     }
                 }
             } else {
