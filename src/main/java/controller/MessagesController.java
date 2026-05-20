@@ -153,11 +153,10 @@ public class MessagesController {
     private void onBundle(ChatMessage.Bundle b) {
         if (currentPartnerId == null || !currentPartnerId.equals(b.partnerId)) return;
         messageMap.clear();
-        messagesContainer.getChildren().clear();
         for (ChatMessage m : b.items) {
             messageMap.put(m.getMessageId(), m);
-            messagesContainer.getChildren().add(buildBubble(m));
         }
+        rebuildAllBubbles();
         scrollToBottom();
     }
 
@@ -165,25 +164,20 @@ public class MessagesController {
         User cu = AppState.getInstance().getCurrentUser();
         if (cu == null) return;
         String myId = cu.getUserId();
-        // Tin có phải thuộc conversation đang mở?
         boolean inOpen = currentPartnerId != null
                 && ((m.getSenderId().equals(currentPartnerId) && m.getReceiverId().equals(myId))
                  || (m.getReceiverId().equals(currentPartnerId) && m.getSenderId().equals(myId)));
 
         if (inOpen) {
-            ChatMessage existing = messageMap.get(m.getMessageId());
-            if (existing == null) {
-                messageMap.put(m.getMessageId(), m);
-                messagesContainer.getChildren().add(buildBubble(m));
+            boolean isNew = !messageMap.containsKey(m.getMessageId());
+            messageMap.put(m.getMessageId(), m);
+            rebuildAllBubbles();
+            if (isNew) {
                 scrollToBottom();
                 if (m.getSenderId().equals(currentPartnerId)) {
                     AppState.getInstance().getClient()
                             .send("CHAT_MARK_READ:" + myId + ":" + currentPartnerId);
                 }
-            } else {
-                // Cập nhật (like/read) — replace bubble
-                messageMap.put(m.getMessageId(), m);
-                rebuildAllBubbles();
             }
         }
         refreshSummaries();
@@ -210,13 +204,27 @@ public class MessagesController {
     }
 
     private void rebuildAllBubbles() {
-        messagesContainer.getChildren().clear();
-        for (ChatMessage m : messageMap.values().stream()
+        User cu = AppState.getInstance().getCurrentUser();
+        String myId = cu != null ? cu.getUserId() : null;
+
+        java.util.List<ChatMessage> sorted = messageMap.values().stream()
                 .sorted(java.util.Comparator.comparing(
                         ChatMessage::getSentAt,
                         java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
-                .toList()) {
-            messagesContainer.getChildren().add(buildBubble(m));
+                .toList();
+
+        // Only the last message I sent shows "Đã gửi" / "Đã xem"
+        String lastMineId = null;
+        for (int i = sorted.size() - 1; i >= 0; i--) {
+            if (myId != null && myId.equals(sorted.get(i).getSenderId())) {
+                lastMineId = sorted.get(i).getMessageId();
+                break;
+            }
+        }
+
+        messagesContainer.getChildren().clear();
+        for (ChatMessage m : sorted) {
+            messagesContainer.getChildren().add(buildBubble(m, m.getMessageId().equals(lastMineId)));
         }
     }
 
@@ -282,7 +290,7 @@ public class MessagesController {
         return row;
     }
 
-    private Node buildBubble(ChatMessage m) {
+    private Node buildBubble(ChatMessage m, boolean showStatus) {
         User cu = AppState.getInstance().getCurrentUser();
         boolean isMine = cu != null && cu.getUserId().equals(m.getSenderId());
 
@@ -315,7 +323,7 @@ public class MessagesController {
         Label time = new Label(m.getSentAt() == null ? "" : formatTime(m.getSentAt()));
         time.getStyleClass().add("chat-bubble-time");
         metaRow.getChildren().add(time);
-        if (isMine) {
+        if (isMine && showStatus) {
             Label status = new Label(m.getReadAt() != null ? "Đã xem" : "Đã gửi");
             status.getStyleClass().add(m.getReadAt() != null ? "chat-status-read" : "chat-status-sent");
             metaRow.getChildren().add(status);
