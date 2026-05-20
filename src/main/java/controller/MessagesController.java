@@ -50,9 +50,9 @@ public class MessagesController {
     @FXML private Button btnSend;
 
     private static final String[] EMOJIS = {
-        "😀","😁","😂","🤣","😍","😘","🥰","😎","🤩","😜",
-        "🤔","😴","😭","😢","😡","🥺","🤯","😱","😇","🙄",
-        "👍","👎","👏","🙏","💪","🔥","❤️","💯","🎉","✨"
+        "😀","😁","😂","😆","😍","😘","🤗","😎","😲","😜",
+        "🤔","😴","😭","😢","😡","😞","😵","😱","😇","🙄",
+        "👍","👎","👏","🙏","💪","🔥","❤","💯","🎉","✨"
     };
 
     private final ObservableList<ChatMessage.Summary> summaries = FXCollections.observableArrayList();
