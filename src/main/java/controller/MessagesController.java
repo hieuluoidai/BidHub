@@ -1,11 +1,9 @@
 package controller;
 
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -28,7 +26,6 @@ import model.user.User;
 import utils.ChatCenter;
 import utils.ImageStorageService;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -363,10 +360,13 @@ public class MessagesController {
         grid.setHgap(4); grid.setVgap(4);
         grid.setPadding(new javafx.geometry.Insets(10));
         grid.setPrefWrapLength(280);
-        grid.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #E5E7EB; -fx-border-radius: 12; -fx-border-width: 1; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 12, 0, 0, 4);");
+        grid.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #E5E7EB;"
+                + " -fx-border-radius: 12; -fx-border-width: 1;"
+                + " -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 12, 0, 0, 4);");
         for (String e : EMOJIS) {
             Button btn = new Button(e);
-            btn.setStyle("-fx-background-color: transparent; -fx-font-size: 20px; -fx-cursor: hand; -fx-min-width: 36px; -fx-min-height: 36px;");
+            btn.setStyle("-fx-background-color: transparent; -fx-font-size: 20px;"
+                    + " -fx-cursor: hand; -fx-min-width: 36px; -fx-min-height: 36px;");
             btn.setOnAction(ev -> {
                 txtInput.setText(txtInput.getText() + e);
                 txtInput.positionCaret(txtInput.getText().length());

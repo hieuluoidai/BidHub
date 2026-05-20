@@ -169,15 +169,21 @@ public class AuctionClient {
 
             // 5b. ChatMessage — tin nhắn mới hoặc cập nhật (read/like)
             } else if (data instanceof model.chat.ChatMessage chatMsg) {
-                for (var l : chatMessageListeners) l.accept(chatMsg);
+                for (var l : chatMessageListeners) {
+                    l.accept(chatMsg);
+                }
 
             // 5c. ChatMessage.Bundle — lịch sử hội thoại
             } else if (data instanceof model.chat.ChatMessage.Bundle chatBundle) {
-                for (var l : chatBundleListeners) l.accept(chatBundle);
+                for (var l : chatBundleListeners) {
+                    l.accept(chatBundle);
+                }
 
             // 5d. ChatMessage.SummaryBundle — danh sách hội thoại
             } else if (data instanceof model.chat.ChatMessage.SummaryBundle sb) {
-                for (var l : chatSummaryListeners) l.accept(sb);
+                for (var l : chatSummaryListeners) {
+                    l.accept(sb);
+                }
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {

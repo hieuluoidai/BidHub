@@ -92,7 +92,9 @@ public class ChatMessageDAO {
             stmt.setString(4, uidA);
             stmt.setInt(5, limit);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) list.add(map(rs));
+                while (rs.next()) {
+                    list.add(map(rs));
+                }
             }
         } catch (SQLException e) {
             System.err.println("Lỗi load conversation: " + e.getMessage());
@@ -172,7 +174,9 @@ public class ChatMessageDAO {
                 ps.setString(1, userId);
                 ps.setString(2, partnerId);
                 try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) ids.add(rs.getString(1));
+                    while (rs.next()) {
+                        ids.add(rs.getString(1));
+                    }
                 }
             }
             if (!ids.isEmpty()) {

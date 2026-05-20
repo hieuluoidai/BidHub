@@ -320,7 +320,9 @@ public class DashboardController {
                 lblEmptyTitle.setText(noAuctionsAtAll ? "Chưa có phiên đấu giá nào" : "Không tìm thấy phiên đấu giá nào");
             }
             if (lblEmptySubtitle != null) {
-                lblEmptySubtitle.setText(noAuctionsAtAll ? "Các phiên đấu giá mới sẽ sớm xuất hiện ở đây" : "Thử thay đổi từ khóa hoặc bộ lọc của bạn");
+                lblEmptySubtitle.setText(noAuctionsAtAll
+                        ? "Các phiên đấu giá mới sẽ sớm xuất hiện ở đây"
+                        : "Thử thay đổi từ khóa hoặc bộ lọc của bạn");
             }
         }
     }
@@ -431,7 +433,9 @@ public class DashboardController {
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setResizable(false);
             stage.showAndWait();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -460,7 +464,9 @@ public class DashboardController {
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private ItemDetailsController currentDetailController;
@@ -481,9 +487,14 @@ public class DashboardController {
             javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
             currentDetailStage.setWidth(Math.min(1120, screenBounds.getWidth() * 0.96));
             currentDetailStage.setHeight(Math.min(880, screenBounds.getHeight() * 0.96));
-            currentDetailStage.setOnHidden(e -> { currentDetailController = null; currentDetailStage = null; });
+            currentDetailStage.setOnHidden(e -> {
+                currentDetailController = null;
+                currentDetailStage = null;
+            });
             currentDetailStage.show();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -499,7 +510,9 @@ public class DashboardController {
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.show();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateOpenDetailWindow() {
@@ -520,7 +533,9 @@ public class DashboardController {
         try {
             Parent root = FXMLLoader.load(getClass().getResource(fxml));
             showStage(root, title);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showStage(Parent root, String title) {
@@ -540,8 +555,17 @@ public class DashboardController {
         return fallback;
     }
 
-    @FXML void handleNavAuctions() { switchView("auctions"); }
-    @FXML void handleNavWallet() { switchView("wallet"); refreshWalletData(); }
+    @FXML
+    void handleNavAuctions() {
+        switchView("auctions");
+    }
+
+    @FXML
+    void handleNavWallet() {
+        switchView("wallet");
+        refreshWalletData();
+    }
+
     @FXML void handleNavMessages() {
         switchView("messages");
         if (messagesViewController != null) messagesViewController.refreshSummaries();
@@ -553,7 +577,10 @@ public class DashboardController {
         boolean m = "messages".equals(which);
         viewAuctions.setVisible(a); viewAuctions.setManaged(a);
         viewWallet.setVisible(w); viewWallet.setManaged(w);
-        if (viewMessages != null) { viewMessages.setVisible(m); viewMessages.setManaged(m); }
+        if (viewMessages != null) {
+            viewMessages.setVisible(m);
+            viewMessages.setManaged(m);
+        }
         btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
         btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
         if (btnNavMessages != null) btnNavMessages.getStyleClass().removeAll("sidebar-item-active");
@@ -591,13 +618,18 @@ public class DashboardController {
             lblCurrentRole.setText(user.getClass().getSimpleName().toUpperCase());
             if (user instanceof Seller || user instanceof Admin) {
                 lblSellerRequestStatus.setText("Tài khoản của bạn đã có quyền đăng bán sản phẩm.");
-                btnRequestSeller.setVisible(false); btnRequestSeller.setManaged(false);
+                btnRequestSeller.setVisible(false);
+                btnRequestSeller.setManaged(false);
             } else if (user.isPendingSeller()) {
                 lblSellerRequestStatus.setText("Yêu cầu trở thành Seller của bạn đang được Admin xét duyệt.");
                 btnRequestSeller.setDisable(true); btnRequestSeller.setText("Đang chờ duyệt...");
             } else {
-                lblSellerRequestStatus.setText("Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình.");
-                btnRequestSeller.setVisible(true); btnRequestSeller.setManaged(true); btnRequestSeller.setDisable(false); btnRequestSeller.setText("Trở thành Seller?");
+                lblSellerRequestStatus.setText(
+                        "Bạn có thể đăng ký để trở thành người bán (Seller) để đăng các sản phẩm của riêng mình.");
+                btnRequestSeller.setVisible(true);
+                btnRequestSeller.setManaged(true);
+                btnRequestSeller.setDisable(false);
+                btnRequestSeller.setText("Trở thành Seller?");
             }
         }
         new Thread(() -> {
@@ -614,7 +646,8 @@ public class DashboardController {
             AppState.getInstance().getClient().send("REQUEST_SELLER:" + user.getUserId());
             user.setPendingSeller(true);
             refreshWalletData();
-            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS, "Đã gửi yêu cầu", "Yêu cầu của bạn đã được gửi tới quản trị viên.");
+            utils.AlertHelper.show(utils.AlertHelper.Type.SUCCESS,
+                    "Đã gửi yêu cầu", "Yêu cầu của bạn đã được gửi tới quản trị viên.");
         }
     }
 
@@ -626,8 +659,13 @@ public class DashboardController {
             @Override
             protected void updateItem(model.auction.WalletTransaction tx, boolean empty) {
                 super.updateItem(tx, empty);
-                if (empty || tx == null) { setGraphic(null); setStyle("-fx-background-color: transparent;"); }
-                else { setGraphic(createTransactionRow(tx)); setStyle("-fx-background-color: transparent; -fx-padding: 6 0 6 0;"); }
+                if (empty || tx == null) {
+                    setGraphic(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    setGraphic(createTransactionRow(tx));
+                    setStyle("-fx-background-color: transparent; -fx-padding: 6 0 6 0;");
+                }
             }
         });
     }
@@ -640,10 +678,22 @@ public class DashboardController {
         lblIcon.getStyleClass().add("bid-avatar");
         String symbol = tx.getAmount() > 0 ? "+" : "";
         switch (tx.getType()) {
-            case TOPUP -> { lblIcon.setText("💰"); lblIcon.setStyle("-fx-background-color: #10B981; -fx-text-fill: white;"); }
-            case PAYMENT -> { lblIcon.setText("🛒"); lblIcon.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white;"); }
-            case EARNING -> { lblIcon.setText("📈"); lblIcon.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white;"); }
-            case REFUND -> { lblIcon.setText("🔄"); lblIcon.setStyle("-fx-background-color: #F59E0B; -fx-text-fill: white;"); }
+            case TOPUP -> {
+                lblIcon.setText("💰");
+                lblIcon.setStyle("-fx-background-color: #10B981; -fx-text-fill: white;");
+            }
+            case PAYMENT -> {
+                lblIcon.setText("🛒");
+                lblIcon.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white;");
+            }
+            case EARNING -> {
+                lblIcon.setText("📈");
+                lblIcon.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white;");
+            }
+            case REFUND -> {
+                lblIcon.setText("🔄");
+                lblIcon.setStyle("-fx-background-color: #F59E0B; -fx-text-fill: white;");
+            }
         }
         javafx.scene.layout.VBox vContent = new javafx.scene.layout.VBox(2);
         Label lblTitle = new Label(tx.getDescription());

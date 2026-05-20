@@ -51,7 +51,11 @@ public class NotificationCenter {
 
         client.addNotificationBundleListener(bundle -> {
             CACHE.clear();
-            for (Notification n : bundle.items) { if (n != null) CACHE.add(n); }
+            for (Notification n : bundle.items) {
+                    if (n != null) {
+                        CACHE.add(n);
+                    }
+                }
             unreadCount = (int) CACHE.stream().filter(n -> !n.isRead()).count();
             Platform.runLater(() -> {
                 updateBadge();
@@ -102,7 +106,9 @@ public class NotificationCenter {
             Popup popup = new Popup();
             popup.getContent().add(root);
             popup.setAutoHide(true);
-            popup.show(anchor, anchor.localToScreen(anchor.getBoundsInLocal()).getMinX(), anchor.localToScreen(anchor.getBoundsInLocal()).getMinY() - 400);
+            double popupX = anchor.localToScreen(anchor.getBoundsInLocal()).getMinX();
+            double popupY = anchor.localToScreen(anchor.getBoundsInLocal()).getMinY() - 400;
+            popup.show(anchor, popupX, popupY);
             currentPopup = popup;
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -114,11 +120,16 @@ public class NotificationCenter {
         unreadCount = Math.max(0, unreadCount - 1);
         updateBadge();
         if (popupController != null) popupController.setData(new ArrayList<>(CACHE));
-        try { AppState.getInstance().getClient().send("MARK_NOTIFICATION_READ:" + n.getNotificationId()); } catch (Exception ignore) {}
+        try {
+            AppState.getInstance().getClient().send("MARK_NOTIFICATION_READ:" + n.getNotificationId());
+        } catch (Exception ignore) {
+        }
     }
 
     private static void markAllRead() {
-        for (Notification n : CACHE) n.setRead(true);
+        for (Notification n : CACHE) {
+            n.setRead(true);
+        }
         unreadCount = 0;
         updateBadge();
         if (popupController != null) popupController.setData(new ArrayList<>(CACHE));

@@ -152,7 +152,11 @@ public class UserDetailsController {
         if (imgAvatar != null && avatarClip != null) imgAvatar.setClip(avatarClip);
         if (avatarContainer != null && cameraOverlay != null) {
             boolean isOwnProfile = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
-            avatarContainer.setOnMouseEntered(e -> { if (isOwnProfile && !isEditing) cameraOverlay.setVisible(true); });
+            avatarContainer.setOnMouseEntered(e -> {
+                if (isOwnProfile && !isEditing) {
+                    cameraOverlay.setVisible(true);
+                }
+            });
             avatarContainer.setOnMouseExited(e -> cameraOverlay.setVisible(false));
         }
         if (btnEditProfile != null) {

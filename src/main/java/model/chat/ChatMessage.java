@@ -32,22 +32,65 @@ public class ChatMessage implements Serializable {
         this.liked = liked;
     }
 
-    public String getMessageId() { return messageId; }
-    public String getSenderId() { return senderId; }
-    public String getReceiverId() { return receiverId; }
-    public String getContent() { return content; }
-    public LocalDateTime getSentAt() { return sentAt; }
-    public LocalDateTime getReadAt() { return readAt; }
-    public boolean isLiked() { return liked; }
-    public boolean isRead() { return readAt != null; }
+    public String getMessageId() {
+        return messageId;
+    }
 
-    public void setMessageId(String v) { this.messageId = v; }
-    public void setSenderId(String v) { this.senderId = v; }
-    public void setReceiverId(String v) { this.receiverId = v; }
-    public void setContent(String v) { this.content = v; }
-    public void setSentAt(LocalDateTime v) { this.sentAt = v; }
-    public void setReadAt(LocalDateTime v) { this.readAt = v; }
-    public void setLiked(boolean v) { this.liked = v; }
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public String getReceiverId() {
+        return receiverId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public LocalDateTime getSentAt() {
+        return sentAt;
+    }
+
+    public LocalDateTime getReadAt() {
+        return readAt;
+    }
+
+    public boolean isLiked() {
+        return liked;
+    }
+
+    public boolean isRead() {
+        return readAt != null;
+    }
+
+    public void setMessageId(String v) {
+        this.messageId = v;
+    }
+
+    public void setSenderId(String v) {
+        this.senderId = v;
+    }
+
+    public void setReceiverId(String v) {
+        this.receiverId = v;
+    }
+
+    public void setContent(String v) {
+        this.content = v;
+    }
+
+    public void setSentAt(LocalDateTime v) {
+        this.sentAt = v;
+    }
+
+    public void setReadAt(LocalDateTime v) {
+        this.readAt = v;
+    }
+
+    public void setLiked(boolean v) {
+        this.liked = v;
+    }
 
     /** Bundle phản hồi: danh sách tin nhắn của 1 conversation. */
     public static final class Bundle implements Serializable {
