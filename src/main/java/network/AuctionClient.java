@@ -23,6 +23,8 @@ public class AuctionClient {
     private final List<Consumer<model.chat.ChatMessage>> chatMessageListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<model.chat.ChatMessage.Bundle>> chatBundleListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<model.chat.ChatMessage.SummaryBundle>> chatSummaryListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.friendship.Friendship.Bundle>> friendBundleListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.friendship.Friendship.SearchBundle>> friendSearchListeners = new CopyOnWriteArrayList<>();
 
     private Socket socket;
     private ObjectOutputStream out;
@@ -81,6 +83,19 @@ public class AuctionClient {
 
     public void removeChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> l) {
         chatSummaryListeners.remove(l);
+    }
+
+    public void addFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> l) {
+        if (l != null) friendBundleListeners.add(l);
+    }
+    public void removeFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> l) {
+        friendBundleListeners.remove(l);
+    }
+    public void addFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> l) {
+        if (l != null) friendSearchListeners.add(l);
+    }
+    public void removeFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> l) {
+        friendSearchListeners.remove(l);
     }
 
     /** Legacy support - overwrites/sets a primary listener if needed, 
@@ -184,6 +199,14 @@ public class AuctionClient {
                 for (var l : chatSummaryListeners) {
                     l.accept(sb);
                 }
+
+            // 5e. Friendship.Bundle — danh sách bạn bè + lời mời
+            } else if (data instanceof model.friendship.Friendship.Bundle fb) {
+                for (var l : friendBundleListeners) { l.accept(fb); }
+
+            // 5f. Friendship.SearchBundle — kết quả tìm kiếm user
+            } else if (data instanceof model.friendship.Friendship.SearchBundle sb2) {
+                for (var l : friendSearchListeners) { l.accept(sb2); }
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {

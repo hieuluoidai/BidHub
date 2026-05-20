@@ -177,6 +177,18 @@ public class ClientHandler implements Runnable {
                 handleChatMarkRead(msg);
             } else if (msg.startsWith("CHAT_LIKE:")) {
                 handleChatLike(msg);
+            } else if (msg.startsWith("FRIEND_REQUEST:")) {
+                handleFriendRequest(msg);
+            } else if (msg.startsWith("FRIEND_ACCEPT:")) {
+                handleFriendAccept(msg);
+            } else if (msg.startsWith("FRIEND_DECLINE:")) {
+                handleFriendDecline(msg);
+            } else if (msg.startsWith("FRIEND_LIST:")) {
+                handleFriendList(msg);
+            } else if (msg.startsWith("FRIEND_STATUS:")) {
+                handleFriendStatus(msg);
+            } else if (msg.startsWith("USER_SEARCH:")) {
+                handleUserSearch(msg);
             }
         } catch (Exception e) {
             send("ERROR: Lệnh sai định dạng - " + e.getMessage());
@@ -1221,5 +1233,94 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                     likerName + " đã thích tin nhắn của bạn",
                     preview);
         }
+    }
+
+    // =========================================================================
+    // FRIEND handlers
+    // =========================================================================
+
+    /** FRIEND_REQUEST:<fromId>:<toId> */
+    private void handleFriendRequest(String msg) {
+        String[] p = msg.split(":", 3);
+        if (p.length < 3) return;
+        String fromId = p[1], toId = p[2];
+        database.FriendshipDAO dao = new database.FriendshipDAO();
+        if (!dao.sendRequest(fromId, toId)) {
+            send("FRIEND_REQUEST_FAILED:Đã tồn tại quan hệ");
+            return;
+        }
+        send("FRIEND_REQUEST_OK:" + toId);
+        // Refresh bundle cho cả 2 phía
+        pushFriendBundle(fromId);
+        pushFriendBundle(toId);
+        // Notify người được mời
+        UserDAO userDao = new UserDAO();
+        User from = userDao.findById(fromId);
+        String fromName = from != null ? from.getUsername() : fromId;
+        utils.NotificationService.notifyUser(server, toId,
+                Notification.Type.FRIEND_REQUEST,
+                "Lời mời kết bạn",
+                fromName + " muốn kết bạn với bạn");
+    }
+
+    /** FRIEND_ACCEPT:<requesterId>:<addresseeId(=me)> */
+    private void handleFriendAccept(String msg) {
+        String[] p = msg.split(":", 3);
+        if (p.length < 3) return;
+        String requesterId = p[1], addresseeId = p[2];
+        database.FriendshipDAO dao = new database.FriendshipDAO();
+        if (!dao.accept(requesterId, addresseeId)) {
+            send("FRIEND_ACCEPT_FAILED");
+            return;
+        }
+        send("FRIEND_ACCEPT_OK:" + requesterId);
+        pushFriendBundle(requesterId);
+        pushFriendBundle(addresseeId);
+        // Notify người gửi lời mời
+        UserDAO userDao = new UserDAO();
+        User addressee = userDao.findById(addresseeId);
+        String addresseeName = addressee != null ? addressee.getUsername() : addresseeId;
+        utils.NotificationService.notifyUser(server, requesterId,
+                Notification.Type.FRIEND_ACCEPTED,
+                "Lời mời kết bạn",
+                addresseeName + " đã chấp nhận lời mời kết bạn của bạn");
+    }
+
+    /** FRIEND_DECLINE:<requesterId>:<addresseeId> */
+    private void handleFriendDecline(String msg) {
+        String[] p = msg.split(":", 3);
+        if (p.length < 3) return;
+        new database.FriendshipDAO().decline(p[1], p[2]);
+        pushFriendBundle(p[1]);
+        pushFriendBundle(p[2]);
+    }
+
+    /** FRIEND_LIST:<userId> */
+    private void handleFriendList(String msg) {
+        String[] p = msg.split(":", 2);
+        if (p.length < 2) return;
+        send(new database.FriendshipDAO().getFriendBundle(p[1]));
+    }
+
+    /** FRIEND_STATUS:<myId>:<otherId> */
+    private void handleFriendStatus(String msg) {
+        String[] p = msg.split(":", 3);
+        if (p.length < 3) return;
+        String status = new database.FriendshipDAO().getStatus(p[1], p[2]);
+        send("FRIEND_STATUS_RESULT:" + p[2] + ":" + status);
+    }
+
+    /** USER_SEARCH:<myId>:<query...> */
+    private void handleUserSearch(String msg) {
+        String[] p = msg.split(":", 3);
+        if (p.length < 3) return;
+        send(new database.FriendshipDAO().search(p[1], p[2]));
+    }
+
+    /** Push FriendBundle tới user nếu đang online. */
+    private void pushFriendBundle(String userId) {
+        model.friendship.Friendship.Bundle bundle =
+                new database.FriendshipDAO().getFriendBundle(userId);
+        server.sendToUser(userId, bundle);
     }
 }

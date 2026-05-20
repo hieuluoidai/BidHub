@@ -150,6 +150,8 @@ public class NotificationPopupController {
             case DEPOSIT_REJECTED         -> "❌";
             case CHAT_NEW_MESSAGE         -> "💬";
             case CHAT_LIKED               -> "❤️";
+            case FRIEND_REQUEST           -> "👥";
+            case FRIEND_ACCEPTED          -> "🤝";
         };
     }
 
@@ -166,6 +168,7 @@ public class NotificationPopupController {
                  ADMIN_DEPOSIT_REQUEST -> "#8B5CF6";
             case CHAT_NEW_MESSAGE -> "#0EA5E9";
             case CHAT_LIKED       -> "#EC4899";
+            case FRIEND_REQUEST, FRIEND_ACCEPTED -> "#0084FF";
         };
     }
 }

@@ -35,8 +35,12 @@ import java.util.function.Consumer;
 
 public class MessagesController {
 
+    @FXML private Button btnTabMessages;
+    @FXML private Button btnTabFriends;
     @FXML private ListView<ChatMessage.Summary> listConversations;
-    @FXML private Label lblTotalUnread;
+    @FXML private VBox friendsPane;
+    @FXML private FriendsController friendsPaneController;
+
     @FXML private VBox paneEmptyChat;
     @FXML private VBox paneConversation;
     @FXML private Label lblPartnerAvatar;
@@ -71,6 +75,9 @@ public class MessagesController {
 
     @FXML
     public void initialize() {
+        // Default active tab: Tin nhắn
+        btnTabMessages.getStyleClass().add("chat-tab-active");
+
         listConversations.setItems(summaries);
         listConversations.setPlaceholder(new Label("Chưa có cuộc trò chuyện nào."));
         listConversations.setCellFactory(lv -> new ListCell<>() {
@@ -98,6 +105,19 @@ public class MessagesController {
         ChatCenter.addReadReceiptListener(readReceiptListener);
 
         refreshSummaries();
+
+        // Friend badge — update button text when pending count changes
+        AppState.getInstance().pendingFriendCountProperty().addListener((obs, oldV, newV) ->
+                Platform.runLater(() -> updateFriendBadge(newV.intValue())));
+        updateFriendBadge(AppState.getInstance().getPendingFriendCount());
+
+        // Wire "Nhắn tin" callback from friend rows → open chat here
+        if (friendsPaneController != null) {
+            friendsPaneController.setOpenChatCallback(args -> Platform.runLater(() -> {
+                switchToMessagesTab();
+                openConversation(args[0], args[1], args[2]);
+            }));
+        }
     }
 
     public void detach() {
@@ -105,14 +125,16 @@ public class MessagesController {
         ChatCenter.removeBundleListener(bundleListener);
         ChatCenter.removeSummaryListener(summaryListener);
         ChatCenter.removeReadReceiptListener(readReceiptListener);
+        if (friendsPaneController != null) friendsPaneController.detach();
     }
 
     public void refreshSummaries() {
         ChatCenter.fetchSummariesForBadge();
     }
 
-    /** Mở (hoặc tạo) cuộc trò chuyện với 1 user — gọi từ ngoài (vd: từ item_details). */
+    /** Mở cuộc trò chuyện với 1 user — gọi từ ngoài (vd: từ item_details, từ FriendsController). */
     public void openChatWith(String partnerId, String partnerUsername, String partnerAvatarPath) {
+        switchToMessagesTab();
         openConversation(partnerId, partnerUsername, partnerAvatarPath);
     }
 
@@ -229,12 +251,43 @@ public class MessagesController {
     }
 
     private void updateUnreadPill(int total) {
-        if (total <= 0) {
-            lblTotalUnread.setVisible(false); lblTotalUnread.setManaged(false);
-        } else {
-            lblTotalUnread.setText(total > 99 ? "99+" : String.valueOf(total));
-            lblTotalUnread.setVisible(true); lblTotalUnread.setManaged(true);
-        }
+        btnTabMessages.setText(total > 0
+                ? "Tin nhắn (" + (total > 99 ? "99+" : String.valueOf(total)) + ")"
+                : "Tin nhắn");
+    }
+
+    private void updateFriendBadge(int n) {
+        btnTabFriends.setText(n > 0
+                ? "Bạn bè (" + (n > 99 ? "99+" : String.valueOf(n)) + ")"
+                : "Bạn bè");
+    }
+
+    @FXML
+    void handleTabMessages() {
+        switchToMessagesTab();
+    }
+
+    @FXML
+    void handleTabFriends() {
+        switchToFriendsTab();
+    }
+
+    private void switchToMessagesTab() {
+        listConversations.setVisible(true);
+        listConversations.setManaged(true);
+        friendsPane.setVisible(false);
+        friendsPane.setManaged(false);
+        btnTabMessages.getStyleClass().add("chat-tab-active");
+        btnTabFriends.getStyleClass().remove("chat-tab-active");
+    }
+
+    private void switchToFriendsTab() {
+        listConversations.setVisible(false);
+        listConversations.setManaged(false);
+        friendsPane.setVisible(true);
+        friendsPane.setManaged(true);
+        btnTabMessages.getStyleClass().remove("chat-tab-active");
+        btnTabFriends.getStyleClass().add("chat-tab-active");
     }
 
     private Node buildConversationRow(ChatMessage.Summary s) {

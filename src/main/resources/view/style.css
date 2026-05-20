@@ -1736,3 +1736,164 @@
     -fx-text-transform: uppercase;
     -fx-letter-spacing: 1px;
 }
+
+/* ===================================================================
+   FEATURE: CHAT TAB SWITCHER
+   =================================================================== */
+.chat-tab-bar {
+    -fx-background-color: #FFFFFF;
+}
+.chat-tab-btn {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-padding: 8 0 8 0;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.chat-tab-btn:hover {
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #334155;
+}
+.chat-tab-active {
+    -fx-background-color: #0084FF;
+    -fx-text-fill: white;
+}
+.chat-tab-active:hover {
+    -fx-background-color: #006FD6;
+    -fx-text-fill: white;
+}
+
+/* ===================================================================
+   FEATURE: FRIENDS / SOCIAL
+   =================================================================== */
+.friends-root {
+    -fx-background-color: #FFFFFF;
+}
+.friends-search-bar {
+    -fx-background-color: #FFFFFF;
+}
+.friends-search-field {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: transparent;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-padding: 7 12 7 12;
+    -fx-font-size: 13px;
+    -fx-prompt-text-fill: #94A3B8;
+}
+.friends-search-field:focused {
+    -fx-background-color: #E9F3FF;
+    -fx-border-color: #0084FF;
+    -fx-border-width: 1.5;
+}
+.friends-search-btn {
+    -fx-background-color: #0084FF;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-padding: 7 16 7 16;
+    -fx-background-radius: 20;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.friends-search-btn:hover {
+    -fx-background-color: #006FD6;
+}
+.friends-scroll {
+    -fx-background-color: #F8FAFC;
+    -fx-background: #F8FAFC;
+    -fx-border-color: transparent;
+}
+.friends-scroll .viewport {
+    -fx-background-color: #F8FAFC;
+}
+.friends-list-container {
+    -fx-background-color: #F8FAFC;
+}
+.friend-section-header {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-padding: 6 16 6 16;
+    -fx-text-transform: uppercase;
+    -fx-letter-spacing: 0.5px;
+}
+.friend-row {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.friend-row:hover {
+    -fx-background-color: #F0F9FF;
+}
+.friend-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1E293B;
+}
+.friend-role {
+    -fx-font-size: 12px;
+    -fx-text-fill: #94A3B8;
+}
+.friend-btn-accept {
+    -fx-background-color: #22C55E;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.friend-btn-accept:hover {
+    -fx-background-color: #16A34A;
+}
+.friend-btn-decline {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #EF4444;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.friend-btn-decline:hover {
+    -fx-background-color: #FEE2E2;
+}
+.friend-btn-chat {
+    -fx-background-color: #0084FF;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.friend-btn-chat:hover {
+    -fx-background-color: #006FD6;
+}
+.friend-btn-add {
+    -fx-background-color: #E9F3FF;
+    -fx-text-fill: #0084FF;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+.friend-btn-add:hover {
+    -fx-background-color: #DBEAFE;
+}
+.friend-status-sent {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-padding: 5 4 5 4;
+}

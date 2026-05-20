@@ -443,6 +443,7 @@ public class DashboardController {
     void handleLogout() {
         utils.NotificationCenter.reset();
         utils.ChatCenter.reset();
+        utils.FriendCenter.reset();
         if (chatBadgeListener != null) {
             AppState.getInstance().totalUnreadChatProperty().removeListener(chatBadgeListener);
             chatBadgeListener = null;

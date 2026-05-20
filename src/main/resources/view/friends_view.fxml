@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.FriendsController"
+      styleClass="friends-root" spacing="0">
+
+    <!-- Search bar -->
+    <HBox styleClass="friends-search-bar" alignment="CENTER_LEFT" spacing="8">
+        <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+        <TextField fx:id="txtSearch" promptText="Tìm người dùng..." styleClass="friends-search-field"
+                   HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
+        <Button fx:id="btnSearch" text="Tìm" styleClass="friends-search-btn" onAction="#handleSearch"/>
+    </HBox>
+
+    <!-- Khu vực cuộn: pending + friends (hoặc kết quả search) -->
+    <ScrollPane fitToWidth="true" styleClass="friends-scroll" VBox.vgrow="ALWAYS">
+        <content>
+            <VBox fx:id="listContainer" spacing="0" styleClass="friends-list-container"/>
+        </content>
+    </ScrollPane>
+</VBox>

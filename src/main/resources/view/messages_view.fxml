@@ -13,20 +13,22 @@
 <?import javafx.scene.layout.VBox?>
 
 <HBox spacing="0.0" styleClass="chat-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.MessagesController" VBox.vgrow="ALWAYS">
-   <!-- LEFT: CONVERSATION LIST -->
+   <!-- LEFT: CONVERSATION LIST + FRIENDS TAB -->
    <VBox prefWidth="320.0" styleClass="chat-conversation-list">
-      <padding><Insets top="16.0" right="0.0" bottom="0.0" left="0.0" /></padding>
       <children>
-         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <padding><Insets left="20.0" right="20.0" bottom="12.0" /></padding>
+         <!-- Tab switcher -->
+         <HBox styleClass="chat-tab-bar" alignment="CENTER" spacing="0">
+            <padding><Insets top="10.0" left="12.0" right="12.0" bottom="10.0" /></padding>
             <children>
-               <Label styleClass="chat-list-title" text="Tin nhắn" />
-               <Region HBox.hgrow="ALWAYS" />
-               <Label fx:id="lblTotalUnread" styleClass="chat-unread-pill" text="0" managed="false" visible="false" />
+               <Button fx:id="btnTabMessages" text="Tin nhắn" styleClass="chat-tab-btn"
+                       onAction="#handleTabMessages" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+               <Button fx:id="btnTabFriends" text="Bạn bè" styleClass="chat-tab-btn"
+                       onAction="#handleTabFriends" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
             </children>
          </HBox>
          <Separator />
          <ListView fx:id="listConversations" styleClass="chat-conv-list" VBox.vgrow="ALWAYS" />
+         <fx:include fx:id="friendsPane" source="friends_view.fxml" VBox.vgrow="ALWAYS" managed="false" visible="false" />
       </children>
    </VBox>
 

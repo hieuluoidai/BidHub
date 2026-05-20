@@ -33,6 +33,9 @@ public class Notification implements Serializable {
         CHAT_NEW_MESSAGE,        // Nhận được tin nhắn mới
         CHAT_LIKED,              // Tin nhắn của bạn được thả tim
 
+        FRIEND_REQUEST,          // Nhận lời mời kết bạn
+        FRIEND_ACCEPTED,         // Lời mời kết bạn được chấp nhận
+
         // ===== Admin-only =====
         ADMIN_NEW_USER,
         ADMIN_NEW_SELLER_REQUEST,

@@ -44,6 +44,7 @@ import model.user.Bidder;
 import model.user.Seller;
 import model.user.User;
 import utils.AlertHelper;
+import utils.FriendCenter;
 import utils.ImageStorageService;
 import utils.SessionPermission;
 
@@ -105,6 +106,7 @@ public class ItemDetailsController {
     @FXML private Button btnEdit;
     @FXML private Button btnDelete;
     @FXML private Button btnCancel;
+    @FXML private Button btnAddFriend;
     @FXML private Button btnChatSeller;
 
     @FXML private ProgressBar progressTimeBar;
@@ -118,6 +120,8 @@ public class ItemDetailsController {
     private javafx.animation.ScaleTransition pulseAnimation;
     private double lastDisplayedPrice = -1.0;
     private java.util.function.Consumer<String> antiSnipeListener;
+    private java.util.function.Consumer<String> friendStatusListener;
+    private String currentFriendStatus = "NONE";
 
     @FXML
     private void initialize() {
@@ -746,12 +750,17 @@ public class ItemDetailsController {
             btnCancel.setManaged(canCancel);
         }
 
-        if (btnChatSeller != null) {
+        if (btnChatSeller != null && btnAddFriend != null) {
             model.user.User cu = model.manager.AppState.getInstance().getCurrentUser();
             String sellerId = auction.getSellerId();
-            boolean show = cu != null && sellerId != null && !cu.getUserId().equals(sellerId);
-            btnChatSeller.setVisible(show);
-            btnChatSeller.setManaged(show);
+            boolean isOtherUser = cu != null && sellerId != null && !cu.getUserId().equals(sellerId);
+            if (isOtherUser) {
+                // Start async friend-status check; buttons appear after response
+                sendFriendStatusRequest(sellerId);
+            } else {
+                btnChatSeller.setVisible(false); btnChatSeller.setManaged(false);
+                btnAddFriend.setVisible(false); btnAddFriend.setManaged(false);
+            }
         }
 
         if (panePayWinner != null) {
@@ -1105,10 +1114,71 @@ public class ItemDetailsController {
         closeWindow();
     }
 
+    private void sendFriendStatusRequest(String sellerId) {
+        User cu = AppState.getInstance().getCurrentUser();
+        if (cu == null) return;
+        if (friendStatusListener != null) {
+            AppState.getInstance().getClient().removeStringMessageListener(friendStatusListener);
+        }
+        final String prefix = "FRIEND_STATUS_RESULT:" + sellerId + ":";
+        friendStatusListener = msg -> {
+            if (!msg.startsWith(prefix)) return;
+            String status = msg.substring(prefix.length());
+            currentFriendStatus = status;
+            Platform.runLater(() -> applyFriendButtons(status));
+        };
+        AppState.getInstance().getClient().addStringMessageListener(friendStatusListener);
+        AppState.getInstance().getClient().send("FRIEND_STATUS:" + cu.getUserId() + ":" + sellerId);
+    }
+
+    private void applyFriendButtons(String status) {
+        switch (status) {
+            case "ACCEPTED" -> {
+                btnChatSeller.setVisible(true); btnChatSeller.setManaged(true);
+                btnAddFriend.setVisible(false); btnAddFriend.setManaged(false);
+            }
+            case "PENDING_SENT" -> {
+                btnChatSeller.setVisible(false); btnChatSeller.setManaged(false);
+                btnAddFriend.setText("Đã gửi lời mời");
+                btnAddFriend.setDisable(true);
+                btnAddFriend.setVisible(true); btnAddFriend.setManaged(true);
+            }
+            case "PENDING_RECEIVED" -> {
+                btnChatSeller.setVisible(false); btnChatSeller.setManaged(false);
+                btnAddFriend.setText("Chấp nhận lời mời");
+                btnAddFriend.setDisable(false);
+                btnAddFriend.setVisible(true); btnAddFriend.setManaged(true);
+            }
+            default -> {
+                btnChatSeller.setVisible(false); btnChatSeller.setManaged(false);
+                btnAddFriend.setText("+ Kết bạn");
+                btnAddFriend.setDisable(false);
+                btnAddFriend.setVisible(true); btnAddFriend.setManaged(true);
+            }
+        }
+    }
+
+    @FXML
+    void handleFriendAction() {
+        if (auction == null || auction.getSellerId() == null) return;
+        String sellerId = auction.getSellerId();
+        if ("PENDING_RECEIVED".equals(currentFriendStatus)) {
+            FriendCenter.accept(sellerId);
+        } else {
+            FriendCenter.sendRequest(sellerId);
+            btnAddFriend.setText("Đã gửi lời mời");
+            btnAddFriend.setDisable(true);
+        }
+    }
+
     private void closeWindow() {
         if (antiSnipeListener != null) {
             AppState.getInstance().getClient().removeStringMessageListener(antiSnipeListener);
             antiSnipeListener = null;
+        }
+        if (friendStatusListener != null) {
+            AppState.getInstance().getClient().removeStringMessageListener(friendStatusListener);
+            friendStatusListener = null;
         }
         stopPulseAnimation();
         if (lblItemName != null && lblItemName.getScene() != null) {

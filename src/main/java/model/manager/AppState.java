@@ -34,6 +34,10 @@ public class AppState {
     private final javafx.beans.property.IntegerProperty totalUnreadChat =
             new javafx.beans.property.SimpleIntegerProperty(0);
 
+    // Số lời mời kết bạn chưa xử lý (badge tab "Bạn bè")
+    private final javafx.beans.property.IntegerProperty pendingFriendCount =
+            new javafx.beans.property.SimpleIntegerProperty(0);
+
     private AppState() {
         this.client = new AuctionClient();
     }
@@ -129,6 +133,12 @@ public class AppState {
     public void setTotalUnreadChat(int v) {
         totalUnreadChat.set(v);
     }
+
+    public javafx.beans.property.IntegerProperty pendingFriendCountProperty() {
+        return pendingFriendCount;
+    }
+    public int getPendingFriendCount() { return pendingFriendCount.get(); }
+    public void setPendingFriendCount(int v) { pendingFriendCount.set(v); }
 
     /** Hook để mở chat từ bất kỳ controller nào (vd: item_details → mở tab Tin nhắn của dashboard). */
     private java.util.function.Consumer<String[]> openChatHook;

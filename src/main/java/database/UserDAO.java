@@ -527,4 +527,23 @@ public class UserDAO {
         }
         return users;
     }
+
+    /** Tìm user theo username (LIKE, tối đa 20 kết quả, bỏ qua excludeId). */
+    public List<User> searchByUsername(String query, String excludeId) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE username LIKE ? AND user_id != ? LIMIT 20";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + query + "%");
+            stmt.setString(2, excludeId == null ? "" : excludeId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    users.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm kiếm user: " + e.getMessage());
+        }
+        return users;
+    }
 }
