@@ -87,6 +87,7 @@ public class DashboardController {
     private final ObservableList<model.auction.WalletTransaction> transactionRows = FXCollections.observableArrayList();
     private final java.time.format.DateTimeFormatter dateTimeFormatter =
             java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private javafx.beans.value.ChangeListener<Number> chatBadgeListener;
 
     /**
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -187,9 +188,9 @@ public class DashboardController {
 
         // Wire chat badge → sidebar
         utils.ChatCenter.init();
-        AppState.getInstance().totalUnreadChatProperty().addListener((obs, oldV, newV) -> {
-            javafx.application.Platform.runLater(() -> updateChatBadge(newV.intValue()));
-        });
+        chatBadgeListener = (obs, oldV, newV) ->
+                javafx.application.Platform.runLater(() -> updateChatBadge(newV.intValue()));
+        AppState.getInstance().totalUnreadChatProperty().addListener(chatBadgeListener);
         updateChatBadge(AppState.getInstance().getTotalUnreadChat());
 
         // Đăng ký hook để các controller khác có thể yêu cầu mở chat
@@ -442,6 +443,10 @@ public class DashboardController {
     void handleLogout() {
         utils.NotificationCenter.reset();
         utils.ChatCenter.reset();
+        if (chatBadgeListener != null) {
+            AppState.getInstance().totalUnreadChatProperty().removeListener(chatBadgeListener);
+            chatBadgeListener = null;
+        }
         AppState.getInstance().setCurrentUser(null);
         AppState.getInstance().getSceneManager().showLogin();
     }

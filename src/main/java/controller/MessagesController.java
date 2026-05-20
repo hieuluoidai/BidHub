@@ -212,11 +212,9 @@ public class MessagesController {
     private void rebuildAllBubbles() {
         messagesContainer.getChildren().clear();
         for (ChatMessage m : messageMap.values().stream()
-                .sorted((a, b) -> {
-                    if (a.getSentAt() == null) return -1;
-                    if (b.getSentAt() == null) return 1;
-                    return a.getSentAt().compareTo(b.getSentAt());
-                })
+                .sorted(java.util.Comparator.comparing(
+                        ChatMessage::getSentAt,
+                        java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
                 .toList()) {
             messagesContainer.getChildren().add(buildBubble(m));
         }
