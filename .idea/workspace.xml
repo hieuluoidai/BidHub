@@ -4,20 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="Tính năng nhắn tin (Beta - Đang lỗi -)">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="refactor(exception): optimize exception handling logic in auction controller">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/all_in_one.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/all_in_one.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/ItemDetailsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/ItemDetailsController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/NotificationPopupController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/NotificationPopupController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AppState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AppState.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/notification/Notification.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/notification/Notification.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/exception/AuctionClosedException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/exception/AuctionClosedException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/exception/AuthenticationException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/exception/AuthenticationException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/exception/InvalidBidException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/exception/InvalidBidException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/auction/Auction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/auction/BidResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/auction/BidResult.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AuctionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/AutoBidManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/AutoBidManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/manager/ConcurrentBidManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/manager/ConcurrentBidManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/AuctionClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/item_details.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/item_details.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/model/BidResultTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/model/BidResultTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,7 +24,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="181" />
+    <option name="cachedIndexableFilesCount" value="185" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -37,7 +36,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="dev" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -57,6 +56,65 @@
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.32063926090464" />
+      <entry key="MS500" value="4.122699138799328" />
+      <entry key="S2" value="13.662589105714877" />
+      <entry key="S5" value="26.84359818801922" />
+      <entry key="S10" value="37.212442719941684" />
+      <entry key="S30" value="47.930713508876366" />
+      <entry key="S60" value="51.31635961294856" />
+      <entry key="M2" value="54.67309025064785" />
+      <entry key="M5" value="77.75772714232185" />
+      <entry key="M10" value="121.86768541111994" />
+      <entry key="M15" value="154.93276399643267" />
+      <entry key="M30" value="209.24119059404535" />
+      <entry key="H1" value="249.2516858424709" />
+      <entry key="H2" value="273.778115757892" />
+      <entry key="H4" value="287.3904124067083" />
+      <entry key="D1" value="299.4924437588764" />
+      <entry key="W1" value="301.63995336760803" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.2266384207659213" />
+      <entry key="MS500" value="4.056643373770278" />
+      <entry key="S2" value="13.606541030987556" />
+      <entry key="S5" value="26.799441279112166" />
+      <entry key="S10" value="37.18168923027509" />
+      <entry key="S30" value="47.91744426013881" />
+      <entry key="S60" value="51.309246011956986" />
+      <entry key="M2" value="54.66930045043312" />
+      <entry key="M5" value="77.75555266932642" />
+      <entry key="M10" value="121.86588827324138" />
+      <entry key="M15" value="154.9311815754282" />
+      <entry key="M30" value="209.2400682905564" />
+      <entry key="H1" value="249.25099874182524" />
+      <entry key="H2" value="273.7777330078453" />
+      <entry key="H4" value="287.39021007258793" />
+      <entry key="D1" value="299.49240840538954" />
+      <entry key="W1" value="301.6399482756647" />
+    </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -94,7 +152,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.24374.151" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.24374.151" />
       </set>
     </attachedChunks>
   </component>
@@ -119,6 +178,17 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="feat: bộ lọc trạng thái dashboard, thẻ đếm phiên, badge phiên của bạn và thống kê real-time&#10;&#10;- Thêm bộ lọc trạng thái (TẤT CẢ / SẮP DIỄN RA / ĐANG DIỄN RA / ĐÃ KẾT THÚC) trên dashboard người dùng&#10;- Thêm 3 thẻ đếm số: Tổng phiên / Đang diễn ra / Đã kết thúc&#10;- Bỏ nút &quot;+ Nạp tiền&quot; và pill số dư khỏi header dashboard (đã có trong Ví &amp; Giao dịch)&#10;- Fix admin không đăng nhập được: thêm import Separator còn thiếu trong admin_dashboard.fxml&#10;- Thêm badge &quot;PHIÊN CỦA BẠN&quot; trên item card khi user là người tạo phiên&#10;- Tính thống kê thực (Phiên đã tạo / Lượt bid / Phiên thắng) thay cho hardcode 0 trong UserDetails&#10;- Stats và số dư trong UserDetails tự cập nhật real-time qua ListChangeListener" />

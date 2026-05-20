@@ -7,6 +7,7 @@ import model.item.Item;
 import model.user.User;
 import exception.AuctionClosedException;
 import exception.InvalidBidException;
+import exception.ValidationException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -101,9 +102,19 @@ public class Auction extends Entity implements Serializable, Subject {
             throw new AuctionClosedException(getAuctionId(), this.status);
         }
 
+        if (bidder == null) {
+            throw new ValidationException("bidder", "Người đặt giá không được để trống.");
+        }
+        if (!Double.isFinite(amount) || amount <= 0) {
+            throw InvalidBidException.invalidAmount(getAuctionId(), amount);
+        }
+        if (bidType == null) {
+            bidType = BidTransaction.BidType.MANUAL;
+        }
+
         double currentPrice = getCurrentPrice();
         if (amount <= currentPrice) {
-            throw new InvalidBidException(amount, currentPrice);
+            throw new InvalidBidException(getAuctionId(), amount, currentPrice);
         }
 
         BidTransaction newBid = new BidTransaction(bidder, amount, bidType);

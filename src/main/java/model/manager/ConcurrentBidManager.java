@@ -1,6 +1,7 @@
 package model.manager;
 
 import database.BidTransactionDAO;
+import exception.ErrorCode;
 import model.auction.Auction;
 import model.auction.BidTransaction;
 import model.auction.BidResult;
@@ -12,15 +13,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Bộ điều phối bid đồng thời — SINGLE POINT OF SYNCHRONIZATION cho mọi bid.
- * Đảm bảo tính Thread-safe và hiệu năng cao bằng cơ chế Lock Per-Auction.
+ * Bộ điều phối bid đồng thời, là điểm đồng bộ trung tâm cho mọi thao tác đặt giá.
+ *
+ * <p>Mỗi phiên đấu giá có một lock riêng. Cách này giúp các bid trong cùng một phiên
+ * được xử lý tuần tự để tránh race condition, trong khi bid ở các phiên khác nhau
+ * vẫn có thể chạy song song.
  */
 public class ConcurrentBidManager {
 
     private static volatile ConcurrentBidManager instance;
     private final ConcurrentHashMap<String, ReentrantLock> auctionLocks = new ConcurrentHashMap<>();
 
-    // ====== Metrics – an toàn đa luồng nhờ Atomic ======
+    // ====== Chỉ số vận hành, an toàn đa luồng nhờ AtomicLong ======
     private final AtomicLong successCount    = new AtomicLong();
     private final AtomicLong outbidCount     = new AtomicLong();
     private final AtomicLong failureCount    = new AtomicLong();
@@ -28,7 +32,10 @@ public class ConcurrentBidManager {
 
     private ConcurrentBidManager() {}
 
-    /** Singleton thread-safe (double-checked locking + volatile) cho hiệu năng tối ưu. */
+    /**
+     * Singleton an toàn đa luồng, dùng double-checked locking kết hợp volatile
+     * để tránh tạo thừa instance.
+     */
     public static ConcurrentBidManager getInstance() {
         if (instance == null) {
             synchronized (ConcurrentBidManager.class) {
@@ -38,7 +45,10 @@ public class ConcurrentBidManager {
         return instance;
     }
 
-    /** Lấy hoặc tạo mới lock riêng cho từng auctionId (Fair lock). */
+    /**
+     * Lấy hoặc tạo mới lock công bằng cho từng auctionId.
+     * Các thread chờ lock sẽ được phục vụ theo thứ tự để giảm tranh chấp không công bằng.
+     */
     private ReentrantLock getLock(String auctionId) {
         return auctionLocks.computeIfAbsent(auctionId, id -> new ReentrantLock(true));
     }
@@ -49,16 +59,34 @@ public class ConcurrentBidManager {
     }
 
     /**
-     * Bản production – Xử lý bid với đầy đủ cơ chế Double-check và lưu Database.
+     * Xử lý bid trong luồng production với đầy đủ kiểm tra nhanh, khóa theo phiên,
+     * kiểm tra lại trong lock và lưu database nếu bidDao được truyền vào.
      */
     public BidResult processBid(String auctionId, double amount, User bidder,
                                 BidTransactionDAO bidDao) {
+        if (auctionId == null || auctionId.isBlank()) {
+            failureCount.incrementAndGet();
+            return BidResult.failure(auctionId, amount, ErrorCode.VALIDATION_ERROR,
+                    "Mã phiên đấu giá không được để trống.");
+        }
+        if (!Double.isFinite(amount) || amount <= 0) {
+            failureCount.incrementAndGet();
+            return BidResult.failure(auctionId, amount, ErrorCode.VALIDATION_ERROR,
+                    "Số tiền đặt giá phải là số dương hợp lệ.");
+        }
+        if (bidder == null) {
+            failureCount.incrementAndGet();
+            return BidResult.failure(auctionId, amount, ErrorCode.VALIDATION_ERROR,
+                    "Người đặt giá không được để trống.");
+        }
+
         AuctionManager manager = AuctionManager.getInstance();
         Auction auction = manager.getAuctionById(auctionId);
 
         if (auction == null) {
             failureCount.incrementAndGet();
-            return BidResult.failure(auctionId, amount, "Phiên đấu giá không tồn tại!");
+            return BidResult.failure(auctionId, amount, ErrorCode.AUCTION_NOT_FOUND,
+                    "Phiên đấu giá không tồn tại.");
         }
 
         // Sau khi server restart, state trong RAM có thể vừa được dựng lại nhưng chưa
@@ -66,50 +94,48 @@ public class ConcurrentBidManager {
         // không bao giờ cho phép một bid thấp hơn giá cao nhất cũ "mở vòng mới".
         restorePersistedHistoryIfNeeded(auctionId, auction, bidDao);
 
-        // ===== 1. Optimistic pre-check (NGOÀI lock để lọc nhanh) =====
+        // ===== 1. Kiểm tra nhanh ngoài lock để loại sớm các bid chắc chắn không hợp lệ =====
         if (!"RUNNING".equals(auction.getStatus())) {
             failureCount.incrementAndGet();
-            return BidResult.failure(auctionId, amount,
-                    "Phiên không đang diễn ra (Trạng thái: " + auction.getStatus() + ")");
+            return BidResult.failure(auctionId, amount, ErrorCode.AUCTION_NOT_RUNNING,
+                    auctionNotRunningMessage(auctionId, auction.getStatus()));
         }
         if (amount <= auction.getCurrentPrice()) {
             outbidCount.incrementAndGet();
-            return BidResult.outbid(auctionId, amount, auction.getCurrentPrice(),
-                    String.format("Giá $%.2f không cao hơn giá hiện tại $%.2f.",
-                            amount, auction.getCurrentPrice()));
+            return BidResult.outbid(auctionId, amount, auction.getCurrentPrice());
         }
 
-        // ===== 2. Critical section (lock per-auction) =====
+        // ===== 2. Vùng xử lý quan trọng: chỉ một thread được thao tác trên cùng một phiên =====
         ReentrantLock lock = getLock(auctionId);
         if (lock.isLocked()) contentionCount.incrementAndGet();
 
         long t0 = System.nanoTime();
         lock.lock();
         try {
-            // Double-check vì trạng thái có thể đã thay đổi trong lúc chờ lock
+            // Kiểm tra lại vì trạng thái phiên có thể đã thay đổi trong lúc thread đang chờ lock.
             auction = manager.getAuctionById(auctionId);
             if (auction == null) {
                 failureCount.incrementAndGet();
-                return BidResult.failure(auctionId, amount, "Phiên đấu giá không tồn tại!");
+                return BidResult.failure(auctionId, amount, ErrorCode.AUCTION_NOT_FOUND,
+                        "Phiên đấu giá không tồn tại.");
             }
 
-            // Double-check cả history vì đây mới là điểm quyết định giá cuối cùng.
+            // Kiểm tra lại lịch sử bid vì đây mới là thời điểm quyết định giá cuối cùng.
             restorePersistedHistoryIfNeeded(auctionId, auction, bidDao);
 
             if (!"RUNNING".equals(auction.getStatus())) {
                 failureCount.incrementAndGet();
-                return BidResult.failure(auctionId, amount, "Phiên đã kết thúc trong lúc bạn chờ!");
+                return BidResult.failure(auctionId, amount, ErrorCode.AUCTION_NOT_RUNNING,
+                        auctionNotRunningMessage(auctionId, auction.getStatus()));
             }
             
             double currentPrice = auction.getCurrentPrice();
             if (amount <= currentPrice) {
                 outbidCount.incrementAndGet();
-                return BidResult.outbid(auctionId, amount, currentPrice,
-                        String.format("Bạn đã bị vượt giá! Giá hiện tại $%.2f, giá bạn $%.2f.",
-                                currentPrice, amount));
+                return BidResult.outbid(auctionId, amount, currentPrice);
             }
 
-            // ===== 2b. Lock & Balance check =====
+            // ===== 2b. Kiểm tra và khóa số dư sau khi đã chắc chắn bid đủ cao =====
             database.UserDAO userDao = new database.UserDAO();
             boolean lockAcquired = false;
             double amountToUnlockOnFailure = 0;
@@ -128,7 +154,8 @@ public class ConcurrentBidManager {
                         double diff = amount - baseLocked;
                         if (!userDao.lockBalance(bidder.getUserId(), diff)) {
                             failureCount.incrementAndGet();
-                            return BidResult.failure(auctionId, amount, "Số dư không đủ để nâng giá!");
+                            return BidResult.failure(auctionId, amount, ErrorCode.INSUFFICIENT_BALANCE,
+                                    "Số dư không đủ để nâng giá.");
                         }
                         lockAcquired = true;
                         amountToUnlockOnFailure = diff;
@@ -139,7 +166,8 @@ public class ConcurrentBidManager {
                         double diff = amount - baseLocked;
                         if (!userDao.lockBalance(bidder.getUserId(), diff)) {
                             failureCount.incrementAndGet();
-                            return BidResult.failure(auctionId, amount, "Số dư không đủ để cam kết bid!");
+                            return BidResult.failure(auctionId, amount, ErrorCode.INSUFFICIENT_BALANCE,
+                                    "Số dư không đủ để cam kết bid.");
                         }
                         lockAcquired = true;
                         amountToUnlockOnFailure = diff;
@@ -154,7 +182,7 @@ public class ConcurrentBidManager {
                 }
             }
 
-            // ===== 3. Cập nhật dữ liệu trên bộ nhớ (Memory update) =====
+            // ===== 3. Cập nhật bộ nhớ trước, sau đó mới lưu DB ở bước kế tiếp =====
             java.time.LocalDateTime endTimeBefore = auction.getEndTime();
             try {
                 auction.placeBid(bidder, amount);
@@ -163,10 +191,10 @@ public class ConcurrentBidManager {
                     userDao.unlockBalance(bidder.getUserId(), amountToUnlockOnFailure);
                 }
                 failureCount.incrementAndGet();
-                return BidResult.failure(auctionId, amount, e.getMessage());
+                return BidResult.failure(auctionId, amount, e);
             }
 
-            // ===== 3b. ANTI-SNIPING: nếu phiên vừa được gia hạn → ghi DB =====
+            // ===== 3b. Anti-sniping: nếu phiên vừa được gia hạn thì ghi endTime mới xuống DB =====
             java.time.LocalDateTime endTimeAfter = auction.getEndTime();
             boolean wasExtended = endTimeBefore != null
                     && endTimeAfter != null
@@ -181,21 +209,22 @@ public class ConcurrentBidManager {
                 System.out.printf(">>> [ANTI-SNIPE] Phiên %s gia hạn: %s → %s (lần %d)%n",
                         auctionId, endTimeBefore, endTimeAfter, auction.getExtensionCount());
 
-                // Gửi Notification gia hạn
+                // Gửi thông báo gia hạn cho seller để họ biết phiên được kéo dài do có bid phút chót.
                 network.AuctionServer server = manager.getServer();
                 if (server != null) {
                     String itemName = (auction.getItem() != null) ? auction.getItem().getItemName() : auctionId;
-                    // Thông báo cho Seller
+                    // Thông báo trực tiếp cho người bán của phiên.
                     utils.NotificationService.notifyUser(server, auction.getSellerId(),
                         model.notification.Notification.Type.AUCTION_EXTENDED,
                         "Phiên đấu giá được gia hạn",
                         String.format("Phiên \"%s\" vừa được cộng thêm thời gian do có người bid vào phút chót.", itemName));
                     
-                    // Có thể broadcast một signal đặc biệt để client reload end_time (Auction object broadcast đã làm việc này)
+                    // Có thể phát tín hiệu riêng để client nạp lại end_time.
+                    // Hiện Auction object đã mang dữ liệu mới nên chưa cần tín hiệu riêng.
                 }
             }
 
-            // ===== 4. Lưu vào DB (Đảm bảo tính nhất quán) =====
+            // ===== 4. Lưu vào DB để đảm bảo trạng thái vẫn khôi phục được sau restart =====
             if (bidDao != null) {
                 model.auction.BidTransaction latest = auction.getHighestBid();
                 boolean saved = bidDao.save(auctionId, bidder.getUserId(), amount, 
@@ -206,7 +235,7 @@ public class ConcurrentBidManager {
                 }
             }
 
-            // ===== 5. Kích hoạt Auto-Bidding (Logic mới) =====
+            // ===== 5. Kích hoạt Auto-Bidding sau khi bid thủ công thành công =====
             AutoBidManager.getInstance().executeAutoBids(auctionId, bidDao);
 
             successCount.incrementAndGet();
@@ -239,6 +268,10 @@ public class ConcurrentBidManager {
         }
     }
 
+    private String auctionNotRunningMessage(String auctionId, String status) {
+        return String.format("Phiên đấu giá '%s' không thể đặt giá (Trạng thái: %s).", auctionId, status);
+    }
+
     /** Giải phóng lock khi phiên đấu giá kết thúc. */
     public void releaseLock(String auctionId) {
         auctionLocks.remove(auctionId);
@@ -248,7 +281,7 @@ public class ConcurrentBidManager {
         return auctionLocks.size(); 
     }
 
-    // ===== Metrics getters (Dùng cho báo cáo/demo bảo vệ đồ án) =====
+    // ===== Getter cho chỉ số vận hành, dùng khi báo cáo/demo bảo vệ đồ án =====
     public long getSuccessCount() {
         return successCount.get();
     }

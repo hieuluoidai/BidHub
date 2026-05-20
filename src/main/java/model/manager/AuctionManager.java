@@ -8,8 +8,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
+import exception.AppException;
 import exception.InvalidBidException;
 import exception.AuctionClosedException;
+import exception.ErrorCode;
+import exception.ExceptionMapper;
 
 /**
  * Quản lý và điều hành toàn hệ thống phía Server.
@@ -61,7 +64,8 @@ public class AuctionManager {
         Auction auction = getAuctionById(auctionId);
 
         if (auction == null) {
-            System.err.println("Lỗi: Không tìm thấy ID phiên " + auctionId);
+            System.err.printf("[%s] Phiên đấu giá không tồn tại. | auctionId=%s%n",
+                    ErrorCode.AUCTION_NOT_FOUND.getCode(), auctionId);
             return false;
         }
 
@@ -69,7 +73,13 @@ public class AuctionManager {
             auction.placeBid(bidder, newPrice);
             return true;
         } catch (InvalidBidException | AuctionClosedException e) {
-            System.err.println("Lỗi đặt giá: " + e.getMessage());
+            System.err.println("Lỗi đặt giá: " + e.getUserMessage());
+            return false;
+        } catch (AppException e) {
+            System.err.println("Lỗi đặt giá: " + ExceptionMapper.logMessage(e));
+            return false;
+        } catch (RuntimeException e) {
+            System.err.println("Lỗi đặt giá: " + ExceptionMapper.logMessage(e));
             return false;
         }
     }

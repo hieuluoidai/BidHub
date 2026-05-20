@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import exception.ErrorResponse;
 import javafx.application.Platform;
 import model.auction.Auction;
 import model.auction.BidResult;
@@ -98,8 +99,10 @@ public class AuctionClient {
         friendSearchListeners.remove(l);
     }
 
-    /** Legacy support - overwrites/sets a primary listener if needed, 
-     * but we'll adapt existing code to use the new add/remove pattern. */
+    /**
+     * Hỗ trợ code cũ chỉ truyền một callback chính.
+     * Bên trong vẫn dùng cơ chế add/remove listener mới để tránh lệch cách dispatch sự kiện.
+     */
     private Consumer<BidResult> legacyBidResultCallback;
     public void setBidResultCallback(Consumer<BidResult> callback) {
         if (this.legacyBidResultCallback != null) removeBidResultListener(this.legacyBidResultCallback);
@@ -210,6 +213,23 @@ public class AuctionClient {
             } else if (data instanceof model.friendship.Friendship.SearchBundle sb2) {
                 for (var l : friendSearchListeners) {
                     l.accept(sb2);
+                }
+
+            // 5g. ErrorResponse — lỗi chuẩn hóa từ server
+            } else if (data instanceof ErrorResponse error) {
+                String msg = "ERROR:" + error.getCode() + ":" + error.getMessage();
+                System.out.println(">>> [CLIENT] Server error: " + msg);
+                if (stringMessageListeners.isEmpty()) {
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText(null);
+                    alert.setContentText(error.getMessage());
+                    alert.showAndWait();
+                } else {
+                    for (Consumer<String> listener : stringMessageListeners) {
+                        listener.accept(msg);
+                    }
                 }
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)

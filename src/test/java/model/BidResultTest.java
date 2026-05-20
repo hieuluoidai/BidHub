@@ -1,5 +1,8 @@
 package model;
 
+import exception.ErrorCode;
+import exception.ErrorResponse;
+import exception.InvalidBidException;
 import model.auction.BidResult;
 
 import org.junit.jupiter.api.DisplayName;
@@ -90,6 +93,14 @@ class BidResultTest {
         assertNull(r.getWinnerUsername());
     }
 
+    @Test
+    @DisplayName("outbid(): lưu ErrorCode BID_TOO_LOW")
+    void outbid_storesErrorCode() {
+        BidResult r = BidResult.outbid(AUCTION_ID, 150.0, 200.0);
+        assertEquals(ErrorCode.BID_TOO_LOW, r.getErrorCode());
+        assertEquals("BID_TOO_LOW", r.getErrorCodeValue());
+    }
+
     // ================================================================
     // NHÓM 3 — failure()
     // ================================================================
@@ -114,6 +125,36 @@ class BidResultTest {
     void failure_storesReason() {
         BidResult r = BidResult.failure(AUCTION_ID, 50.0, "Phiên đã đóng");
         assertEquals("Phiên đã đóng", r.getMessage());
+    }
+
+    @Test
+    @DisplayName("failure(): tạo trực tiếp từ ErrorCode")
+    void failure_fromErrorCode_storesCodeAndMessage() {
+        BidResult r = BidResult.failure(AUCTION_ID, 50.0, ErrorCode.AUCTION_NOT_RUNNING,
+                "Phiên chưa chạy.");
+        assertEquals(BidResult.Status.FAILURE, r.getStatus());
+        assertEquals(ErrorCode.AUCTION_NOT_RUNNING, r.getErrorCode());
+        assertEquals("Phiên chưa chạy.", r.getMessage());
+    }
+
+    @Test
+    @DisplayName("failure(): tạo từ AppException")
+    void failure_fromAppException_storesCodeAndMessage() {
+        InvalidBidException ex = new InvalidBidException(AUCTION_ID, 100.0, 150.0);
+        BidResult r = BidResult.failure(AUCTION_ID, 100.0, ex);
+        assertEquals(ErrorCode.BID_TOO_LOW, r.getErrorCode());
+        assertEquals(ex.getUserMessage(), r.getMessage());
+    }
+
+    @Test
+    @DisplayName("ErrorResponse: chứa code, message và details từ AppException")
+    void errorResponse_fromAppException_containsCodeMessageAndDetails() {
+        InvalidBidException ex = new InvalidBidException(AUCTION_ID, 100.0, 150.0);
+        ErrorResponse response = ErrorResponse.from(ex);
+        assertEquals("BID_TOO_LOW", response.getCode());
+        assertEquals(ex.getUserMessage(), response.getMessage());
+        assertEquals(AUCTION_ID, response.getDetails().get("auctionId"));
+        assertEquals("100.0", response.getDetails().get("attemptedAmount"));
     }
 
     // ================================================================

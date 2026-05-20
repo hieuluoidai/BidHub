@@ -6,6 +6,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import exception.ErrorCode;
+import exception.ErrorResponse;
+import exception.ExceptionMapper;
 import model.auction.Auction;
 import model.auction.BidResult;
 import model.manager.AuctionManager;
@@ -46,12 +49,17 @@ public class ClientHandler implements Runnable {
 
             while (active) {
                 Object request = in.readObject();
-                handleRequest(request);
+                try {
+                    handleRequest(request);
+                } catch (Exception e) {
+                    System.err.println(">>> Lỗi xử lý request: " + ExceptionMapper.logMessage(e));
+                    send(ErrorResponse.from(e));
+                }
             }
         } catch (EOFException | SocketException e) {
             System.out.println(">>> Thông báo: Một Client đã thoát.");
         } catch (Exception e) {
-            System.err.println(">>> Lỗi ClientHandler: " + e.getMessage());
+            System.err.println(">>> Lỗi ClientHandler: " + ExceptionMapper.logMessage(e));
         } finally {
             close();
         }
@@ -77,8 +85,8 @@ public class ClientHandler implements Runnable {
                     saveBidToDatabase(incomingAuction);
                 }
             } else {
-                // SERVER SIDE PERSISTENCE: Khi client gửi 1 phiên mới, server phải lưu nó
-                // để đảm bảo restart không mất dữ liệu.
+                // Lưu phía server: khi client gửi một phiên mới, server phải ghi DB ngay
+                // để restart không làm mất phiên vừa tạo.
                 new database.ItemDAO().save(incomingAuction.getItem(), incomingAuction.getSellerId());
                 new database.AuctionDAO().save(incomingAuction);
                 
@@ -99,11 +107,14 @@ public class ClientHandler implements Runnable {
                     String.format("Phiên đấu giá cho \"%s\" vừa được tạo bởi %s.", 
                         incomingAuction.getItem().getItemName(), incomingAuction.getSellerId()));
             }
-            // Smart Broadcast: Chỉ gửi phiên vừa thay đổi/tạo mới
+            // Broadcast tối ưu: chỉ gửi phiên vừa thay đổi/tạo mới thay vì gửi lại toàn bộ danh sách.
             server.broadcast(incomingAuction);
         // TRƯỜNG HỢP 2: Nhận lệnh dạng chuỗi văn bản (String)
         } else if (request instanceof String msg) {
             handleStringRequest(msg);
+        } else {
+            send(ErrorResponse.of(ErrorCode.COMMAND_FORMAT_INVALID,
+                    "Server không hỗ trợ kiểu dữ liệu request này."));
         }
     }
 
@@ -191,13 +202,14 @@ public class ClientHandler implements Runnable {
                 handleUserSearch(msg);
             }
         } catch (Exception e) {
-            send("ERROR: Lệnh sai định dạng - " + e.getMessage());
+            System.err.println(">>> Lỗi xử lý lệnh: " + ExceptionMapper.logMessage(e));
+            send(ExceptionMapper.protocolMessage("ERROR", e));
         }
     }
 
     /**
      * Thiết lập Auto-Bid cho User.
-     * Format: "SET_AUTOBID:<auctionId>:<userId>:<maxBid>:<increment>"
+     * Định dạng: "SET_AUTOBID:<auctionId>:<userId>:<maxBid>:<increment>"
      */
     private void handleSetAutoBid(String msg) {
         String[] parts = msg.split(":");
@@ -228,11 +240,11 @@ public class ClientHandler implements Runnable {
             double locked = userDao.getLockedBalance(userId);
             send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", avail, locked));
 
-            // Re-trigger auto-bids and BROADCAST (Crucial for real-time)
+            // Kích hoạt lại Auto-Bid và broadcast để các client thấy giá mới theo thời gian thực.
             BidTransactionDAO bidDao = new BidTransactionDAO();
             model.manager.AutoBidManager.getInstance().executeAutoBids(auctionId, bidDao);
             
-            // Smart Broadcast: Chỉ gửi phiên vừa thay đổi
+            // Broadcast tối ưu: chỉ gửi phiên vừa thay đổi.
             Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
             if (updated != null) server.broadcast(updated);
         } else {
@@ -242,7 +254,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Hủy Auto-Bid cho User.
-     * Format: "CANCEL_AUTOBID:<auctionId>:<userId>"
+     * Định dạng: "CANCEL_AUTOBID:<auctionId>:<userId>"
      */
     private void handleCancelAutoBid(String msg) {
         String[] parts = msg.split(":");
@@ -263,7 +275,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Lấy cấu hình Auto-Bid của User hiện tại cho 1 phiên.
-     * Format: "GET_MY_AUTOBID:<auctionId>:<userId>"
+     * Định dạng: "GET_MY_AUTOBID:<auctionId>:<userId>"
      */
     private void handleGetMyAutoBid(String msg) {
         String[] parts = msg.split(":");
@@ -281,7 +293,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Xóa 1 phiên đấu giá khỏi hệ thống.
-     * Format: "DELETE_AUCTION:<auctionId>:<requesterId>"
+     * Định dạng: "DELETE_AUCTION:<auctionId>:<requesterId>"
      */
     private void handleDeleteAuction(String msg) {
         String[] parts = msg.split(":");
@@ -355,7 +367,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Cập nhật thông tin hồ sơ User.
-     * Format: "UPDATE_PROFILE:<userId>:<email>:<phone>:<dob>"
+     * Định dạng: "UPDATE_PROFILE:<userId>:<email>:<phone>:<dob>"
      */
     private void handleUpdateProfile(String msg) {
         String[] parts = msg.split(":");
@@ -378,7 +390,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Cập nhật Avatar User.
-     * Format: "UPDATE_AVATAR:<userId>:<avatarPath>"
+     * Định dạng: "UPDATE_AVATAR:<userId>:<avatarPath>"
      */
     private void handleUpdateAvatar(String msg) {
         String[] parts = msg.split(":");
@@ -410,7 +422,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Đổi mật khẩu User.
-     * Format: "CHANGE_PASSWORD:<userId>:<oldPass>:<newPass>"
+     * Định dạng: "CHANGE_PASSWORD:<userId>:<oldPass>:<newPass>"
      */
     private void handleChangePassword(String msg) {
         String[] parts = msg.split(":");
@@ -420,7 +432,7 @@ public class ClientHandler implements Runnable {
         String oldPass = parts[2];
         String newPass = parts[3];
 
-        // SECURITY CHECK: Chỉ cho phép đổi mật khẩu của chính mình
+        // Kiểm tra bảo mật: chỉ cho phép user đổi mật khẩu của chính mình.
         if (this.currentUserId == null || !this.currentUserId.equals(userId)) {
             send("CHANGE_PASSWORD_FAILED: Bạn không có quyền đổi mật khẩu của người khác!");
             return;
@@ -438,7 +450,7 @@ if (!utils.PasswordUtils.verify(oldPass, user.getPassword())) {
     return;
 }
 
-// Hash mật khẩu mới
+// Băm mật khẩu mới trước khi lưu DB.
 String hashedNew = utils.PasswordUtils.hash(newPass);
 
         boolean ok = dao.updatePassword(userId, hashedNew);
@@ -476,7 +488,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         java.util.Set<String> autoBidderIds = model.manager.AutoBidManager.getInstance()
                 .cleanupForCancellation(auctionId);
 
-        // 2. Kiểm tra nếu người đang dẫn đầu là Manual Bid (không có AutoBid)
+        // 2. Kiểm tra nếu người đang dẫn đầu là bid thủ công, tức không có AutoBid.
         // thì phải giải phóng thủ công số tiền họ đang cam kết.
         if (auction.getHighestBid() != null) {
             String bidderId = auction.getHighestBid().getBidder().getUserId();
@@ -562,7 +574,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             double amount   = auction.getHighestBid().getBidAmount();
             
             // Nếu người này có AutoBid, nó sẽ được unlock bởi AutoBidManager.cleanup hoặc cancel
-            // Tuy nhiên để an toàn, ta check manual bid unlock tại đây
+            // Tuy nhiên để an toàn, vẫn kiểm tra mở khóa bid thủ công tại đây.
             model.auction.AutoBid ab = new database.AutoBidDAO().findByUserAndAuction(winnerId, auction.getAuctionId());
             if (ab == null) {
                 new UserDAO().unlockBalance(winnerId, amount);
@@ -577,12 +589,12 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Thanh toán phiên đấu giá đã FINISHED. Chỉ winner mới được gọi.
-     * Format: "PAY_AUCTION:<auctionId>:<requesterId>"
+     * Định dạng: "PAY_AUCTION:<auctionId>:<requesterId>"
      *
-     * Quy trình ATOMIC (transaction trong UserDAO.transferAtomic):
+     * Quy trình nguyên tử (transaction trong UserDAO.transferAtomic):
      *   1. Tra winner_id, seller_id, final_price từ DB
      *   2. Kiểm tra requester có đúng là winner không
-     *   3. Transfer atomic (lock row, kiểm balance, trừ winner, cộng seller)
+     *   3. Chuyển tiền nguyên tử (khóa row, kiểm balance, trừ winner, cộng seller)
      *   4. Nếu OK → markAsPaid → broadcast
      *
      * Phản hồi:
@@ -616,17 +628,17 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
-        // 2. Verify requester là winner thật sự (chống tampering)
+        // 2. Xác minh requester là winner thật sự để chống client tự sửa request.
         if (!winnerId.equals(requesterId)) {
             send("PAY_FAILED: Bạn không phải người thắng phiên này");
             return;
         }
 
-        // 3. Transfer atomic (từ locked_balance sang seller balance)
+        // 3. Chuyển tiền nguyên tử từ locked_balance của winner sang balance của seller.
         UserDAO userDao = new UserDAO();
         double currentLocked = userDao.getLockedBalance(winnerId);
         if (currentLocked < finalPrice) {
-            // Trường hợp hy hữu: locked_balance < giá thắng (có thể do Manual Bid đè lên AutoBid nhưng lock hụt)
+            // Trường hợp hy hữu: locked_balance < giá thắng do bid thủ công đè lên AutoBid nhưng khóa hụt.
             // Ta thử dùng transferAtomic thường nếu user có đủ tiền ở balance chính
             double currentBalance = userDao.getBalance(winnerId);
             if (currentBalance >= finalPrice) {
@@ -685,7 +697,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             "Bạn nhận được tiền bán hàng",
             String.format("Người mua đã thanh toán %,.0f ₫ cho sản phẩm \"%s\" của bạn.", finalPrice, itemName));
 
-        // 6. Cập nhật memory + broadcast
+        // 6. Cập nhật bộ nhớ và broadcast trạng thái mới cho client.
         if (auction != null) auction.setStatus("PAID");
 
         double newBalance = userDao.getBalance(winnerId);
@@ -698,7 +710,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         double locked = userDao.getLockedBalance(winnerId);
         send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
         
-        // Notify seller about balance update too
+        // Gửi cập nhật số dư cho seller vì họ vừa nhận tiền.
         double sellerAvail = userDao.getBalance(sellerId);
         double sellerLocked = userDao.getLockedBalance(sellerId);
         server.sendToUser(sellerId, String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", sellerAvail, sellerLocked));
@@ -708,7 +720,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Nạp tiền vào ví user.
-     * Format: "TOPUP:<userId>:<amount>"
+     * Định dạng: "TOPUP:<userId>:<amount>"
      *
      * Mô phỏng nạp tiền: server "xử lý giao dịch" trong 1.5s rồi cộng vào balance.
      * Tương lai sẽ tích hợp payment gateway thật.
@@ -782,12 +794,13 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Xử lý bid đồng thời cực nhanh và an toàn.
-     * Format: "BID:<auctionId>:<amount>:<bidderId>"
+     * Định dạng: "BID:<auctionId>:<amount>:<bidderId>"
      */
     private void handleConcurrentBid(String msg) {
         String[] parts = msg.split(":");
         if (parts.length < 4) {
-            send(BidResult.failure("?", 0, "Lệnh BID sai định dạng!"));
+            send(BidResult.failure("?", 0, ErrorCode.COMMAND_FORMAT_INVALID,
+                    "Lệnh BID sai định dạng."));
             return;
         }
 
@@ -796,18 +809,20 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         try {
             amount = Double.parseDouble(parts[2]);
         } catch (NumberFormatException e) {
-            send(BidResult.failure(auctionId, 0, "Số tiền không hợp lệ!"));
+            send(BidResult.failure(auctionId, 0, ErrorCode.VALIDATION_ERROR,
+                    "Số tiền không hợp lệ."));
             return;
         }
         
         String bidderId = parts[3];
         User bidder = new UserDAO().findById(bidderId);
         if (bidder == null) {
-            send(BidResult.failure(auctionId, amount, "Người dùng không tồn tại!"));
+            send(BidResult.failure(auctionId, amount, ErrorCode.USER_NOT_FOUND,
+                    "Người dùng không tồn tại."));
             return;
         }
 
-        // Trước khi bid, lấy thông tin người đang dẫn đầu để notify nếu họ bị outbid
+        // Trước khi bid, lấy thông tin người đang dẫn đầu để thông báo nếu họ bị vượt giá.
         Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
         String prevBidderId = (auction != null && auction.getHighestBid() != null) 
                                 ? auction.getHighestBid().getBidder().getUserId() : null;
@@ -836,14 +851,14 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             double lockedCurrent = userDao.getLockedBalance(bidderId);
             send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availCurrent, lockedCurrent));
 
-            // 2. Cập nhật số dư cho người vừa bị OUTBID (nếu có và khác người hiện tại)
+            // 2. Cập nhật số dư cho người vừa bị vượt giá nếu có và khác người hiện tại.
             if (prevBidderId != null && !prevBidderId.equals(bidderId)) {
                 double availPrev = userDao.getBalance(prevBidderId);
                 double lockedPrev = userDao.getLockedBalance(prevBidderId);
                 String balanceMsg = String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availPrev, lockedPrev);
                 server.sendToUser(prevBidderId, balanceMsg);
 
-                // Gửi Notification OUTBID
+                // Gửi notification cho người vừa bị vượt giá.
                 NotificationService.notifyUser(server, prevBidderId,
                     Notification.Type.AUCTION_OUTBID,
                     "Bạn đã bị vượt giá!",
@@ -860,7 +875,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                         bidder.getUsername(), amount, itemName));
             }
 
-            // 4. Smart Broadcast: Chỉ gửi phiên vừa thay đổi
+            // 4. Broadcast tối ưu: chỉ gửi phiên vừa thay đổi.
             if (updated != null) server.broadcast(updated);
         }
     }
@@ -915,13 +930,13 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
         System.out.println(">>> [NEW_USER] User " + username + " registered.");
         
-        // 1. Notify all Admins in DB + push signal
+        // 1. Tạo notification cho tất cả admin trong DB và đẩy tín hiệu theo thời gian thực.
         NotificationService.notifyAdmins(server, 
             Notification.Type.ADMIN_NEW_USER, 
             "Người dùng mới", 
             "Người dùng " + username + " vừa đăng ký tài khoản mới.");
 
-        // 2. Broadcast for real-time table refresh (if admin is on User management tab)
+        // 2. Broadcast để bảng quản lý user của admin refresh theo thời gian thực.
         server.broadcastToRole("ADMIN", "USERS_UPDATED");
     }
 
@@ -930,7 +945,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         UserDAO userDao = new UserDAO();
         if (userDao.updatePendingSeller(userId, true)) {
             System.out.println(">>> [SELLER_REQ] User " + userId + " requested to become Seller.");
-            // 1. Thông báo socket (real-time refresh bảng admin)
+            // 1. Thông báo qua socket để bảng admin refresh theo thời gian thực.
             server.broadcastToRole("ADMIN", "NEW_SELLER_REQUEST:" + userId);
             
             // 2. Lưu notification vào DB cho tất cả Admin
@@ -963,7 +978,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             // Thông báo cho tất cả Admin để refresh bảng người dùng
             server.broadcastToRole("ADMIN", "USERS_UPDATED");
 
-            // Re-broadcast all auctions to update role-based UI if needed
+            // Broadcast lại danh sách phiên để UI phụ thuộc role cập nhật nếu cần.
             server.broadcast(AuctionManager.getInstance().getAllAuctions());
         }
     }
@@ -986,7 +1001,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             // Thông báo cho tất cả Admin để refresh bảng người dùng
             server.broadcastToRole("ADMIN", "USERS_UPDATED");
 
-            // Re-broadcast all auctions to update role-based UI if needed
+            // Broadcast lại danh sách phiên để UI phụ thuộc role cập nhật nếu cần.
             server.broadcast(AuctionManager.getInstance().getAllAuctions());
         }
     }
@@ -1010,7 +1025,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Lưu yêu cầu nạp tiền qua chuyển khoản ngân hàng.
-     * Format: "DEPOSIT_REQUEST:<userId>:<amount>:<requestId>"
+     * Định dạng: "DEPOSIT_REQUEST:<userId>:<amount>:<requestId>"
      * Phản hồi: DEPOSIT_REQUEST_OK | DEPOSIT_REQUEST_FAILED:<reason>
      */
     private void handleDepositRequest(String msg) {
@@ -1060,7 +1075,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Admin duyệt hoặc từ chối yêu cầu nạp tiền.
-     * Format: "DEPOSIT_REVIEW:<requestId>:<APPROVED|REJECTED>:<adminNote>"
+     * Định dạng: "DEPOSIT_REVIEW:<requestId>:<APPROVED|REJECTED>:<adminNote>"
      * Phản hồi: DEPOSIT_REVIEW_OK | DEPOSIT_REVIEW_FAILED:<reason>
      */
     private void handleDepositReview(String msg) {
@@ -1134,8 +1149,8 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     }
 
     /**
-     * Format: "CHAT_SEND:<senderId>:<receiverId>:<content...>"
-     * Content có thể chứa ':' và Unicode emoji.
+     * Định dạng: "CHAT_SEND:<senderId>:<receiverId>:<content...>"
+     * Nội dung có thể chứa dấu ':' và ký tự Unicode.
      */
     private void handleChatSend(String msg) {
         String[] parts = msg.split(":", 4);
@@ -1159,7 +1174,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
             return;
         }
 
-        // Echo lại cho sender (xác nhận đã gửi) + push cho receiver real-time
+        // Gửi lại cho người gửi để xác nhận, đồng thời đẩy tin mới cho người nhận theo thời gian thực.
         send(saved);
         server.sendToUser(receiverId, saved);
 
@@ -1236,14 +1251,20 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     }
 
     // =========================================================================
-    // FRIEND handlers
+    // Các handler xử lý luồng bạn bè.
     // =========================================================================
 
     /** FRIEND_REQUEST:<fromId>:<toId> */
     private void handleFriendRequest(String msg) {
         String[] p = msg.split(":", 3);
-        if (p.length < 3) return;
+        if (!requireFriendCommandParts("FRIEND_REQUEST", p, 3)) {
+            return;
+        }
         String fromId = p[1], toId = p[2];
+        if (fromId.equals(toId)) {
+            send("FRIEND_REQUEST_FAILED:Không thể kết bạn với chính mình");
+            return;
+        }
         database.FriendshipDAO dao = new database.FriendshipDAO();
         if (!dao.sendRequest(fromId, toId)) {
             send("FRIEND_REQUEST_FAILED:Đã tồn tại quan hệ");
@@ -1253,7 +1274,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         // Refresh bundle cho cả 2 phía
         pushFriendBundle(fromId);
         pushFriendBundle(toId);
-        // Notify người được mời
+        // Gửi notification cho người được mời kết bạn.
         UserDAO userDao = new UserDAO();
         User from = userDao.findById(fromId);
         String fromName = from != null ? from.getUsername() : fromId;
@@ -1266,7 +1287,9 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     /** FRIEND_ACCEPT:<requesterId>:<addresseeId(=me)> */
     private void handleFriendAccept(String msg) {
         String[] p = msg.split(":", 3);
-        if (p.length < 3) return;
+        if (!requireFriendCommandParts("FRIEND_ACCEPT", p, 3)) {
+            return;
+        }
         String requesterId = p[1], addresseeId = p[2];
         database.FriendshipDAO dao = new database.FriendshipDAO();
         if (!dao.accept(requesterId, addresseeId)) {
@@ -1276,7 +1299,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         send("FRIEND_ACCEPT_OK:" + requesterId);
         pushFriendBundle(requesterId);
         pushFriendBundle(addresseeId);
-        // Notify người gửi lời mời
+        // Gửi notification cho người đã gửi lời mời.
         UserDAO userDao = new UserDAO();
         User addressee = userDao.findById(addresseeId);
         String addresseeName = addressee != null ? addressee.getUsername() : addresseeId;
@@ -1289,8 +1312,13 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     /** FRIEND_DECLINE:<requesterId>:<addresseeId> */
     private void handleFriendDecline(String msg) {
         String[] p = msg.split(":", 3);
-        if (p.length < 3) return;
-        new database.FriendshipDAO().decline(p[1], p[2]);
+        if (!requireFriendCommandParts("FRIEND_DECLINE", p, 3)) {
+            return;
+        }
+        if (!new database.FriendshipDAO().decline(p[1], p[2])) {
+            send("FRIEND_DECLINE_FAILED");
+            return;
+        }
         pushFriendBundle(p[1]);
         pushFriendBundle(p[2]);
     }
@@ -1298,14 +1326,18 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     /** FRIEND_LIST:<userId> */
     private void handleFriendList(String msg) {
         String[] p = msg.split(":", 2);
-        if (p.length < 2) return;
+        if (!requireFriendCommandParts("FRIEND_LIST", p, 2)) {
+            return;
+        }
         send(new database.FriendshipDAO().getFriendBundle(p[1]));
     }
 
     /** FRIEND_STATUS:<myId>:<otherId> */
     private void handleFriendStatus(String msg) {
         String[] p = msg.split(":", 3);
-        if (p.length < 3) return;
+        if (!requireFriendCommandParts("FRIEND_STATUS", p, 3)) {
+            return;
+        }
         String status = new database.FriendshipDAO().getStatus(p[1], p[2]);
         send("FRIEND_STATUS_RESULT:" + p[2] + ":" + status);
     }
@@ -1313,8 +1345,19 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     /** USER_SEARCH:<myId>:<query...> */
     private void handleUserSearch(String msg) {
         String[] p = msg.split(":", 3);
-        if (p.length < 3) return;
+        if (!requireFriendCommandParts("USER_SEARCH", p, 3)) {
+            return;
+        }
         send(new database.FriendshipDAO().search(p[1], p[2]));
+    }
+
+    private boolean requireFriendCommandParts(String command, String[] parts, int minLength) {
+        if (parts.length >= minLength) {
+            return true;
+        }
+        send(ErrorResponse.of(ErrorCode.COMMAND_FORMAT_INVALID,
+                "Lệnh " + command + " sai định dạng."));
+        return false;
     }
 
     /** Push FriendBundle tới user nếu đang online. */

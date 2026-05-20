@@ -3,6 +3,7 @@ package model.manager;
 import database.AutoBidDAO;
 import database.BidTransactionDAO;
 import database.UserDAO;
+import exception.ExceptionMapper;
 import model.auction.Auction;
 import model.auction.AutoBid;
 import model.user.User;
@@ -13,7 +14,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages Auto-Bidding logic.
+ * Quản lý toàn bộ logic Auto-Bid trong bộ nhớ và đồng bộ với database.
+ *
+ * <p>Class này chịu trách nhiệm đăng ký, hủy, thực thi và dọn dẹp Auto-Bid.
+ * Các thay đổi tiền bị khóa cũng được xử lý tại đây để tránh khóa trùng tiền
+ * giữa bid thủ công và Auto-Bid.
  */
 public class AutoBidManager {
     private static volatile AutoBidManager instance;
@@ -43,22 +48,27 @@ public class AutoBidManager {
     }
 
     /**
-     * Registers a new Auto-Bid for a user.
-     * Locks the balance immediately.
+     * Đăng ký hoặc cập nhật Auto-Bid cho một user trong một phiên.
+     *
+     * <p>Khi đăng ký thành công, hệ thống khóa ngay số tiền maxBid để đảm bảo user
+     * thật sự có khả năng thanh toán nếu thắng. Nếu user đang dẫn đầu bằng bid thủ công,
+     * phần tiền thủ công đang khóa sẽ được mở trước để tránh khóa cùng một khoản tiền hai lần.
      */
     public synchronized String registerAutoBid(String userId, String auctionId, double maxBid, double increment) {
-        // 1. Check if user has enough balance to lock
+        // 1. Kiểm tra user tồn tại trước khi thao tác với số dư.
         User user = userDAO.findById(userId);
         if (user == null) return "USER_NOT_FOUND";
         
-        // If there's an existing auto-bid, release its lock first to simplify update
+        // Nếu đã có Auto-Bid cũ, mở khóa khoản cũ trước để thao tác cập nhật rõ ràng.
+        // Nếu bước lưu mới thất bại, hệ thống có thể khôi phục tiền cho user ngay.
         AutoBid existing = autoBidDAO.findByUserAndAuction(userId, auctionId);
         if (existing != null) {
             userDAO.unlockBalance(userId, existing.getMaxBid());
             removeAutoBidFromMemory(existing);
         } else {
-            // FIX: If no existing AutoBid, check if they have a manual bid as leader
-            // to avoid double-locking (manual bid lock + new autobid lock)
+            // Nếu user đang dẫn đầu bằng bid thủ công, mở khóa khoản bid đó trước
+            // khi khóa maxBid mới.
+            // Việc này tránh locked_balance bị cộng cả bid thủ công lẫn Auto-Bid cho cùng một user.
             Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
             if (auction != null && auction.getHighestBid() != null 
                     && auction.getHighestBid().getBidder().getUserId().equals(userId)) {
@@ -73,18 +83,19 @@ public class AutoBidManager {
             return "INSUFFICIENT_BALANCE";
         }
 
-        // 2. Lock the balance
+        // 2. Khóa số tiền maxBid để giữ cam kết thanh toán cho Auto-Bid.
         if (!userDAO.lockBalance(userId, maxBid)) {
             return "LOCK_FAILED";
         }
 
-        // 3. Save to DB and Memory
+        // 3. Lưu Auto-Bid xuống DB trước, sau đó mới đưa vào bộ nhớ để trạng thái không bị lệch.
         AutoBid newAutoBid = new AutoBid(UUID.randomUUID().toString(), auctionId, userId, maxBid, increment);
         if (autoBidDAO.save(newAutoBid)) {
             auctionAutoBids.computeIfAbsent(auctionId, id -> new ArrayList<>()).add(newAutoBid);
             return "SUCCESS";
         } else {
-            userDAO.unlockBalance(userId, maxBid); // Rollback lock if DB save fails
+            // Nếu DB lưu thất bại, mở khóa lại ngay để user không bị treo tiền vô lý.
+            userDAO.unlockBalance(userId, maxBid);
             return "DB_ERROR";
         }
     }
@@ -93,10 +104,10 @@ public class AutoBidManager {
         AutoBid existing = autoBidDAO.findByUserAndAuction(userId, auctionId);
         if (existing == null) return false;
 
-        // 1. Release lock
+        // 1. Mở khóa toàn bộ maxBid đang được giữ cho Auto-Bid này.
         userDAO.unlockBalance(userId, existing.getMaxBid());
 
-        // 2. Remove from DB and Memory
+        // 2. Xóa khỏi DB trước, sau đó xóa khỏi bộ nhớ để dữ liệu sau restart vẫn đúng.
         if (autoBidDAO.deleteByUserAndAuction(userId, auctionId)) {
             removeAutoBidFromMemory(existing);
             return true;
@@ -112,8 +123,11 @@ public class AutoBidManager {
     }
 
     /**
-     * The core logic: Executes Auto-Bid battle after a manual bid.
-     * Should be called from ConcurrentBidManager while holding the auction lock.
+     * Thực thi cuộc đua Auto-Bid sau khi có một bid thủ công hoặc một Auto-Bid mới.
+     *
+     * <p>Hàm này cần được gọi khi ConcurrentBidManager đang giữ lock của phiên.
+     * Nhờ vậy toàn bộ quá trình chọn Auto-Bid thắng, đặt giá tự động và dọn Auto-Bid thua
+     * không bị race condition.
      */
     public void executeAutoBids(String auctionId, BidTransactionDAO bidDAO) {
         List<AutoBid> autoBids = auctionAutoBids.get(auctionId);
@@ -174,21 +188,22 @@ public class AutoBidManager {
 
         String currentWinnerId = (auction.getHighestBid() != null) ? auction.getHighestBid().getBidder().getUserId() : null;
 
-        // 4. Nếu người thắng hiện tại là người có Auto-Bid tốt nhất, chỉ cần nâng giá nếu cần thiết
+        // 4. Nếu người thắng hiện tại có Auto-Bid tốt nhất,
+        // chỉ cần nâng giá khi mức hiện tại chưa đủ để vượt người thứ hai.
         if (best.getUserId().equals(currentWinnerId)) {
             if (secondBest != null) {
                 double neededPrice = secondBest.getMaxBid() + best.getIncrement();
                 if (neededPrice > best.getMaxBid()) neededPrice = best.getMaxBid();
                 if (neededPrice > currentPrice) {
                     applyAutoBid(auction, best, neededPrice, bidDAO);
-                    // Sau khi apply, check láº¡i xem cÃ³ ai vá»«a bá»‹ loáº¡i khÃ´ng (Recursion-like check)
+                    // Sau khi áp dụng bid tự động, kiểm tra lại để loại Auto-Bid vừa không còn đủ giá.
                     executeAutoBids(auctionId, bidDAO); 
                 }
             }
             return;
         }
 
-        // 5. Tính toán giá nhảy (Instant Jump)
+        // 5. Tính toán giá nhảy tức thì để Auto-Bid tốt nhất vượt lên đúng mức cần thiết.
         double priceToJump;
         if (secondBest != null) {
             priceToJump = secondBest.getMaxBid() + best.getIncrement();
@@ -201,7 +216,7 @@ public class AutoBidManager {
 
         applyAutoBid(auction, best, priceToJump, bidDAO);
         
-        // 6. Đệ quy kiểm tra lại để loại bỏ các Auto-Bid vừa bị outbid bởi giá mới
+        // 6. Kiểm tra lại để loại bỏ các Auto-Bid vừa bị vượt giá bởi mức giá mới.
         executeAutoBids(auctionId, bidDAO);
     }
 
@@ -215,17 +230,17 @@ public class AutoBidManager {
         double prevAmount   = (prevBid != null) ? prevBid.getBidAmount() : 0;
 
         try {
-            // 1. Memory update
+            // 1. Cập nhật phiên trong bộ nhớ trước để các observer thấy giá mới ngay lập tức.
             auction.placeBid(bidder, amount, model.auction.BidTransaction.BidType.AUTO_BID);
             
-            // 2. DB update
+            // 2. Ghi giao dịch Auto-Bid xuống DB nếu luồng gọi có truyền DAO.
             if (bidDAO != null) {
                 model.auction.BidTransaction latest = auction.getHighestBid();
                 bidDAO.save(auction.getAuctionId(), bidder.getUserId(), amount,
                         latest.getBidType(), latest.getTimestamp());
             }
 
-            // 3. Giải phóng tiền cho người bị outbid (nếu người đó chỉ dùng manual bid)
+            // 3. Giải phóng tiền cho người bị vượt giá nếu người đó chỉ dùng bid thủ công.
             if (prevBidderId != null && !prevBidderId.equals(ab.getUserId())) {
                 AutoBid prevAB = autoBidDAO.findByUserAndAuction(prevBidderId, auction.getAuctionId());
                 if (prevAB == null) {
@@ -237,21 +252,22 @@ public class AutoBidManager {
                 bidder.getUsername(), amount, auction.getAuctionId());
             
         } catch (Exception e) {
-            System.err.println(">>> [AutoBid ERROR] " + e.getMessage());
+            System.err.println(">>> [AutoBid ERROR] " + ExceptionMapper.logMessage(e));
         }
     }
 
     /**
      * Dọn dẹp toàn bộ Auto-Bids khi phiên bị HỦY hoặc XÓA.
      * Giải phóng TOÀN BỘ số tiền maxBid đã cam kết cho mọi người tham gia.
-     * @return Danh sách UserID đã được giải phóng Auto-Bid (để tránh giải phóng trùng lặp manual bid).
+     * @return Danh sách ID người dùng đã được giải phóng Auto-Bid
+     *         để tránh mở khóa trùng bid thủ công.
      */
     public synchronized java.util.Set<String> cleanupForCancellation(String auctionId) {
         java.util.Set<String> unlockedUserIds = new java.util.HashSet<>();
         List<AutoBid> autoBids = auctionAutoBids.remove(auctionId);
         
         if (autoBids == null) {
-            // Đề phòng trường hợp memory bị trống, load từ DB
+            // Đề phòng trường hợp bộ nhớ bị trống, nạp lại danh sách Auto-Bid từ DB.
             autoBids = autoBidDAO.findAll().stream()
                     .filter(ab -> ab.getAuctionId().equals(auctionId))
                     .toList();
@@ -279,7 +295,7 @@ public class AutoBidManager {
 
         for (AutoBid ab : autoBids) {
             if (ab.getUserId().equals(winnerId)) {
-                // Winner: Chỉ giải phóng phần THỪA (MaxBid - Giá thắng)
+                // Người thắng: chỉ giải phóng phần THỪA (MaxBid - Giá thắng).
                 // Giữ lại đúng 'finalPrice' trong locked_balance để phục vụ thanh toán
                 double excess = ab.getMaxBid() - finalPrice;
                 if (excess > 0) {
@@ -289,7 +305,7 @@ public class AutoBidManager {
                             ab.getUserId(), excess, finalPrice);
                 }
             } else {
-                // Loser: giải phóng toàn bộ quỹ đã cam kết
+                // Người thua: giải phóng toàn bộ quỹ đã cam kết.
                 userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
             }
             autoBidDAO.delete(ab.getAutoBidId());
