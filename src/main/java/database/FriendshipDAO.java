@@ -148,9 +148,9 @@ public class FriendshipDAO {
      */
     public Friendship.SearchBundle search(String myId, String query) {
         UserDAO userDao = new UserDAO();
-        List<model.user.User> users = userDao.searchByUsername(query, myId);
+        List<User> users = userDao.searchByUsername(query, myId);
         List<Friendship.SearchResult> results = new ArrayList<>();
-        for (model.user.User u : users) {
+        for (User u : users) {
             String status = getStatus(myId, u.getUserId());
             results.add(new Friendship.SearchResult(
                     u.getUserId(), u.getUsername(),
@@ -165,8 +165,10 @@ public class FriendshipDAO {
         Friendship f = new Friendship();
         f.setRequesterId(rs.getString("requester_id"));
         f.setAddresseeId(rs.getString("addressee_id"));
-        try { f.setStatus(Status.valueOf(rs.getString("status"))); }
-        catch (IllegalArgumentException ignored) {}
+        try {
+            f.setStatus(Status.valueOf(rs.getString("status")));
+        } catch (IllegalArgumentException ignored) {
+        }
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) f.setCreatedAt(ts.toLocalDateTime());
         f.setPartnerId(rs.getString("partner_id"));

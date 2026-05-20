@@ -137,8 +137,13 @@ public class AppState {
     public javafx.beans.property.IntegerProperty pendingFriendCountProperty() {
         return pendingFriendCount;
     }
-    public int getPendingFriendCount() { return pendingFriendCount.get(); }
-    public void setPendingFriendCount(int v) { pendingFriendCount.set(v); }
+    public int getPendingFriendCount() {
+        return pendingFriendCount.get();
+    }
+
+    public void setPendingFriendCount(int v) {
+        pendingFriendCount.set(v);
+    }
 
     /** Hook để mở chat từ bất kỳ controller nào (vd: item_details → mở tab Tin nhắn của dashboard). */
     private java.util.function.Consumer<String[]> openChatHook;

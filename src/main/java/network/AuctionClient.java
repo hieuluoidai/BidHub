@@ -202,11 +202,15 @@ public class AuctionClient {
 
             // 5e. Friendship.Bundle — danh sách bạn bè + lời mời
             } else if (data instanceof model.friendship.Friendship.Bundle fb) {
-                for (var l : friendBundleListeners) { l.accept(fb); }
+                for (var l : friendBundleListeners) {
+                    l.accept(fb);
+                }
 
             // 5f. Friendship.SearchBundle — kết quả tìm kiếm user
             } else if (data instanceof model.friendship.Friendship.SearchBundle sb2) {
-                for (var l : friendSearchListeners) { l.accept(sb2); }
+                for (var l : friendSearchListeners) {
+                    l.accept(sb2);
+                }
 
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {

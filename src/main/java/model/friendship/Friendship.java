@@ -20,31 +20,72 @@ public class Friendship implements Serializable {
     private String partnerAvatarPath;
     private String partnerRole;
 
-    public Friendship() {}
+    public Friendship() {
+    }
 
-    public String getRequesterId() { return requesterId; }
-    public void setRequesterId(String v) { this.requesterId = v; }
+    public String getRequesterId() {
+        return requesterId;
+    }
 
-    public String getAddresseeId() { return addresseeId; }
-    public void setAddresseeId(String v) { this.addresseeId = v; }
+    public void setRequesterId(String v) {
+        this.requesterId = v;
+    }
 
-    public Status getStatus() { return status; }
-    public void setStatus(Status v) { this.status = v; }
+    public String getAddresseeId() {
+        return addresseeId;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime v) { this.createdAt = v; }
+    public void setAddresseeId(String v) {
+        this.addresseeId = v;
+    }
 
-    public String getPartnerId() { return partnerId; }
-    public void setPartnerId(String v) { this.partnerId = v; }
+    public Status getStatus() {
+        return status;
+    }
 
-    public String getPartnerUsername() { return partnerUsername; }
-    public void setPartnerUsername(String v) { this.partnerUsername = v; }
+    public void setStatus(Status v) {
+        this.status = v;
+    }
 
-    public String getPartnerAvatarPath() { return partnerAvatarPath; }
-    public void setPartnerAvatarPath(String v) { this.partnerAvatarPath = v; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-    public String getPartnerRole() { return partnerRole; }
-    public void setPartnerRole(String v) { this.partnerRole = v; }
+    public void setCreatedAt(LocalDateTime v) {
+        this.createdAt = v;
+    }
+
+    public String getPartnerId() {
+        return partnerId;
+    }
+
+    public void setPartnerId(String v) {
+        this.partnerId = v;
+    }
+
+    public String getPartnerUsername() {
+        return partnerUsername;
+    }
+
+    public void setPartnerUsername(String v) {
+        this.partnerUsername = v;
+    }
+
+    public String getPartnerAvatarPath() {
+        return partnerAvatarPath;
+    }
+
+    public void setPartnerAvatarPath(String v) {
+        this.partnerAvatarPath = v;
+    }
+
+    public String getPartnerRole() {
+        return partnerRole;
+    }
+
+    public void setPartnerRole(String v) {
+        this.partnerRole = v;
+    }
 
     /** Danh sách bạn bè + lời mời đang chờ gửi về client. */
     public static final class Bundle implements Serializable {
@@ -79,6 +120,8 @@ public class Friendship implements Serializable {
     public static final class SearchBundle implements Serializable {
         private static final long serialVersionUID = 1L;
         public final List<SearchResult> items;
-        public SearchBundle(List<SearchResult> items) { this.items = items; }
+        public SearchBundle(List<SearchResult> items) {
+            this.items = items;
+        }
     }
 }

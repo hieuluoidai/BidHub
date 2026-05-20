@@ -34,12 +34,16 @@ public final class FriendCenter {
         clientBundleListener = bundle -> Platform.runLater(() -> {
             int pending = bundle.pending != null ? bundle.pending.size() : 0;
             AppState.getInstance().setPendingFriendCount(pending);
-            for (var l : BUNDLE_LISTENERS) l.accept(bundle);
+            for (var l : BUNDLE_LISTENERS) {
+                l.accept(bundle);
+            }
         });
         client.addFriendBundleListener(clientBundleListener);
 
         clientSearchListener = sb -> Platform.runLater(() -> {
-            for (var l : SEARCH_LISTENERS) l.accept(sb);
+            for (var l : SEARCH_LISTENERS) {
+                l.accept(sb);
+            }
         });
         client.addFriendSearchListener(clientSearchListener);
 

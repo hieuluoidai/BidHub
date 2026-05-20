@@ -12,11 +12,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import model.friendship.Friendship;
-import model.manager.AppState;
 import utils.FriendCenter;
 import utils.ImageStorageService;
-
-import java.util.List;
 import java.util.function.Consumer;
 
 public class FriendsController {
