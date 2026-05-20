@@ -36,7 +36,14 @@
       "Bash(mvn help:all-profiles)",
       "Bash(mvn -q -DskipTests compile)",
       "Bash(mvn -q -DskipTests test-compile)",
-      "Bash(mvn -q -DskipTests test)"
+      "Bash(mvn -q -DskipTests test)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\hp\\\\git\\\\bai-tap-lon-ltnc\\\\BidHub\")",
+      "Bash(mvn checkstyle:check)",
+      "Bash(grep -v \"^$\")",
+      "Bash(ssh *)",
+      "Bash(mvn dependency:tree -Dincludes=mysql)",
+      "Bash(Get-Content \"C:\\\\Users\\\\hp\\\\git\\\\bai-tap-lon-ltnc\\\\BidHub\\\\src\\\\main\\\\resources\\\\view\\\\style.css\")",
+      "Bash(Select-Object -Last 30)"
     ]
   }
 }
