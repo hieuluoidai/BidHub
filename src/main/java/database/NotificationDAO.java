@@ -32,6 +32,46 @@ public class NotificationDAO {
         return null;
     }
 
+    /**
+     * Gộp thông báo chat: nếu đã có thông báo CHAT_NEW_MESSAGE chưa đọc từ cùng sender,
+     * cập nhật nội dung thay vì tạo mới — tránh spam thông báo.
+     * Trả về id (hoặc "updated") nếu thành công, null nếu lỗi.
+     */
+    public String upsertChat(String receiverId, String senderId, String title, String message) {
+        String updSql = "UPDATE notifications "
+                      + "SET title = ?, message = ?, created_at = CURRENT_TIMESTAMP "
+                      + "WHERE user_id = ? AND type = 'CHAT_NEW_MESSAGE' "
+                      + "  AND source_id = ? AND is_read = 0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement upd = conn.prepareStatement(updSql)) {
+            upd.setString(1, title);
+            upd.setString(2, truncate(message, 500));
+            upd.setString(3, receiverId);
+            upd.setString(4, senderId);
+            if (upd.executeUpdate() > 0) return "updated";
+        } catch (SQLException e) {
+            System.err.println("Lỗi upsert chat notification: " + e.getMessage());
+            return null;
+        }
+        // Không có thông báo cũ → insert mới với source_id
+        String id = "n-" + UUID.randomUUID().toString().substring(0, 12);
+        String insSql = "INSERT INTO notifications "
+                      + "(notification_id, user_id, type, title, message, source_id) "
+                      + "VALUES (?, ?, 'CHAT_NEW_MESSAGE', ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ins = conn.prepareStatement(insSql)) {
+            ins.setString(1, id);
+            ins.setString(2, receiverId);
+            ins.setString(3, title);
+            ins.setString(4, truncate(message, 500));
+            ins.setString(5, senderId);
+            if (ins.executeUpdate() > 0) return id;
+        } catch (SQLException e) {
+            System.err.println("Lỗi insert chat notification: " + e.getMessage());
+        }
+        return null;
+    }
+
     /** Lấy thông báo mới nhất của 1 user (giới hạn N). */
     public List<Notification> findRecent(String userId, int limit) {
         List<Notification> list = new ArrayList<>();

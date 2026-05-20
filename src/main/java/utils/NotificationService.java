@@ -31,6 +31,20 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Gộp thông báo tin nhắn chat: nếu receiver đã có thông báo chưa đọc từ sender này,
+     * cập nhật nội dung thay vì tạo mới — tránh spam thông báo.
+     */
+    public static void notifyChat(AuctionServer server, String receiverId,
+                                  String senderId, String senderName, String preview) {
+        if (receiverId == null) return;
+        String title = "Tin nhắn mới từ " + senderName;
+        String id = DAO.upsertChat(receiverId, senderId, title, preview);
+        if (id != null && server != null) {
+            server.sendToUser(receiverId, new Notification.RefreshSignal());
+        }
+    }
+
     /** Tạo notification cho tất cả Admin trong DB + push refresh signal cho admin online. */
     public static void notifyAdmins(AuctionServer server,
                                     Notification.Type type, String title, String message) {

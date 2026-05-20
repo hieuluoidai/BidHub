@@ -1151,15 +1151,12 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         send(saved);
         server.sendToUser(receiverId, saved);
 
-        // Notification cho receiver
+        // Notification cho receiver — gộp thay vì tạo mới từng tin
         UserDAO userDao = new UserDAO();
         User sender = userDao.findById(senderId);
         String senderName = sender != null ? sender.getUsername() : senderId;
         String preview = content.length() > 80 ? content.substring(0, 77) + "..." : content;
-        NotificationService.notifyUser(server, receiverId,
-                Notification.Type.CHAT_NEW_MESSAGE,
-                "Tin nhắn mới từ " + senderName,
-                preview);
+        NotificationService.notifyChat(server, receiverId, senderId, senderName, preview);
     }
 
     private void handleChatFetch(String msg) {
