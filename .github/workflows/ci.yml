@@ -40,11 +40,7 @@ jobs:
 
       - name: Initialize Database
         run: |
-          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/schema.sql
-          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_users.sql
-          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_balance_and_states.sql
-          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_item_image.sql
-          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" auction_db < sql/migration_autobid.sql
+          mysql -h"127.0.0.1" -P3306 -u"root" -p"password" < sql/all_in_one.sql
 
       - name: Check coding conventions (Checkstyle)
         run: mvn --batch-mode --no-transfer-progress checkstyle:check
