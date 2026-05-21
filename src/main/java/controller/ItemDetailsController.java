@@ -827,59 +827,59 @@ public class ItemDetailsController {
         btnCancelAutoBid.setDisable(true);
     }
 
+    // Hàm này được gọi từ bên trong Platform.runLater() của AuctionClient,
+    // nên không cần thêm Platform.runLater() bên trong nữa.
     private void handleAutoBidResponse(String msg) {
-        Platform.runLater(() -> {
-            if (msg.contains(":") && !msg.startsWith("AUTOBID_FAILED")) {
-                String[] parts = msg.split(":");
-                if (parts.length > 1 && !parts[1].equals(auction.getAuctionId())) return;
-            }
+        if (msg.contains(":") && !msg.startsWith("AUTOBID_FAILED")) {
+            String[] parts = msg.split(":");
+            if (parts.length > 1 && !parts[1].equals(auction.getAuctionId())) return;
+        }
 
-            if (msg.startsWith("AUTOBID_OK")) {
-                String[] parts = msg.split(":");
-                if (parts.length >= 3) {
-                    try {
-                        double balance = Double.parseDouble(parts[2]);
-                        AppState.getInstance().getCurrentUser().setBalance(balance);
-                    } catch (NumberFormatException ignore) {
-                    }
+        if (msg.startsWith("AUTOBID_OK")) {
+            String[] parts = msg.split(":");
+            if (parts.length >= 3) {
+                try {
+                    double balance = Double.parseDouble(parts[2]);
+                    AppState.getInstance().getCurrentUser().setBalance(balance);
+                } catch (NumberFormatException ignore) {
                 }
+            }
+            AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
+            AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", "Đã thiết lập đấu giá tự động!");
+            updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText());
+
+        } else if (msg.startsWith("MY_AUTOBID:")) {
+            String[] parts = msg.split(":");
+            if (parts.length >= 4) {
                 AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
-                AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", "Đã thiết lập đấu giá tự động!");
-                updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText());
-
-            } else if (msg.startsWith("MY_AUTOBID:")) {
-                String[] parts = msg.split(":");
-                if (parts.length >= 4) {
-                    AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
-                    updateAutoBidUI(true, parts[2], parts[3]);
-                }
-
-            } else if (msg.startsWith("MY_AUTOBID_NONE")) {
-                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
-                updateAutoBidUI(false, "", "");
-
-            } else if (msg.startsWith("CANCEL_AUTOBID_OK")) {
-                String[] parts = msg.split(":");
-                if (parts.length >= 3) {
-                    try {
-                        double balance = Double.parseDouble(parts[2]);
-                        AppState.getInstance().getCurrentUser().setBalance(balance);
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
-                AlertHelper.show(AlertHelper.Type.INFO, "Đã hủy",
-                        "Đã hủy đấu giá tự động và hoàn lại tiền khóa.");
-                updateAutoBidUI(false, "", "");
-
-            } else if (msg.startsWith("AUTOBID_FAILED")) {
-                String reason = msg.substring("AUTOBID_FAILED:".length());
-                AlertHelper.show(AlertHelper.Type.ERROR, "Thất bại",
-                        "Không thể thiết lập Auto-Bid: " + reason);
-                btnSetAutoBid.setDisable(false);
-                btnSetAutoBid.setText("Thiết lập Auto-Bid");
+                updateAutoBidUI(true, parts[2], parts[3]);
             }
-        });
+
+        } else if (msg.startsWith("MY_AUTOBID_NONE")) {
+            AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
+            updateAutoBidUI(false, "", "");
+
+        } else if (msg.startsWith("CANCEL_AUTOBID_OK")) {
+            String[] parts = msg.split(":");
+            if (parts.length >= 3) {
+                try {
+                    double balance = Double.parseDouble(parts[2]);
+                    AppState.getInstance().getCurrentUser().setBalance(balance);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+            AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
+            AlertHelper.show(AlertHelper.Type.INFO, "Đã hủy",
+                    "Đã hủy đấu giá tự động và hoàn lại tiền khóa.");
+            updateAutoBidUI(false, "", "");
+
+        } else if (msg.startsWith("AUTOBID_FAILED")) {
+            String reason = msg.substring("AUTOBID_FAILED:".length());
+            AlertHelper.show(AlertHelper.Type.ERROR, "Thất bại",
+                    "Không thể thiết lập Auto-Bid: " + reason);
+            btnSetAutoBid.setDisable(false);
+            btnSetAutoBid.setText("Thiết lập Auto-Bid");
+        }
     }
 
     private void updateAutoBidUI(boolean active, String max, String inc) {

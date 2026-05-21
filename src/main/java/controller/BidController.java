@@ -34,6 +34,19 @@ public class BidController {
      */
     private Consumer<BidResult> onBidDoneCallback;
 
+    /**
+     * Listener xử lý lỗi dạng String từ server (ERROR:code:msg, BID_FAILED:...).
+     * Đảm bảo dialog không bị đơ mãi nếu server gửi lỗi dạng String thay vì BidResult object.
+     */
+    private final Consumer<String> errorStringListener = msg -> {
+        if (msg == null) return;
+        if (msg.startsWith("ERROR:") || msg.startsWith("BID_FAILED")) {
+            cleanupListeners();
+            setLoading(false);
+            showError(extractErrorMessage(msg));
+        }
+    };
+
     public void setOnBidDoneCallback(Consumer<BidResult> callback) {
         this.onBidDoneCallback = callback;
     }
@@ -119,11 +132,12 @@ public class BidController {
                 return;
             }
 
-            // 1. Vô hiệu hóa nút bấm để tránh gửi trùng (Race Condition phía Client)
+            // 1. Chỉ vô hiệu hóa Confirm để tránh gửi trùng; Cancel vẫn hoạt động để thoát khi cần
             setLoading(true);
 
-            // 2. Đăng ký nhận kết quả trả về từ ConcurrentBidManager
+            // 2. Đăng ký nhận BidResult và cả lỗi dạng String từ server
             AppState.getInstance().getClient().setBidResultCallback(this::handleBidResult);
+            AppState.getInstance().getClient().addStringMessageListener(errorStringListener);
 
             // 3. Gửi lệnh BID theo giao thức đồng bộ: BID:<auctionId>:<amount>:<bidderId>
             String command = String.format("BID:%s:%.2f:%s",
@@ -147,8 +161,8 @@ public class BidController {
             return;
         }
 
-        // Gỡ callback sau khi đã nhận được phản hồi
-        AppState.getInstance().getClient().setBidResultCallback(null);
+        // Gỡ tất cả listener sau khi đã nhận được phản hồi
+        cleanupListeners();
         setLoading(false);
 
         // Báo kết quả cho các controller khác đang lắng nghe
@@ -175,14 +189,36 @@ public class BidController {
 
     @FXML
     void handleCancel() {
-        // Hủy đăng ký callback nếu thoát ngang
-        AppState.getInstance().getClient().setBidResultCallback(null);
+        // Gỡ tất cả listener nếu thoát ngang
+        cleanupListeners();
         closeStage();
     }
 
+    /**
+     * Gỡ mọi listener đã đăng ký — gọi ở mọi nơi thoát khỏi dialog.
+     */
+    private void cleanupListeners() {
+        AppState.getInstance().getClient().setBidResultCallback(null);
+        AppState.getInstance().getClient().removeStringMessageListener(errorStringListener);
+    }
+
+    /**
+     * Trích message hiển thị từ chuỗi "ERROR:CODE:message" hoặc "BID_FAILED:reason".
+     */
+    private String extractErrorMessage(String msg) {
+        if (msg.startsWith("ERROR:")) {
+            String[] parts = msg.split(":", 3);
+            return parts.length >= 3 ? parts[2] : msg;
+        }
+        if (msg.startsWith("BID_FAILED:")) {
+            return msg.substring("BID_FAILED:".length());
+        }
+        return msg;
+    }
+
     private void setLoading(boolean loading) {
+        // Chỉ khóa Confirm — Cancel luôn được bật để user có thể thoát bất cứ lúc nào
         if (confirmButton != null) confirmButton.setDisable(loading);
-        if (cancelButton != null) cancelButton.setDisable(loading);
     }
 
     private void showError(String msg) {

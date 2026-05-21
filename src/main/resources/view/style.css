@@ -420,6 +420,13 @@
     -fx-text-fill: #1D4ED8;
     -fx-font-weight: bold;
 }
+/* Override Modena: mặc định Modena đặt .label thành trắng khi row selected,
+   nhưng vì background selected của ta là xanh nhạt (#EFF6FF) nên phải giữ chữ đậm.
+   Các label đã có inline style (avatar initials màu trắng) sẽ không bị ảnh hưởng. */
+.table-view:focused .table-row-cell:filled:selected .label,
+.table-row-cell:filled:selected .label {
+    -fx-text-fill: #1D4ED8;
+}
 .table-cell {
     -fx-border-width: 0;
     -fx-padding: 0 0 0 10px;
@@ -1651,6 +1658,57 @@
 .chat-bubble-time { -fx-font-size: 10px; -fx-text-fill: #65676B; }
 .chat-status-sent { -fx-font-size: 10px; -fx-text-fill: #65676B; }
 .chat-status-read { -fx-font-size: 10px; -fx-text-fill: #0084FF; -fx-font-weight: 700; }
+/* ── Recall popup menu ───────────────────────────────────────────────────── */
+.recall-popup-box {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-color: #E5E7EB;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 24, 0, 0, 8);
+    -fx-padding: 5 0 5 0;
+    -fx-min-width: 220;
+}
+.recall-popup-item {
+    -fx-background-color: transparent;
+    -fx-padding: 10 20 10 16;
+    -fx-font-size: 13px;
+    -fx-text-fill: #374151;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-font-weight: normal;
+}
+.recall-popup-item:hover {
+    -fx-background-color: #F3F4F6;
+}
+.recall-popup-danger {
+    -fx-text-fill: #EF4444;
+}
+.recall-popup-danger:hover {
+    -fx-background-color: #FEF2F2;
+}
+.recall-popup-sep {
+    -fx-padding: 2 12 2 12;
+}
+.recall-popup-sep .line {
+    -fx-border-color: #E5E7EB;
+    -fx-border-width: 0.5;
+}
+
+/* Bubble khi bị thu hồi với tất cả */
+.chat-bubble-recalled {
+    -fx-text-fill: #9CA3AF;
+    -fx-font-style: italic;
+    -fx-font-size: 13px;
+    -fx-background-color: #F3F4F6;
+    -fx-background-radius: 16px;
+    -fx-border-color: #E5E7EB;
+    -fx-border-radius: 16px;
+    -fx-border-width: 1;
+    -fx-padding: 8 14 8 14;
+}
 
 .chat-input-bar { -fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1 0 0 0; }
 .chat-emoji-btn {

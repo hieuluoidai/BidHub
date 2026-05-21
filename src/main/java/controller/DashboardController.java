@@ -10,7 +10,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
@@ -32,7 +31,6 @@ public class DashboardController {
     @FXML private Label lblBalance;        // hiển thị số dư hiện tại
     @FXML private Label lblLockedBalance;  // hiển thị số dư bị khóa
     @FXML private TextField textSearch;
-    @FXML private ComboBox<String> comboFilter;
 
     @FXML private javafx.scene.control.ToggleGroup auctionStatusGroup;
     @FXML private javafx.scene.control.ToggleButton tglAllAuctions;
@@ -93,10 +91,6 @@ public class DashboardController {
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
      */
     public void initialize() {
-        // Khởi tạo các giá trị cho bộ lọc danh mục
-        comboFilter.setItems(FXCollections.observableArrayList("All", "Electronics", "Art", "Vehicle"));
-        comboFilter.setValue("All");
-
         // Setup personal transaction list
         setupTransactionList();
 
@@ -121,10 +115,6 @@ public class DashboardController {
 
         // Khi tìm kiếm or đổi loại hàng, bảng sẽ tự động update
         textSearch.textProperty().addListener((obs, old, newVal) -> {
-            updatePredicate();
-            renderAuctions();
-        });
-        comboFilter.valueProperty().addListener((obs, old, newVal) -> {
             updatePredicate();
             renderAuctions();
         });
@@ -346,16 +336,19 @@ public class DashboardController {
         filteredData.setPredicate(auction -> {
             if (auction == null || auction.getItem() == null) return false;
             String search = textSearch.getText().toLowerCase().trim();
-            String filter = comboFilter.getValue();
-            boolean matchesType = filter.equals("All") || auction.getItem().getItemType().equalsIgnoreCase(filter);
             boolean matchesName = auction.getItem().getItemName().toLowerCase().contains(search);
-            if (!matchesType || !matchesName) return false;
+            if (!matchesName) return false;
             String status = getSelectedStatusFilter();
             if (status.equals("SẮP DIỄN RA")) return "OPEN".equals(auction.getStatus());
             if (status.equals("ĐANG DIỄN RA")) return "RUNNING".equals(auction.getStatus());
             if (status.equals("ĐÃ KẾT THÚC")) return isAuctionEnded(auction);
             return true;
         });
+    }
+
+    @FXML
+    void handleRefresh() {
+        loadAuctionData();
     }
 
     @FXML

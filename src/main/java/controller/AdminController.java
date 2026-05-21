@@ -42,6 +42,7 @@ import database.DepositRequestDAO;
 import database.UserDAO;
 
 import utils.AlertHelper;
+import utils.ChatCenter;
 import utils.ImageStorageService;
 import utils.NotificationCenter;
 
@@ -101,8 +102,14 @@ public class AdminController {
     @FXML private Button navAuctionsBtn;
     @FXML private Button navUsersBtn;
     @FXML private Button navDepositsBtn;
+    @FXML private Button navMessagesBtn;
+    @FXML private Label lblSidebarChatBadge;
+    @FXML private Button btnCreateSession;
+    @FXML private MessagesController messagesViewController;
     @FXML private Label pageTitleLabel;
     @FXML private Label pageSubtitleLabel;
+
+    private javafx.beans.value.ChangeListener<Number> chatBadgeListener;
 
     private final ObservableList<DepositRequest> depositList = FXCollections.observableArrayList();
     private Set<String> pendingDepositUserIds = new HashSet<>();
@@ -199,6 +206,18 @@ public class AdminController {
         if (bellNotif != null && lblNotifBadge != null) {
             NotificationCenter.attach(bellNotif, lblNotifBadge, this::handleNotificationAction);
         }
+
+        // Chat badge trên sidebar
+        ChatCenter.init();
+        chatBadgeListener = (obs, oldV, newV) ->
+                javafx.application.Platform.runLater(() -> updateChatBadge(newV.intValue()));
+        AppState.getInstance().totalUnreadChatProperty().addListener(chatBadgeListener);
+        updateChatBadge(AppState.getInstance().getTotalUnreadChat());
+
+        // Hook để ItemDetails mở chat ngay trong admin dashboard
+        AppState.getInstance().setOpenChatHook(args ->
+                javafx.application.Platform.runLater(() ->
+                        openChatWith(args[0], args[1], args[2])));
 
         AppState.getInstance().getStarredAuctionIds().addListener(
                 (javafx.collections.SetChangeListener<String>) c ->
@@ -543,28 +562,17 @@ public class AdminController {
         }
         String uid = user.getUserId();
         boolean hosting = false;
-        boolean leading = false;
         for (Auction a : AppState.getInstance().getAuctionList()) {
             if (!"RUNNING".equals(a.getStatus())) {
                 continue;
             }
-            if (!hosting && uid.equals(a.getSellerId())) {
+            if (uid.equals(a.getSellerId())) {
                 hosting = true;
-            }
-            if (!leading && a.getHighestBid() != null
-                    && a.getHighestBid().getBidder() != null
-                    && uid.equals(a.getHighestBid().getBidder().getUserId())) {
-                leading = true;
-            }
-            if (hosting && leading) {
                 break;
             }
         }
         if (hosting) {
             badges.add(makeBadge("ĐANG MỞ PHIÊN", "role-hosting"));
-        }
-        if (leading) {
-            badges.add(makeBadge("DẪN ĐẦU", "role-leading"));
         }
         return badges;
     }
@@ -665,12 +673,16 @@ public class AdminController {
         if (mainTabPane != null) {
             mainTabPane.getSelectionModel().select(0);
         }
-        setActiveNav(navAuctionsBtn, navUsersBtn, navDepositsBtn);
+        setActiveNav(navAuctionsBtn, navUsersBtn, navDepositsBtn, navMessagesBtn);
         if (pageTitleLabel != null) {
             pageTitleLabel.setText("Phiên đấu giá");
         }
         if (pageSubtitleLabel != null) {
             pageSubtitleLabel.setText("Tổng quan toàn bộ phiên đấu giá trong hệ thống");
+        }
+        if (btnCreateSession != null) {
+            btnCreateSession.setVisible(true);
+            btnCreateSession.setManaged(true);
         }
     }
 
@@ -679,12 +691,57 @@ public class AdminController {
         if (mainTabPane != null) {
             mainTabPane.getSelectionModel().select(1);
         }
-        setActiveNav(navUsersBtn, navAuctionsBtn, navDepositsBtn);
+        setActiveNav(navUsersBtn, navAuctionsBtn, navDepositsBtn, navMessagesBtn);
         if (pageTitleLabel != null) {
             pageTitleLabel.setText("Quản lý người dùng");
         }
         if (pageSubtitleLabel != null) {
             pageSubtitleLabel.setText("Danh sách tất cả tài khoản trong hệ thống");
+        }
+        if (btnCreateSession != null) {
+            btnCreateSession.setVisible(false);
+            btnCreateSession.setManaged(false);
+        }
+    }
+
+    @FXML
+    void handleNavMessages() {
+        if (mainTabPane != null) {
+            mainTabPane.getSelectionModel().select(3);
+        }
+        setActiveNav(navMessagesBtn, navAuctionsBtn, navUsersBtn, navDepositsBtn);
+        if (pageTitleLabel != null) {
+            pageTitleLabel.setText("Tin nhắn & Bạn bè");
+        }
+        if (pageSubtitleLabel != null) {
+            pageSubtitleLabel.setText("Nhắn tin và quản lý kết bạn");
+        }
+        if (btnCreateSession != null) {
+            btnCreateSession.setVisible(false);
+            btnCreateSession.setManaged(false);
+        }
+        if (messagesViewController != null) {
+            messagesViewController.refreshSummaries();
+        }
+    }
+
+    /** Mở chat với 1 user — gọi từ AppState.openChatHook (vd: ItemDetailsController). */
+    public void openChatWith(String partnerId, String partnerUsername, String partnerAvatarPath) {
+        handleNavMessages();
+        if (messagesViewController != null) {
+            messagesViewController.openChatWith(partnerId, partnerUsername, partnerAvatarPath);
+        }
+    }
+
+    private void updateChatBadge(int unread) {
+        if (lblSidebarChatBadge == null) return;
+        if (unread <= 0) {
+            lblSidebarChatBadge.setVisible(false);
+            lblSidebarChatBadge.setManaged(false);
+        } else {
+            lblSidebarChatBadge.setText(unread > 99 ? "99+" : String.valueOf(unread));
+            lblSidebarChatBadge.setVisible(true);
+            lblSidebarChatBadge.setManaged(true);
         }
     }
 
@@ -701,6 +758,13 @@ public class AdminController {
 
     @FXML
     void handleLogout() {
+        if (chatBadgeListener != null) {
+            AppState.getInstance().totalUnreadChatProperty().removeListener(chatBadgeListener);
+        }
+        if (messagesViewController != null) {
+            messagesViewController.detach();
+        }
+        AppState.getInstance().setOpenChatHook(null);
         NotificationCenter.reset();
         AppState.getInstance().setCurrentUser(null);
         AppState.getInstance().getSceneManager().showLogin();
@@ -892,13 +956,17 @@ public class AdminController {
         if (mainTabPane != null) {
             mainTabPane.getSelectionModel().select(2);
         }
-        setActiveNav(navDepositsBtn, navAuctionsBtn, navUsersBtn);
+        setActiveNav(navDepositsBtn, navAuctionsBtn, navUsersBtn, navMessagesBtn);
         if (pageTitleLabel != null) {
             pageTitleLabel.setText("Yêu cầu nạp tiền");
         }
         if (pageSubtitleLabel != null) {
             pageSubtitleLabel.setText(
                     "Duyệt yêu cầu chuyển khoản ngân hàng từ người dùng");
+        }
+        if (btnCreateSession != null) {
+            btnCreateSession.setVisible(false);
+            btnCreateSession.setManaged(false);
         }
     }
 

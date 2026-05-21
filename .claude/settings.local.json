@@ -43,7 +43,10 @@
       "Bash(ssh *)",
       "Bash(mvn dependency:tree -Dincludes=mysql)",
       "Bash(Get-Content \"C:\\\\Users\\\\hp\\\\git\\\\bai-tap-lon-ltnc\\\\BidHub\\\\src\\\\main\\\\resources\\\\view\\\\style.css\")",
-      "Bash(Select-Object -Last 30)"
+      "Bash(Select-Object -Last 30)",
+      "Bash(kill %1)",
+      "Bash(dir target\\\\*.jar)",
+      "Bash(grep -E \"//|/\\\\*|\\\\*\")"
     ]
   }
 }
