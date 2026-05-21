@@ -874,14 +874,15 @@ public class AdminController {
             @Override
             protected void updateItem(String v, boolean empty) {
                 super.updateItem(v, empty);
-                setStyle("-fx-alignment: CENTER; -fx-padding: 0;");
                 if (empty) {
                     setGraphic(null);
+                    setText(null);
                 } else {
                     javafx.scene.layout.HBox box =
-                            new javafx.scene.layout.HBox(8, btnApprove, btnReject);
+                            new javafx.scene.layout.HBox(10, btnApprove, btnReject);
                     box.setAlignment(javafx.geometry.Pos.CENTER);
                     setGraphic(box);
+                    setStyle("-fx-alignment: CENTER; -fx-padding: 0;");
                 }
             }
         });

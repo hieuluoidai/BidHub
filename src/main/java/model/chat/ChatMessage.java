@@ -17,6 +17,8 @@ public class ChatMessage implements Serializable {
     private LocalDateTime sentAt;
     private LocalDateTime readAt;
     private boolean liked;
+    /** true khi sender đã thu hồi tin nhắn với tất cả mọi người. */
+    private boolean recalled;
 
     public ChatMessage() {}
 
@@ -90,6 +92,14 @@ public class ChatMessage implements Serializable {
 
     public void setLiked(boolean v) {
         this.liked = v;
+    }
+
+    public boolean isRecalled() {
+        return recalled;
+    }
+
+    public void setRecalled(boolean v) {
+        this.recalled = v;
     }
 
     /** Bundle phản hồi: danh sách tin nhắn của 1 conversation. */

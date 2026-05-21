@@ -188,6 +188,8 @@ public class ClientHandler implements Runnable {
                 handleChatMarkRead(msg);
             } else if (msg.startsWith("CHAT_LIKE:")) {
                 handleChatLike(msg);
+            } else if (msg.startsWith("CHAT_RECALL:")) {
+                handleChatRecall(msg);
             } else if (msg.startsWith("FRIEND_REQUEST:")) {
                 handleFriendRequest(msg);
             } else if (msg.startsWith("FRIEND_ACCEPT:")) {
@@ -1247,6 +1249,46 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                     Notification.Type.CHAT_LIKED,
                     likerName + " đã thích tin nhắn của bạn",
                     preview);
+        }
+    }
+
+    /**
+     * CHAT_RECALL:{@code <messageId>}:ALL  — Thu hồi với tất cả (chỉ sender).
+     * CHAT_RECALL:{@code <messageId>}:SELF — Ẩn với chính mình (sender hoặc receiver).
+     */
+    private void handleChatRecall(String msg) {
+        String[] parts = msg.split(":", 3);
+        if (parts.length < 3) {
+            send("CHAT_RECALL_FAILED:Sai định dạng");
+            return;
+        }
+        String messageId = parts[1];
+        String mode = parts[2];
+        String requesterId = this.currentUserId;
+        if (requesterId == null) {
+            send("CHAT_RECALL_FAILED:Chưa xác thực");
+            return;
+        }
+
+        database.ChatMessageDAO dao = new database.ChatMessageDAO();
+        if ("ALL".equals(mode)) {
+            model.chat.ChatMessage updated = dao.recallForAll(messageId, requesterId);
+            if (updated == null) {
+                send("CHAT_RECALL_FAILED:Không thể thu hồi");
+                return;
+            }
+            // Đẩy ChatMessage đã cập nhật (recalled=true) cho cả 2 phía
+            server.sendToUser(updated.getSenderId(), updated);
+            server.sendToUser(updated.getReceiverId(), updated);
+        } else if ("SELF".equals(mode)) {
+            if (!dao.hideSelf(messageId, requesterId)) {
+                send("CHAT_RECALL_FAILED:Không thể ẩn");
+                return;
+            }
+            // Chỉ thông báo cho người yêu cầu
+            send("CHAT_RECALLED_SELF:" + messageId);
+        } else {
+            send("CHAT_RECALL_FAILED:Mode không hợp lệ");
         }
     }
 

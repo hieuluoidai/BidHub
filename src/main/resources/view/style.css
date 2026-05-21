@@ -1364,6 +1364,7 @@
 .modern-table .centered-column .label {
     -fx-alignment: CENTER;
     -fx-text-alignment: CENTER;
+    -fx-padding: 0;
 }
 
 .modern-table .right-column .label {

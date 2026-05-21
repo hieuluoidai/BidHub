@@ -30,6 +30,9 @@ public class ChatMessageDAO {
                 + "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
                 + "read_at TIMESTAMP NULL,"
                 + "liked TINYINT(1) DEFAULT 0,"
+                + "recalled TINYINT(1) DEFAULT 0,"
+                + "hidden_by_sender TINYINT(1) DEFAULT 0,"
+                + "hidden_by_receiver TINYINT(1) DEFAULT 0,"
                 + "INDEX idx_pair_ab (sender_id, receiver_id),"
                 + "INDEX idx_pair_ba (receiver_id, sender_id),"
                 + "INDEX idx_receiver_unread (receiver_id, read_at)"
@@ -37,6 +40,18 @@ public class ChatMessageDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement()) {
             st.executeUpdate(ddl);
+            // Migration: bổ sung cột recall nếu bảng cũ chưa có
+            for (String col : new String[]{
+                    "ALTER TABLE chat_messages ADD COLUMN recalled TINYINT(1) DEFAULT 0",
+                    "ALTER TABLE chat_messages ADD COLUMN hidden_by_sender TINYINT(1) DEFAULT 0",
+                    "ALTER TABLE chat_messages ADD COLUMN hidden_by_receiver TINYINT(1) DEFAULT 0"
+            }) {
+                try {
+                    st.executeUpdate(col);
+                } catch (SQLException ignore) {
+                    // Cột đã tồn tại — bỏ qua
+                }
+            }
             tablesReady = true;
             System.out.println(">>> [CHAT] Table chat_messages sẵn sàng.");
         } catch (SQLException e) {
@@ -77,12 +92,17 @@ public class ChatMessageDAO {
         return null;
     }
 
-    /** Tin nhắn giữa 2 user (cả 2 chiều), sắp xếp tăng dần theo thời gian. */
+    /**
+     * Tin nhắn giữa 2 user (cả 2 chiều), sắp xếp tăng dần theo thời gian.
+     * uidA là người đang xem — lọc bỏ tin bị ẩn phía họ (hidden_by_sender/receiver).
+     */
     public List<ChatMessage> findConversation(String uidA, String uidB, int limit) {
         List<ChatMessage> list = new ArrayList<>();
         String sql = "SELECT * FROM chat_messages "
-                + "WHERE (sender_id = ? AND receiver_id = ?) "
-                + "   OR (sender_id = ? AND receiver_id = ?) "
+                + "WHERE ((sender_id = ? AND receiver_id = ?) "
+                + "    OR (sender_id = ? AND receiver_id = ?)) "
+                + "  AND NOT (sender_id = ? AND hidden_by_sender = 1) "
+                + "  AND NOT (receiver_id = ? AND hidden_by_receiver = 1) "
                 + "ORDER BY sent_at ASC, message_id ASC LIMIT ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -90,7 +110,9 @@ public class ChatMessageDAO {
             stmt.setString(2, uidB);
             stmt.setString(3, uidB);
             stmt.setString(4, uidA);
-            stmt.setInt(5, limit);
+            stmt.setString(5, uidA);
+            stmt.setString(6, uidA);
+            stmt.setInt(7, limit);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     list.add(map(rs));
@@ -100,6 +122,61 @@ public class ChatMessageDAO {
             System.err.println("Lỗi load conversation: " + e.getMessage());
         }
         return list;
+    }
+
+    /**
+     * Thu hồi tin nhắn với tất cả mọi người (chỉ sender mới được phép).
+     * Trả về object đã cập nhật để push cho cả 2 phía, hoặc null nếu thất bại.
+     */
+    public ChatMessage recallForAll(String messageId, String requesterId) {
+        // Kiểm tra chỉ sender mới được thu hồi
+        ChatMessage msg = findById(messageId);
+        if (msg == null || !requesterId.equals(msg.getSenderId())) {
+            return null;
+        }
+        if (msg.isRecalled()) {
+            return msg; // Đã thu hồi rồi
+        }
+        String sql = "UPDATE chat_messages SET recalled = 1 WHERE message_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, messageId);
+            if (stmt.executeUpdate() > 0) {
+                return findById(messageId);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi recallForAll: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Ẩn tin nhắn chỉ ở phía người yêu cầu (thu hồi với tôi).
+     * viewerId có thể là sender hoặc receiver.
+     * Trả về true nếu thành công.
+     */
+    public boolean hideSelf(String messageId, String viewerId) {
+        ChatMessage msg = findById(messageId);
+        if (msg == null) {
+            return false;
+        }
+        String col;
+        if (viewerId.equals(msg.getSenderId())) {
+            col = "hidden_by_sender";
+        } else if (viewerId.equals(msg.getReceiverId())) {
+            col = "hidden_by_receiver";
+        } else {
+            return false; // Không liên quan đến tin nhắn này
+        }
+        String sql = "UPDATE chat_messages SET " + col + " = 1 WHERE message_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, messageId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi hideSelf: " + e.getMessage());
+            return false;
+        }
     }
 
     /** Danh sách conversations của 1 user: 1 dòng cho mỗi partner, kèm tin gần nhất + unread. */
@@ -225,6 +302,7 @@ public class ChatMessageDAO {
         Timestamp read = rs.getTimestamp("read_at");
         if (read != null) m.setReadAt(read.toLocalDateTime());
         m.setLiked(rs.getInt("liked") == 1);
+        m.setRecalled(rs.getInt("recalled") == 1);
         return m;
     }
 }

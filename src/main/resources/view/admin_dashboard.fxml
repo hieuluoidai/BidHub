@@ -51,6 +51,17 @@
 
          <Region prefHeight="10.0" />
 
+         <Label styleClass="sidebar-section" text="LIÊN LẠC" />
+
+         <StackPane>
+            <children>
+               <Button fx:id="navMessagesBtn" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item" text="Tin nhắn" />
+               <Label fx:id="lblSidebarChatBadge" managed="false" visible="false" styleClass="sidebar-chat-badge" StackPane.alignment="CENTER_RIGHT">
+                  <StackPane.margin><Insets right="14.0" /></StackPane.margin>
+               </Label>
+            </children>
+         </StackPane>
+
          <Region VBox.vgrow="ALWAYS" />
 
          <!-- Profile + Notification Bell -->
@@ -103,7 +114,7 @@
                <Label fx:id="pageSubtitleLabel" styleClass="page-subtitle" text="Tổng quan toàn bộ phiên đấu giá trong hệ thống" />
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Button onAction="#handleCreateSession" prefHeight="42.0" prefWidth="180.0" styleClass="button-primary" text="+ Tạo phiên mới" />
+            <Button fx:id="btnCreateSession" onAction="#handleCreateSession" prefHeight="42.0" prefWidth="180.0" styleClass="button-primary" text="+ Tạo phiên mới" />
          </HBox>
 
          <!-- TAB CONTENT (tab header bị ẩn — điều hướng qua sidebar) -->
@@ -342,8 +353,7 @@
                                     <TableColumn fx:id="colDepositUsername" prefWidth="150" text="Username" />
                                     <TableColumn fx:id="colDepositAmount" prefWidth="130" style="-fx-alignment: CENTER_RIGHT;" text="Số tiền" />
                                     <TableColumn fx:id="colDepositTime" prefWidth="140" text="Thời gian gửi" />
-                                    <TableColumn fx:id="colDepositAction" prefWidth="200" text="Hành động" />
-                                 </columns>
+                                    <TableColumn fx:id="colDepositAction" prefWidth="200" style="-fx-alignment: CENTER;" styleClass="centered-column" text="Hành động" />                                 </columns>
                                  <columnResizePolicy>
                                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                                  </columnResizePolicy>
@@ -359,6 +369,10 @@
                      </children>
                   </StackPane>
                </VBox>
+            </Tab>
+
+            <Tab text="Tin nhắn">
+               <fx:include fx:id="messagesView" source="messages_view.fxml" />
             </Tab>
 
          </TabPane>

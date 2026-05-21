@@ -273,14 +273,18 @@ public class UserDAO {
      */
     public boolean unlockBalance(String userId, double amount) {
         if (amount <= 0) return false;
-        String sql = "UPDATE users SET balance = balance + ?, locked_balance = locked_balance - ? " +
-                     "WHERE user_id = ? AND locked_balance >= ?";
+        // Dùng LEAST/GREATEST để tránh silent fail khi floating-point làm amount
+        // lớn hơn locked_balance một chút (ví dụ 24.1 > 24.0 → WHERE >= thất bại).
+        // Luôn hoàn trả tối đa locked_balance, không để locked_balance âm.
+        String sql = "UPDATE users SET "
+                + "balance = balance + LEAST(?, locked_balance), "
+                + "locked_balance = GREATEST(0, locked_balance - ?) "
+                + "WHERE user_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDouble(1, amount);
             stmt.setDouble(2, amount);
             stmt.setString(3, userId);
-            stmt.setDouble(4, amount);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi giải phóng tiền: " + e.getMessage());
@@ -528,14 +532,17 @@ public class UserDAO {
         return users;
     }
 
-    /** Tìm user theo username (LIKE, tối đa 20 kết quả, bỏ qua excludeId). */
+    /** Tìm user theo username hoặc user_id (LIKE, tối đa 20 kết quả, bỏ qua excludeId). */
     public List<User> searchByUsername(String query, String excludeId) {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE username LIKE ? AND user_id != ? LIMIT 20";
+        String sql = "SELECT * FROM users "
+                + "WHERE (username LIKE ? OR user_id LIKE ?) AND user_id != ? LIMIT 20";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "%" + query + "%");
-            stmt.setString(2, excludeId == null ? "" : excludeId);
+            String pattern = "%" + query + "%";
+            stmt.setString(1, pattern);
+            stmt.setString(2, pattern);
+            stmt.setString(3, excludeId == null ? "" : excludeId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     users.add(mapResultSetToUser(rs));

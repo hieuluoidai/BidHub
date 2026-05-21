@@ -21,6 +21,7 @@ public final class ChatCenter {
     private static final List<Consumer<ChatMessage.Bundle>> BUNDLE_LISTENERS = new ArrayList<>();
     private static final List<Consumer<ChatMessage.SummaryBundle>> SUMMARY_LISTENERS = new ArrayList<>();
     private static final List<Consumer<String>> READ_RECEIPT_LISTENERS = new ArrayList<>();
+    private static final List<Consumer<String>> RECALLED_SELF_LISTENERS = new ArrayList<>();
 
     // Lưu tham chiếu lambda để gỡ khỏi AuctionClient khi reset (tránh listener trùng lặp khi đăng nhập lại)
     private static Consumer<ChatMessage> clientMsgListener;
@@ -65,6 +66,12 @@ public final class ChatCenter {
             if (msg.startsWith("CHAT_READ:")) {
                 Platform.runLater(() -> {
                     for (var l : READ_RECEIPT_LISTENERS) {
+                        l.accept(msg);
+                    }
+                });
+            } else if (msg.startsWith("CHAT_RECALLED_SELF:")) {
+                Platform.runLater(() -> {
+                    for (var l : RECALLED_SELF_LISTENERS) {
                         l.accept(msg);
                     }
                 });
@@ -118,11 +125,20 @@ public final class ChatCenter {
         READ_RECEIPT_LISTENERS.remove(l);
     }
 
+    public static void addRecalledSelfListener(Consumer<String> l) {
+        RECALLED_SELF_LISTENERS.add(l);
+    }
+
+    public static void removeRecalledSelfListener(Consumer<String> l) {
+        RECALLED_SELF_LISTENERS.remove(l);
+    }
+
     public static void reset() {
         MESSAGE_LISTENERS.clear();
         BUNDLE_LISTENERS.clear();
         SUMMARY_LISTENERS.clear();
         READ_RECEIPT_LISTENERS.clear();
+        RECALLED_SELF_LISTENERS.clear();
         AppState.getInstance().setTotalUnreadChat(0);
 
         if (wired) {

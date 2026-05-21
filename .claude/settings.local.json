@@ -48,5 +48,6 @@
       "Bash(dir target\\\\*.jar)",
       "Bash(grep -E \"//|/\\\\*|\\\\*\")"
     ]
-  }
+  },
+  "prefersReducedMotion": false
 }

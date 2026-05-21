@@ -5,11 +5,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -70,6 +72,7 @@ public class MessagesController {
     private final Consumer<ChatMessage.Bundle> bundleListener = this::onBundle;
     private final Consumer<ChatMessage.SummaryBundle> summaryListener = this::onSummaries;
     private final Consumer<String> readReceiptListener = this::onReadReceipt;
+    private final Consumer<String> recalledSelfListener = this::onRecalledSelf;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm dd/MM");
 
@@ -103,6 +106,7 @@ public class MessagesController {
         ChatCenter.addBundleListener(bundleListener);
         ChatCenter.addSummaryListener(summaryListener);
         ChatCenter.addReadReceiptListener(readReceiptListener);
+        ChatCenter.addRecalledSelfListener(recalledSelfListener);
 
         refreshSummaries();
 
@@ -125,6 +129,7 @@ public class MessagesController {
         ChatCenter.removeBundleListener(bundleListener);
         ChatCenter.removeSummaryListener(summaryListener);
         ChatCenter.removeReadReceiptListener(readReceiptListener);
+        ChatCenter.removeRecalledSelfListener(recalledSelfListener);
         if (friendsPaneController != null) friendsPaneController.detach();
     }
 
@@ -223,6 +228,16 @@ public class MessagesController {
             }
         }
         rebuildAllBubbles();
+    }
+
+    private void onRecalledSelf(String msg) {
+        // "CHAT_RECALLED_SELF:<messageId>"
+        String[] parts = msg.split(":", 2);
+        if (parts.length < 2) return;
+        String messageId = parts[1];
+        messageMap.remove(messageId);
+        rebuildAllBubbles();
+        refreshSummaries();
     }
 
     private void rebuildAllBubbles() {
@@ -347,6 +362,16 @@ public class MessagesController {
         User cu = AppState.getInstance().getCurrentUser();
         boolean isMine = cu != null && cu.getUserId().equals(m.getSenderId());
 
+        // ── Trường hợp đã bị thu hồi với tất cả ──────────────────────────────
+        if (m.isRecalled()) {
+            Label recalled = new Label("Tin nhắn đã bị thu hồi");
+            recalled.getStyleClass().add("chat-bubble-recalled");
+            HBox row = new HBox();
+            javafx.scene.layout.Region sp = new javafx.scene.layout.Region();
+            HBox.setHgrow(sp, javafx.scene.layout.Priority.ALWAYS);
+            return isMine ? new HBox(sp, recalled) : new HBox(recalled, sp);
+        }
+
         // Bubble label — wraps at maxWidth, sized to content for short messages
         Label bubble = new Label(m.getContent());
         bubble.setWrapText(true);
@@ -359,17 +384,24 @@ public class MessagesController {
         if (m.isLiked()) {
             Label heart = new Label("❤");
             heart.getStyleClass().add("chat-bubble-heart");
-            StackPane.setAlignment(heart, isMine ? javafx.geometry.Pos.BOTTOM_LEFT : javafx.geometry.Pos.BOTTOM_RIGHT);
+            StackPane.setAlignment(heart,
+                    isMine ? javafx.geometry.Pos.BOTTOM_LEFT : javafx.geometry.Pos.BOTTOM_RIGHT);
             heart.setTranslateY(8);
             heart.setTranslateX(isMine ? -8 : 8);
             bubblePane.getChildren().add(heart);
         }
         bubblePane.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
+            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2 && !isMine) {
                 toggleLike(m);
             }
         });
         bubblePane.setStyle("-fx-cursor: hand;");
+
+        // ── Context menu (chuột phải) — custom popup ─────────────────────────
+        bubblePane.setOnContextMenuRequested(e -> {
+            showBubbleMenu(m, isMine, bubblePane, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
 
         HBox metaRow = new HBox(5);
         metaRow.setAlignment(isMine ? javafx.geometry.Pos.CENTER_RIGHT : javafx.geometry.Pos.CENTER_LEFT);
@@ -402,7 +434,70 @@ public class MessagesController {
 
     private void toggleLike(ChatMessage m) {
         boolean newLiked = !m.isLiked();
-        AppState.getInstance().getClient().send("CHAT_LIKE:" + m.getMessageId() + ":" + (newLiked ? "1" : "0"));
+        AppState.getInstance().getClient()
+                .send("CHAT_LIKE:" + m.getMessageId() + ":" + (newLiked ? "1" : "0"));
+    }
+
+    /** Gửi lệnh thu hồi tin nhắn lên server. mode = "ALL" hoặc "SELF". */
+    private void recallMessage(String messageId, String mode) {
+        AppState.getInstance().getClient()
+                .send("CHAT_RECALL:" + messageId + ":" + mode);
+    }
+
+    /**
+     * Hiển thị popup thu hồi tin nhắn với giao diện tùy chỉnh.
+     * Dùng Popup thay vì ContextMenu để kiểm soát hoàn toàn CSS.
+     */
+    private void showBubbleMenu(ChatMessage m, boolean isMine,
+                                javafx.scene.Node anchor, double sx, double sy) {
+        if (anchor.getScene() == null) return;
+        Popup popup = new Popup();
+        popup.setAutoHide(true);
+        popup.setHideOnEscape(true);
+
+        VBox box = new VBox(0);
+        box.getStyleClass().add("recall-popup-box");
+
+        Button btnSelf = makeRecallBtn("✕  Thu hồi với tôi", false);
+        btnSelf.setOnAction(e -> {
+            recallMessage(m.getMessageId(), "SELF");
+            popup.hide();
+        });
+        box.getChildren().add(btnSelf);
+
+        if (isMine) {
+            Separator sep = new Separator();
+            sep.getStyleClass().add("recall-popup-sep");
+            Button btnAll = makeRecallBtn("↺  Thu hồi với tất cả", true);
+            btnAll.setOnAction(e -> {
+                recallMessage(m.getMessageId(), "ALL");
+                popup.hide();
+            });
+            box.getChildren().addAll(sep, btnAll);
+        }
+
+        popup.getContent().add(box);
+
+        // Nạp stylesheet vào scene nội bộ của Popup sau khi hiển thị
+        String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
+        popup.setOnShown(ev -> {
+            Scene sc = popup.getScene();
+            if (sc != null && !sc.getStylesheets().contains(cssUrl)) {
+                sc.getStylesheets().add(cssUrl);
+            }
+        });
+
+        popup.show(anchor.getScene().getWindow(), sx, sy);
+    }
+
+    private Button makeRecallBtn(String text, boolean danger) {
+        Button btn = new Button(text);
+        btn.getStyleClass().add("recall-popup-item");
+        if (danger) {
+            btn.getStyleClass().add("recall-popup-danger");
+        }
+        btn.setMaxWidth(Double.MAX_VALUE);
+        return btn;
     }
 
     @FXML

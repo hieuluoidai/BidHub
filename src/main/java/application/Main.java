@@ -19,7 +19,7 @@ public class Main extends Application {
             
             // Xử lý nạp icon ứng dụng (bọc try-catch để tránh crash nếu thiếu tài nguyên)
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/Images/logo-uet.jpg"));
+                Image logo = new Image(getClass().getResourceAsStream("/Images/bid-hub-logo.png"));
                 primaryStage.getIcons().add(logo);
             } catch (Exception e) {
                 System.err.println(">>> Cảnh báo: Không tìm thấy tài nguyên logo, sử dụng icon mặc định.");
