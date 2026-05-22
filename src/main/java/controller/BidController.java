@@ -8,17 +8,22 @@ import javafx.stage.Stage;
 import model.auction.Auction;
 import model.auction.BidResult;
 import model.manager.AppState;
-import model.user.Bidder;
 import model.user.User;
 import utils.AlertHelper;
 import java.util.function.Consumer;
+
+import service.AuctionService;
+import exception.ValidationException;
 
 /**
  * Điều khiển cửa sổ đặt giá (Bid Window).
  */
 public class BidController {
 
+    private final AuctionService auctionService = new AuctionService();
+
     @FXML private Label labelItemName;
+    // ... rest of fields ...
     @FXML private Label labelCurrentPrice;
     @FXML private Label labelUserBalance;
     @FXML private Label labelError;
@@ -110,27 +115,10 @@ public class BidController {
             }
 
             double amount = Double.parseDouble(amountStr);
-
-            if (amount <= 0) {
-                showError("Số tiền phải lớn hơn 0!");
-                return;
-            }
-
-            if (amount <= currentAuction.getCurrentPrice()) {
-                showError(String.format("Giá đặt phải cao hơn giá hiện tại (%,.0f ₫)!",
-                        currentAuction.getCurrentPrice()));
-                return;
-            }
-
             User currentUser = AppState.getInstance().getCurrentUser();
-            if (!(currentUser instanceof Bidder)) {
-                showError("Chỉ người mua (Bidder) mới có quyền đặt giá!");
-                return;
-            }
-            if (currentUser.getUserId().equals(currentAuction.getSellerId())) {
-                showError("Bạn không thể đặt giá cho sản phẩm của chính mình!");
-                return;
-            }
+
+            // Sử dụng AuctionService để validate logic nghiệp vụ
+            auctionService.validateBid(currentAuction, amount, currentUser);
 
             // 1. Chỉ vô hiệu hóa Confirm để tránh gửi trùng; Cancel vẫn hoạt động để thoát khi cần
             setLoading(true);
@@ -139,8 +127,8 @@ public class BidController {
             AppState.getInstance().getClient().setBidResultCallback(this::handleBidResult);
             AppState.getInstance().getClient().addStringMessageListener(errorStringListener);
 
-            // 3. Gửi lệnh BID theo giao thức đồng bộ: BID:<auctionId>:<amount>:<bidderId>
-            String command = String.format("BID:%s:%.2f:%s",
+            // 3. Gửi lệnh BID theo giao thức đã được đóng gói trong Service
+            String command = auctionService.buildBidCommand(
                     currentAuction.getAuctionId(),
                     amount,
                     currentUser.getUserId());
@@ -149,6 +137,8 @@ public class BidController {
 
         } catch (NumberFormatException e) {
             showError("Số tiền không hợp lệ (phải là định dạng số)!");
+        } catch (ValidationException e) {
+            showError(e.getMessage());
         }
     }
 

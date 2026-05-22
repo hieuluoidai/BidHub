@@ -28,8 +28,12 @@ public class DatabaseConnection {
         String user = props.getProperty("db.user", "root");
         String pass = props.getProperty("db.password", "password");
 
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + name
-                + "?useSSL=false&allowPublicKeyRetrieval=true";
+        // Hỗ trợ truyền full URL (ví dụ cho H2 Testing)
+        String url = props.getProperty("db.url");
+        if (url == null || url.isEmpty()) {
+            url = "jdbc:mysql://" + host + ":" + port + "/" + name
+                    + "?useSSL=false&allowPublicKeyRetrieval=true";
+        }
 
         try {
             HikariConfig config = new HikariConfig();

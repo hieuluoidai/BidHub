@@ -9,6 +9,7 @@ import model.user.Bidder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test cho AuctionManager – kiểm tra Singleton Pattern và logic xử lý bid đồng thời.
@@ -33,6 +36,7 @@ class AuctionManagerTest {
     @BeforeEach
     void setUp() {
         manager = AuctionManager.getInstance();
+        manager.clearAll();
         bidder1 = new Bidder("U_001", "alice", "alice@test.com", "pass1");
         bidder2 = new Bidder("U_002", "bob", "bob@test.com", "pass2");
     }
@@ -220,9 +224,94 @@ class AuctionManagerTest {
         assertEquals(sizeBefore + numThreads, sizeAfter, "Phải thêm đủ 20 phiên");
     }
 
-    // ================================================================
-    // Helper
-    // ================================================================
+    @Test
+    @DisplayName("updateAuction: cập nhật thông tin phiên và chống rollback giá")
+    void updateAuction_works() {
+        String id = "AUC_UPDATE";
+        Auction original = createRunningAuction(id);
+        original.placeBid(bidder1, 200);
+        manager.addAuction(original);
+
+        // Client gửi bản update với giá cũ 150
+        Auction updated = createRunningAuction(id);
+        updated.placeBid(bidder1, 150);
+        
+        manager.updateAuction(updated);
+
+        // Phải giữ giá 200 (không được rollback)
+        assertEquals(200.0, manager.getAuctionById(id).getCurrentPrice());
+    }
+
+    @Test
+    @DisplayName("removeAuction: xóa khỏi memory và giải phóng lock")
+    void removeAuction_works() {
+        String id = "AUC_REMOVE";
+        manager.addAuction(createRunningAuction(id));
+        assertNotNull(manager.getAuctionById(id));
+
+        boolean result = manager.removeAuction(id);
+        assertTrue(result);
+        assertNull(manager.getAuctionById(id));
+    }
+
+    @Test
+    @DisplayName("reloadAuctionFromDB: nạp lại từ database")
+    void reloadAuctionFromDB() {
+        String id = "AUC_RELOAD";
+        manager.addAuction(createRunningAuction(id));
+
+        try (MockedConstruction<database.AuctionDAO> daoConstruction = mockConstruction(database.AuctionDAO.class, (mock, context) -> {
+            when(mock.findById(id)).thenReturn(createRunningAuction(id));
+        })) {
+            manager.reloadAuctionFromDB(id);
+            verify(daoConstruction.constructed().get(0)).findById(id);
+            assertNotNull(manager.getAuctionById(id));
+        }
+    }
+
+    @Test
+    @DisplayName("clearAll: xóa sạch memory")
+    void clearAll_works() {
+        manager.addAuction(createRunningAuction("A1"));
+        manager.clearAll();
+        assertEquals(0, manager.getAllAuctions().size());
+    }
+
+    @Test
+    @DisplayName("startAutoClosureService: kiểm tra logic chuyển trạng thái và kết thúc")
+    void autoClosureService_logic() throws Exception {
+        String idStart = "AUC_TO_START";
+        Auction aStart = createRunningAuction(idStart);
+        aStart.setStatus("OPEN");
+        aStart.setStartTime(LocalDateTime.now().minusSeconds(1));
+        
+        String idEnd = "AUC_TO_END";
+        Auction aEnd = createRunningAuction(idEnd);
+        aEnd.setStatus("RUNNING");
+        aEnd.setEndTime(LocalDateTime.now().minusSeconds(1));
+        
+        manager.addAuction(aStart);
+        manager.addAuction(aEnd);
+
+        network.AuctionServer mockServer = mock(network.AuctionServer.class);
+
+        try (MockedConstruction<database.AuctionDAO> daoConstruction = mockConstruction(database.AuctionDAO.class);
+             MockedConstruction<database.AutoBidDAO> abDaoConstruction = mockConstruction(database.AutoBidDAO.class)
+        ) {
+            manager.startAutoClosureService(mockServer);
+            Thread.sleep(1500); 
+
+            database.AuctionDAO mockedDAO = daoConstruction.constructed().get(0);
+            verify(mockedDAO, atLeastOnce()).updateStatus(eq(idStart), eq("RUNNING"));
+            verify(mockedDAO, atLeastOnce()).updateStatus(eq(idEnd), eq("FINISHED"));
+            
+            assertEquals("RUNNING", aStart.getStatus());
+            assertEquals("FINISHED", aEnd.getStatus());
+            
+            verify(mockServer, atLeastOnce()).broadcast(any(Auction.class));
+        }
+    }
+
     private Auction createRunningAuction(String id) {
         Item item = new Electronics(
             "ITEM_FOR_" + id, "Test Item", "desc", 100.0, "Brand"

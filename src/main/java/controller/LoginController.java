@@ -1,7 +1,7 @@
 package controller;
 
-import database.UserDAO;
 import exception.AuthenticationException;
+import service.AuthService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -42,20 +42,9 @@ public class LoginController {
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!");
-            return;
-        }
-
         try {
-            UserDAO userDAO   = new UserDAO();
-            // login() sẽ verify bằng BCrypt bên trong
-            User    foundUser = userDAO.login(username, password);
-
-            // Thay vì kiểm tra null → ném exception
-            if (foundUser == null) {
-                throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không chính xác!");
-            }
+            AuthService authService = new AuthService();
+            User foundUser = authService.login(username, password);
 
             AppState.getInstance().getClient().connect(SERVER_HOST, SERVER_PORT);
             AppState.getInstance().setCurrentUser(foundUser);
@@ -69,9 +58,9 @@ public class LoginController {
                 AppState.getInstance().getSceneManager().showDashboard();
             }
 
-        } catch (AuthenticationException e) {      // ← bắt riêng lỗi login
+        } catch (AuthenticationException e) {
             showError(e.getMessage());
-        } catch (Exception e) {                    // ← giữ nguyên lỗi kết nối server
+        } catch (Exception e) {
             showError("Lỗi: Không thể kết nối tới Server!");
             e.printStackTrace();
         }

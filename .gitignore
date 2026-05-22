@@ -11,3 +11,6 @@ bin/
 
 # Old folders
 HelloFx/
+
+# AI Assistants
+.claude/

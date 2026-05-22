@@ -1,6 +1,5 @@
 package controller;
 
-import database.UserDAO;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.DatePicker;
@@ -10,26 +9,27 @@ import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import model.manager.AppState;
-import model.user.Bidder;
 import model.user.User;
 import utils.AlertHelper;
-import utils.PasswordUtils;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import service.AuthService;
+import exception.ValidationException;
 
 /**
  * Điều khiển màn hình đăng ký tài khoản mới.
  */
 public class RegisterController {
 
-    // ===== FXML bindings (input) =====
+    private final AuthService authService = new AuthService();
+
+    // ... rest of fields ...
     @FXML private TextField     fullNameField;
     @FXML private DatePicker    dobPicker;
     @FXML private TextField     phoneField;
@@ -172,116 +172,87 @@ public class RegisterController {
     private boolean validateFullName() {
         String v = safeTrim(fullNameField.getText());
         if (v.isEmpty()) return clearHint(fullNameField, hintFullName);
-        if (!P_NAME.matcher(v).matches()) {
-            return showHintError(fullNameField, hintFullName,
-                    "Chỉ chứa chữ cái và dấu cách, ít nhất 2 ký tự");
+        try {
+            authService.validateFullName(v);
+            return showHintOk(fullNameField, hintFullName);
+        } catch (ValidationException e) {
+            return showHintError(fullNameField, hintFullName, e.getMessage());
         }
-        return showHintOk(fullNameField, hintFullName);
     }
 
     /**
-     * Validate ngày sinh — phân biệt 5 trường hợp lỗi:
-     *   1. Field rỗng              → ẩn hint
-     *   2. Có text nhưng sai dạng  → "Định dạng không hợp lệ."
-     *   3. Đúng dạng nhưng ngày không tồn tại (30/2, 31/4...) → "Ngày DD/MM không tồn tại"
-     *   4. Hợp lệ nhưng tương lai  → "Ngày sinh không thể ở tương lai"
-     *   5. Hợp lệ nhưng < 18 tuổi  → "Bạn cần đủ 18 tuổi"
+     * Validate ngày sinh — phân biệt 5 trường hợp lỗi
      */
     private boolean validateDob() {
-        // Lấy text trực tiếp từ editor
         String text = dobPicker.getEditor().getText();
-
-        // Case 1: rỗng
         if (text == null || text.isBlank()) {
             return clearHint(dobPicker, hintDob);
         }
 
-        // Case 2: kiểm tra "shape" trước — phải có dạng "số/số/số 4 chữ số"
+        // Vẫn giữ logic parse ở UI vì nó liên quan đến DatePicker editor
         Matcher m = P_DATE_SHAPE.matcher(text);
         if (!m.matches()) {
-            return showHintError(dobPicker, hintDob,
-                    "Định dạng không hợp lệ.");
+            return showHintError(dobPicker, hintDob, "Định dạng không hợp lệ.");
         }
 
-        // Case 3: shape đúng nhưng ngày không tồn tại (30/2/2000, 31/4/2020...)
         int day = Integer.parseInt(m.group(1));
         int month = Integer.parseInt(m.group(2));
         int year = Integer.parseInt(m.group(3));
         LocalDate dob;
         try {
             dob = LocalDate.of(year, month, day);
+            authService.validateDob(dob);
+            return showHintOk(dobPicker, hintDob);
         } catch (DateTimeException e) {
             return showHintError(dobPicker, hintDob,
                     "Ngày " + day + "/" + month + " không tồn tại trong năm " + year);
+        } catch (ValidationException e) {
+            return showHintError(dobPicker, hintDob, e.getMessage());
         }
-
-        // Case 4: tương lai
-        LocalDate today = LocalDate.now();
-        if (dob.isAfter(today)) {
-            return showHintError(dobPicker, hintDob, "Ngày sinh không hợp lệ");
-        }
-
-        // Case 5: tuổi
-        int age = Period.between(dob, today).getYears();
-        if (age < MIN_AGE) {
-            return showHintError(dobPicker, hintDob,
-                    "Bạn cần đủ " + MIN_AGE + " tuổi (hiện: " + age + ")");
-        }
-
-        return showHintOk(dobPicker, hintDob);
     }
 
     private boolean validatePhone() {
         String v = safeTrim(phoneField.getText());
         if (v.isEmpty()) return clearHint(phoneField, hintPhone);
-        if (!P_PHONE.matcher(v).matches()) {
-            return showHintError(phoneField, hintPhone,
-                    "Số điện thoại không hợp lệ");
+        try {
+            authService.validatePhone(v);
+            return showHintOk(phoneField, hintPhone);
+        } catch (ValidationException e) {
+            return showHintError(phoneField, hintPhone, e.getMessage());
         }
-        return showHintOk(phoneField, hintPhone);
     }
 
     private boolean validateEmail() {
         String v = safeTrim(emailField.getText());
         if (v.isEmpty()) return clearHint(emailField, hintEmail);
-        if (!P_EMAIL.matcher(v).matches()) {
-            return showHintError(emailField, hintEmail, "Định dạng email không hợp lệ");
+        try {
+            authService.validateEmail(v);
+            return showHintOk(emailField, hintEmail);
+        } catch (ValidationException e) {
+            return showHintError(emailField, hintEmail, e.getMessage());
         }
-        return showHintOk(emailField, hintEmail);
     }
 
     private boolean validateUsername() {
         String v = safeTrim(usernameField.getText());
         if (v.isEmpty()) return clearHint(usernameField, hintUsername);
-        if (!P_USERNAME.matcher(v).matches()) {
-            return showHintError(usernameField, hintUsername,
-                    "3–20 ký tự, chỉ chữ cái, số và dấu _");
+        try {
+            authService.validateUsername(v);
+            return showHintOk(usernameField, hintUsername);
+        } catch (ValidationException e) {
+            return showHintError(usernameField, hintUsername, e.getMessage());
         }
-        return showHintOk(usernameField, hintUsername);
     }
 
     private boolean validatePassword() {
         String v = passwordField.getText();
         if (v == null || v.isEmpty()) return clearHint(passwordField, hintPassword);
-        if (v.length() < PASSWORD_MIN) {
-            return showHintError(passwordField, hintPassword,
-                    "Cần ít nhất " + PASSWORD_MIN + " ký tự (hiện: " + v.length() + ")");
+        try {
+            authService.validatePassword(v);
+            return showHintOk(passwordField, hintPassword);
+        } catch (ValidationException e) {
+            return showHintError(passwordField, hintPassword, e.getMessage());
         }
-        boolean hasLower = P_PWD_HAS_LOWER.matcher(v).matches();
-        boolean hasDigit = P_PWD_HAS_DIGIT.matcher(v).matches();
-        if (!hasLower && !hasDigit) {
-            return showHintError(passwordField, hintPassword,
-                    "Cần thêm chữ thường và chữ số");
-        }
-        if (!hasLower) {
-            return showHintError(passwordField, hintPassword,
-                    "Cần thêm ít nhất 1 chữ thường");
-        }
-        if (!hasDigit) {
-            return showHintError(passwordField, hintPassword,
-                    "Cần thêm ít nhất 1 chữ số");
-        }
-        return showHintOk(passwordField, hintPassword);
     }
 
     private boolean validateConfirm() {
@@ -362,72 +333,38 @@ public class RegisterController {
         ok &= validateConfirm();
 
         if (!ok) {
-            // Có ít nhất 1 field rỗng hoặc sai
-            String fullName  = safeTrim(fullNameField.getText());
-            String phone     = safeTrim(phoneField.getText());
-            String email     = safeTrim(emailField.getText());
-            String username  = safeTrim(usernameField.getText());
-            String password  = passwordField.getText();
-            String confirm   = confirmPasswordField.getText();
-            LocalDate dob    = dobPicker.getValue();
-
-            if (fullName.isEmpty() || phone.isEmpty() || email.isEmpty()
-                    || username.isEmpty() || password.isEmpty() || confirm.isEmpty()
-                    || dob == null) {
-                showError("Vui lòng điền đầy đủ tất cả các trường thông tin!");
-            } else {
-                showError("Vui lòng sửa các trường còn lỗi!");
-            }
+            showError("Vui lòng điền đầy đủ và sửa các trường còn lỗi!");
             return;
         }
 
-        // Lấy giá trị đã được validate
-        String fullName = safeTrim(fullNameField.getText());
-        LocalDate dob   = dobPicker.getValue();
-        String phone    = safeTrim(phoneField.getText());
-        String email    = safeTrim(emailField.getText());
-        String username = safeTrim(usernameField.getText());
-        String password = passwordField.getText();
-
-        // Check trùng với DB
-        UserDAO userDAO = new UserDAO();
-        if (userDAO.existsByUsername(username)) {
-            showHintError(usernameField, hintUsername, "Tên đăng nhập đã được sử dụng");
-            showError("Tên đăng nhập \"" + username + "\" đã được sử dụng. Vui lòng chọn tên khác!");
-            return;
-        }
-        if (userDAO.existsByEmail(email)) {
-            showHintError(emailField, hintEmail, "Email đã được đăng ký");
-            showError("Email \"" + email + "\" đã được đăng ký. Vui lòng dùng email khác!");
-            return;
-        }
-
-        // Hash password (BCrypt) trước khi lưu
-        String hashedPassword = PasswordUtils.hash(password);
-
-        String userId = "u-" + UUID.randomUUID().toString().substring(0, 8);
-        User newUser = new Bidder(userId, username, email, hashedPassword);
-
-        newUser.setFullName(fullName);
-        newUser.setDateOfBirth(dob);
-        newUser.setPhoneNumber(phone);
-
-        if (!userDAO.save(newUser)) {
-            showError("Không thể tạo tài khoản. Vui lòng thử lại sau!");
-            return;
-        }
-
-        // Thông báo cho server để gửi notification tới các Admin online
         try {
-            AppState.getInstance().getClient().send("NEW_USER_REGISTERED:" + userId);
-        } catch (Exception ignore) { /* Server có thể chưa connect — bỏ qua */ }
+            User newUser = authService.register(
+                safeTrim(fullNameField.getText()),
+                dobPicker.getValue(),
+                safeTrim(phoneField.getText()),
+                safeTrim(emailField.getText()),
+                safeTrim(usernameField.getText()),
+                passwordField.getText()
+            );
 
-        AlertHelper.show(
+            // Thông báo cho server để gửi notification tới các Admin online
+            try {
+                AppState.getInstance().getClient().send("NEW_USER_REGISTERED:" + newUser.getUserId());
+            } catch (Exception ignore) { }
+
+            AlertHelper.show(
                 AlertHelper.Type.SUCCESS,
                 "Đăng ký thành công",
-                "Tài khoản \"" + username + "\" đã được tạo. Bạn có thể đăng nhập ngay bây giờ."
-        );
-        AppState.getInstance().getSceneManager().showLogin();
+                "Tài khoản \"" + newUser.getUsername() + "\" đã được tạo. Bạn có thể đăng nhập ngay bây giờ."
+            );
+            AppState.getInstance().getSceneManager().showLogin();
+
+        } catch (ValidationException e) {
+            showError(e.getMessage());
+            // Highlight field cụ thể nếu cần (ở đây register() validate lại toàn bộ nên message chung là đủ)
+        } catch (Exception e) {
+            showError("Lỗi hệ thống: " + e.getMessage());
+        }
     }
 
     @FXML

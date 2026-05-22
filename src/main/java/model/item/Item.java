@@ -51,6 +51,14 @@ public abstract class Item extends Entity implements Serializable {
         return imagePath;
     }
 
+    public void setItemName(String itemName) {
+        this.itemName = itemName;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     // Update giá hiện tại (thường dùng khi có người Bid mới)
     public void setStartingPrice(double price) {
         this.startingPrice = price;

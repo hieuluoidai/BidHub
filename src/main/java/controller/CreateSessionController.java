@@ -21,12 +21,16 @@ import model.item.Item;
 import model.item.ItemFactory;
 import model.manager.AppState;
 import utils.ImageStorageService;
+import service.AuctionService;
+import exception.ValidationException;
 
 /**
  * Điều khiển màn hình tạo phiên đấu giá mới.
  * Giúp seller nhập thông tin sản phẩm và kích hoạt phiên đấu giá.
  */
 public class CreateSessionController {
+
+    private final AuctionService auctionService = new AuctionService();
 
     @FXML private TextField textItemName;
     @FXML private TextField textStartingPrice;
@@ -114,45 +118,17 @@ public class CreateSessionController {
             LocalDate endDate = datePickerEndDate.getValue();
             String endHourStr = cbEndHour.getValue();
             String endMinStr  = cbEndMinute.getValue();
+            int startDelaySeconds = parseStartDelay();
 
-            // 2. Validation
-            if (type == null) {
-                showError("Vui lòng chọn loại sản phẩm!");
-                return;
-            }
-            if (name.isEmpty() || priceStr.isEmpty() || extraInfo.isEmpty()) {
-                showError("Vui lòng điền đầy đủ các thông tin bắt buộc!");
-                return;
-            }
-            if (endDate == null || endHourStr == null || endMinStr == null) {
-                showError("Vui lòng chọn đầy đủ ngày, giờ và phút kết thúc!");
-                return;
-            }
+            // 2. Validation qua Service
+            auctionService.validateAuctionCreation(type, name, priceStr, extraInfo, 
+                                                  endDate, endHourStr, endMinStr, startDelaySeconds);
 
             double startingPrice = Double.parseDouble(priceStr);
-            if (startingPrice <= 0) {
-                showError("Giá khởi điểm phải lớn hơn 0!");
-                return;
-            }
-
-            // 3. Ghép ngày + giờ + phút thành LocalDateTime
+            LocalDateTime startTime = LocalDateTime.now().plusSeconds(startDelaySeconds);
             int endHour = Integer.parseInt(endHourStr);
             int endMin  = Integer.parseInt(endMinStr);
             LocalDateTime endTime   = LocalDateTime.of(endDate, LocalTime.of(endHour, endMin));
-
-            // Thời gian đợi trước khi phiên RUNNING — user tự nhập (mặc định 15s)
-            int startDelaySeconds = parseStartDelay();
-            if (startDelaySeconds < 0) {
-                showError("Thời gian bắt đầu phải là số nguyên dương (giây)!");
-                return;
-            }
-            LocalDateTime startTime = LocalDateTime.now().plusSeconds(startDelaySeconds);
-
-            if (!endTime.isAfter(startTime)) {
-                showError("Thời điểm kết thúc phải sau thời điểm bắt đầu ("
-                        + startDelaySeconds + "s từ bây giờ)!");
-                return;
-            }
 
             // 4. Tạo Item & Auction (Factory Pattern)
             String itemId = "ITEM_" + System.currentTimeMillis();
@@ -189,6 +165,8 @@ public class CreateSessionController {
                 finishCreation(newItem, newAuction, sellerId);
             }
 
+        } catch (ValidationException e) {
+            showError(e.getMessage());
         } catch (NumberFormatException e) {
             showError("Lỗi: Giá tiền phải là một con số hợp lệ!");
         } catch (IllegalArgumentException e) {
@@ -244,9 +222,6 @@ public class CreateSessionController {
         }
     }
 
-    /**
-     * Tìm và đóng cửa sổ hiện tại.
-     */
     /**
      * Mở FileChooser cho user chọn ảnh, sau đó hiển thị preview.
      */

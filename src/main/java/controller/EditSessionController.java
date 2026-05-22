@@ -1,6 +1,7 @@
 package controller;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import javafx.concurrent.Task;
 
@@ -28,17 +29,17 @@ import model.user.Admin;
 import model.user.User;
 import utils.AlertHelper;
 import utils.ImageStorageService;
+import service.AuctionService;
+import exception.ValidationException;
 
 /**
  * Điều khiển màn hình SỬA phiên đấu giá.
  * Cho phép Seller (chủ phiên) hoặc Admin chỉnh sửa thông tin sản phẩm
  * + thời gian kết thúc khi phiên còn ở trạng thái OPEN.
- *
- * Lưu ý quan trọng: KHÔNG cho đổi item_type vì DB lưu Single Table Inheritance,
- * mỗi loại có cột đặc thù riêng (brand vs artist). Đổi type sẽ dẫn đến
- * dữ liệu rác trong các cột khác.
  */
 public class EditSessionController {
+
+    private final AuctionService auctionService = new AuctionService();
 
     @FXML private Label labelHeader;
     @FXML private Label labelItemType;       // Hiển thị type, không cho sửa
@@ -59,47 +60,30 @@ public class EditSessionController {
     private Auction auction;          // Phiên đang được sửa
     private Runnable onSavedCallback; // Callback chạy sau khi save thành công
 
-    /**
-     * Trạng thái ảnh — 3 case:
-     *   - null + originalImagePath null      → không có ảnh, không đổi
-     *   - null + originalImagePath != null   → user muốn XÓA ảnh hiện có
-     *   - File != null                       → user chọn ảnh mới (thay thế hoặc thêm mới)
-     */
     private File selectedImageFile;
     private String originalImagePath;        // imagePath ban đầu của item
     private boolean userRemovedOriginal;     // true nếu user nhấn Bỏ chọn khi đã có ảnh sẵn
 
-    /**
-     * Truyền phiên cần sửa vào controller. Phải gọi NGAY sau khi load FXML.
-     */
     public void setAuction(Auction auction) {
         this.auction = auction;
         prefillData();
     }
 
-    /**
-     * Đăng ký callback để controller cha (vd ItemDetailsController) đóng cửa sổ
-     * và refresh sau khi user save thành công.
-     */
     public void setOnSavedCallback(Runnable callback) {
         this.onSavedCallback = callback;
     }
 
-    /**
-     * Đổ dữ liệu hiện tại của phiên lên các ô input.
-     */
     private void prefillData() {
         if (auction == null) return;
         Item item = auction.getItem();
 
         labelHeader.setText("Sửa phiên: " + item.getItemName());
-        labelItemType.setText(item.getItemType()); // Read-only
+        labelItemType.setText(item.getItemType()); 
         textItemName.setText(item.getItemName());
         textStartingPrice.setText(String.valueOf(item.getStartingPrice()));
         textDescription.setText(item.getDescription());
         datePickerEndDate.setValue(auction.getEndTime().toLocalDate());
 
-        // Hiển thị label + value của trường đặc thù theo type
         if (item instanceof Electronics e) {
             labelExtraInfo.setText("Hãng sản xuất (Brand)");
             textExtraInfo.setText(e.getBrand());
@@ -111,7 +95,6 @@ public class EditSessionController {
             textExtraInfo.setText(v.getBrand());
         }
 
-        // Load ảnh hiện có (nếu có) — tải qua HTTP server
         originalImagePath = item.getImagePath();
         if (originalImagePath != null && !originalImagePath.isBlank()) {
             String uri = ImageStorageService.toImageUrl(originalImagePath);
@@ -126,61 +109,25 @@ public class EditSessionController {
         }
     }
 
-    /**
-     * Xử lý khi user nhấn Lưu.
-     * 1. Validate input
-     * 2. Tạo Item mới với dữ liệu đã sửa
-     * 3. Update DB qua DAO (kiểm tra quyền sở hữu hoặc admin override)
-     * 4. Update end_time nếu user đổi
-     * 5. Gửi RELOAD_AUCTION lên server → server broadcast danh sách mới
-     */
     @FXML
     void handleSave() {
         try {
-            // 1. Validate
             String name      = textItemName.getText().trim();
             String priceStr  = textStartingPrice.getText().trim();
             String desc      = textDescription.getText().trim();
             String extra     = textExtraInfo.getText().trim();
+            LocalDate endDate = datePickerEndDate.getValue();
 
-            if (name.isEmpty() || priceStr.isEmpty() || extra.isEmpty()) {
-                showError("Vui lòng điền đầy đủ các thông tin bắt buộc!");
-                return;
-            }
-            if (datePickerEndDate.getValue() == null) {
-                showError("Vui lòng chọn ngày kết thúc!");
-                return;
-            }
+            // Validation qua Service
+            auctionService.validateAuctionEdit(name, priceStr, extra, endDate, auction.getStartTime());
 
-            double startingPrice;
-            try {
-                startingPrice = Double.parseDouble(priceStr);
-            } catch (NumberFormatException ex) {
-                showError("Giá khởi điểm phải là một con số!");
-                return;
-            }
-            if (startingPrice <= 0) {
-                showError("Giá khởi điểm phải lớn hơn 0!");
-                return;
-            }
+            double startingPrice = Double.parseDouble(priceStr);
+            LocalDateTime newEndTime = endDate.atTime(23, 59, 59);
 
-            LocalDateTime newEndTime = datePickerEndDate.getValue().atTime(23, 59, 59);
-            if (!newEndTime.isAfter(auction.getStartTime())) {
-                showError("Thời điểm kết thúc phải sau thời điểm bắt đầu!");
-                return;
-            }
-
-            // 2. Tạo Item mới với cùng ID, cùng type, dữ liệu mới
             String itemId   = auction.getItem().getItemId();
             String itemType = auction.getItem().getItemType();
-            Item updatedItem = ItemFactory.createItem(
-                    itemType, itemId, name, desc, startingPrice, extra
-            );
+            Item updatedItem = ItemFactory.createItem(itemType, itemId, name, desc, startingPrice, extra);
 
-            // 2b. Xử lý ảnh — 3 case:
-            //   A. User chọn ảnh mới → upload lên server
-            //   B. User nhấn "Bỏ chọn" → imagePath = null (file trên server giữ nguyên)
-            //   C. Không đổi gì → giữ nguyên originalImagePath
             if (selectedImageFile != null) {
                 btnChooseImage.setDisable(true);
                 if (lblImageStatus != null) {
@@ -210,11 +157,10 @@ public class EditSessionController {
                 finishEdit(updatedItem, newEndTime);
             }
 
-        } catch (IllegalArgumentException e) {
-            showError("Lỗi tạo sản phẩm: " + e.getMessage());
+        } catch (ValidationException e) {
+            showError(e.getMessage());
         } catch (Exception e) {
             showError("Lỗi không xác định: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -233,7 +179,6 @@ public class EditSessionController {
         }
         new AuctionDAO().updateTime(auction.getAuctionId(), auction.getStartTime(), newEndTime);
         AppState.getInstance().getClient().send("RELOAD_AUCTION:" + auction.getAuctionId());
-        System.out.println(">>> Đã gửi RELOAD_AUCTION cho phiên " + auction.getAuctionId());
         AlertHelper.show(AlertHelper.Type.SUCCESS, "Đã cập nhật phiên đấu giá!");
         if (onSavedCallback != null) onSavedCallback.run();
         closeWindow();
@@ -244,31 +189,24 @@ public class EditSessionController {
         closeWindow();
     }
 
-    /**
-     * Mở FileChooser cho user chọn ảnh mới.
-     */
     @FXML
     void handleChooseImage() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Chọn ảnh sản phẩm");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Ảnh (JPG, PNG, GIF)",
-                        "*.jpg", "*.jpeg", "*.png", "*.gif"));
-
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                "Ảnh (JPG, PNG, GIF)", "*.jpg", "*.jpeg", "*.png", "*.gif"));
         Stage owner = (Stage) textItemName.getScene().getWindow();
         File file = chooser.showOpenDialog(owner);
         if (file == null) return;
-
         if (!ImageStorageService.isValidImageExtension(file.getName())) {
             showError("Định dạng không hợp lệ. Chỉ chấp nhận JPG, PNG, GIF.");
             return;
         }
-
         try {
             Image img = new Image(file.toURI().toString(), 200, 0, true, true);
             imagePreview.setImage(img);
             selectedImageFile = file;
-            userRemovedOriginal = false;     // chọn ảnh mới → reset cờ remove
+            userRemovedOriginal = false;
             if (lblImageStatus != null) {
                 lblImageStatus.setText("Sẽ thay bằng: " + file.getName());
                 lblImageStatus.setTextFill(Color.web("#10B981"));
@@ -282,22 +220,13 @@ public class EditSessionController {
         }
     }
 
-    /**
-     * Bỏ chọn ảnh.
-     * Nếu item có ảnh gốc → đánh dấu để xóa khi save.
-     * Nếu chỉ là ảnh user vừa chọn → bỏ chọn local.
-     */
     @FXML
     void handleRemoveImage() {
         if (selectedImageFile != null) {
-            // User vừa chọn ảnh mới rồi đổi ý → hủy chọn, có thể vẫn còn ảnh gốc
             selectedImageFile = null;
             if (originalImagePath != null && !originalImagePath.isBlank()) {
-                // Quay lại hiển thị ảnh gốc qua HTTP server
                 String uri = ImageStorageService.toImageUrl(originalImagePath);
-                if (uri != null) {
-                    imagePreview.setImage(new Image(uri, 200, 0, true, true));
-                }
+                if (uri != null) imagePreview.setImage(new Image(uri, 200, 0, true, true));
                 if (lblImageStatus != null) lblImageStatus.setText("Ảnh hiện tại");
             } else {
                 imagePreview.setImage(null);
@@ -308,7 +237,6 @@ public class EditSessionController {
                 }
             }
         } else {
-            // User muốn xóa ảnh gốc đang có
             userRemovedOriginal = true;
             imagePreview.setImage(null);
             if (lblImageStatus != null) {
