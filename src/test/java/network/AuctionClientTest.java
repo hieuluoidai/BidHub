@@ -31,13 +31,6 @@ class AuctionClientTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Initialize JavaFX Toolkit for headless testing
-        try {
-            javafx.application.Platform.startup(() -> {});
-        } catch (IllegalStateException ignore) {
-            // Already started
-        }
-
         socketMock = mock(Socket.class);
         serverOut = new PipedOutputStream();
         clientIn = new PipedInputStream(serverOut);
@@ -48,7 +41,7 @@ class AuctionClientTest {
         when(socketMock.getOutputStream()).thenReturn(clientOut);
 
         client = new AuctionClient();
-        
+
         // Mock Platform.runLater to execute immediately in the same thread
         platformMock = mockStatic(Platform.class);
         platformMock.when(() -> Platform.runLater(any(Runnable.class))).thenAnswer(invocation -> {
@@ -66,48 +59,19 @@ class AuctionClientTest {
 
     @Test
     void testListenAndHandleBidResult() throws Exception {
-        ObjectOutputStream oos = new ObjectOutputStream(serverOut);
-        
-        // Connect the client (this starts the listen thread)
-        // We can't use client.connect because it creates a real Socket.
-        // We'll use reflection or just trigger the listen logic if possible.
-        // AuctionClient.connect is hard to test because it does 'new Socket(host, port)'.
-        
-        // Let's use reflection to set the internal fields and start the thread.
-        var outField = AuctionClient.class.getDeclaredField("out");
-        outField.setAccessible(true);
-        outField.set(client, new ObjectOutputStream(clientOut));
-
-        var inField = AuctionClient.class.getDeclaredField("in");
-        inField.setAccessible(true);
-        inField.set(client, new ObjectInputStream(clientIn));
-
-        var isRunningField = AuctionClient.class.getDeclaredField("isRunning");
-        isRunningField.setAccessible(true);
-        isRunningField.set(client, true);
-
-        Thread listenThread = new Thread(() -> {
-            try {
-                var listenMethod = AuctionClient.class.getDeclaredMethod("listen");
-                listenMethod.setAccessible(true);
-                listenMethod.invoke(client);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-        listenThread.start();
-
         AtomicReference<BidResult> receivedResult = new AtomicReference<>();
         client.addBidResultListener(receivedResult::set);
 
         BidResult result = BidResult.success("auc1", 200.0, "winner1");
-        oos.writeObject(result);
-        oos.flush();
-
-        Thread.sleep(200);
+        
+        // Use reflection to call handleIncomingData directly in the test thread
+        var handleMethod = AuctionClient.class.getDeclaredMethod("handleIncomingData", Object.class);
+        handleMethod.setAccessible(true);
+        handleMethod.invoke(client, result);
 
         assertNotNull(receivedResult.get());
         assertTrue(receivedResult.get().isSuccess());
+        assertEquals("winner1", receivedResult.get().getWinnerUsername());
     }
 
     @Test
