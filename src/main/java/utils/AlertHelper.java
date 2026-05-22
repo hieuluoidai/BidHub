@@ -44,6 +44,7 @@ public class AlertHelper {
             return;
         }
         Stage stage = new Stage();
+        SceneManager.setAppIcon(stage);
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);
 
@@ -64,6 +65,7 @@ public class AlertHelper {
         confirmResult = false;
 
         Stage stage = new Stage();
+        SceneManager.setAppIcon(stage);
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);
 

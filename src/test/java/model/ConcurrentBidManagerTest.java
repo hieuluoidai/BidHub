@@ -120,7 +120,7 @@ class ConcurrentBidManagerTest {
             verify(mockedUserDAO).unlockBalance("U_BOB", 150.0);
             
             // Verify BidDAO interaction
-            verify(bidDao).save(eq(id), eq("U_ALICE"), eq(200.0), any(), any());
+            verify(bidDao).save(eq(id), eq("U_ALICE"), eq(200.0), any(), any(), anyBoolean(), any());
         }
     }
 
@@ -244,6 +244,95 @@ class ConcurrentBidManagerTest {
             assertTrue(auction.getEndTime().isAfter(endTime));
             AuctionDAO mockedAuctionDAO = auctionDAOConstruction.constructed().get(0);
             verify(mockedAuctionDAO).updateEndTime(eq(id), any(LocalDateTime.class));
+        }
+    }
+
+    @Test
+    @DisplayName("processBid: tự động hủy Auto-Bid nếu Manual Bid cao hơn MaxBid")
+    void processBid_manualBidExceedsAutoBid_cancelsAutoBid() {
+        String id = "AUC_AUTO_CANCEL";
+        Auction auction = new Auction(id, new Electronics("I1", "N", "D", 100, "B"), LocalDateTime.now().minusHours(1), LocalDateTime.now().plusHours(1));
+        auction.setStatus("RUNNING");
+        AuctionManager.getInstance().addAuction(auction);
+
+        Bidder alice = new Bidder("U_ALICE", "alice", "a@t.com", "p");
+        model.manager.AutoBidManager mockedAutoBidManager = mock(model.manager.AutoBidManager.class);
+
+        try (org.mockito.MockedStatic<model.manager.AutoBidManager> abmStatic = mockStatic(model.manager.AutoBidManager.class);
+             MockedConstruction<AutoBidDAO> autoBidDAOConstruction = mockConstruction(AutoBidDAO.class, (mock, context) -> {
+                 when(mock.findByUserAndAuction("U_ALICE", id))
+                     .thenReturn(new model.auction.AutoBid("AB1", id, "U_ALICE", 1500.0, 50.0, false));
+             });
+             MockedConstruction<UserDAO> userDAOConstruction = mockConstruction(UserDAO.class, (mock, context) -> {
+                 when(mock.lockBalance(anyString(), anyDouble())).thenReturn(true);
+             })
+        ) {
+            abmStatic.when(model.manager.AutoBidManager::getInstance).thenReturn(mockedAutoBidManager);
+            
+            BidResult result = manager.processBid(id, 1600.0, alice, mock(BidTransactionDAO.class));
+
+            assertEquals(BidResult.Status.SUCCESS, result.getStatus());
+            verify(mockedAutoBidManager).cancelAutoBid("U_ALICE", id);
+        }
+    }
+
+    @Test
+    @DisplayName("processBid: KHÔNG hủy Auto-Bid nếu Manual Bid thấp hơn hoặc bằng MaxBid")
+    void processBid_manualBidLowerThanAutoBid_keepsAutoBid() {
+        String id = "AUC_AUTO_KEEP";
+        Auction auction = new Auction(id, new Electronics("I1", "N", "D", 100, "B"), LocalDateTime.now().minusHours(1), LocalDateTime.now().plusHours(1));
+        auction.setStatus("RUNNING");
+        AuctionManager.getInstance().addAuction(auction);
+
+        Bidder alice = new Bidder("U_ALICE", "alice", "a@t.com", "p");
+        model.manager.AutoBidManager mockedAutoBidManager = mock(model.manager.AutoBidManager.class);
+
+        try (org.mockito.MockedStatic<model.manager.AutoBidManager> abmStatic = mockStatic(model.manager.AutoBidManager.class);
+             MockedConstruction<AutoBidDAO> autoBidDAOConstruction = mockConstruction(AutoBidDAO.class, (mock, context) -> {
+                 when(mock.findByUserAndAuction("U_ALICE", id))
+                     .thenReturn(new model.auction.AutoBid("AB1", id, "U_ALICE", 3500.0, 50.0, false));
+             });
+             MockedConstruction<UserDAO> userDAOConstruction = mockConstruction(UserDAO.class, (mock, context) -> {
+                 when(mock.lockBalance(anyString(), anyDouble())).thenReturn(true);
+             })
+        ) {
+            abmStatic.when(model.manager.AutoBidManager::getInstance).thenReturn(mockedAutoBidManager);
+            
+            BidResult result = manager.processBid(id, 200.0, alice, mock(BidTransactionDAO.class));
+
+            assertEquals(BidResult.Status.SUCCESS, result.getStatus());
+            verify(mockedAutoBidManager, never()).cancelAutoBid(anyString(), anyString());
+        }
+    }
+
+    @Test
+    @DisplayName("processBid: giải phóng toàn bộ MaxBid của người cũ (nếu có AutoBid) khi bị outbid")
+    void processBid_outbid_unlocksMaxAmount() {
+        String id = "AUC_UNLOCK_MAX";
+        Auction auction = new Auction(id, new Electronics("I1", "N", "D", 100, "B"), LocalDateTime.now().minusHours(1), LocalDateTime.now().plusHours(1));
+        auction.setStatus("RUNNING");
+        
+        Bidder bob = new Bidder("U_BOB", "bob", "b@t.com", "p");
+        auction.placeBid(bob, 150);
+        
+        AuctionManager.getInstance().addAuction(auction);
+
+        Bidder alice = new Bidder("U_ALICE", "alice", "a@t.com", "p");
+
+        try (MockedConstruction<AutoBidDAO> autoBidDAOConstruction = mockConstruction(AutoBidDAO.class, (mock, context) -> {
+                 when(mock.findByUserAndAuction("U_BOB", id))
+                     .thenReturn(new model.auction.AutoBid("AB_BOB", id, "U_BOB", 1000.0, 50.0, false));
+             });
+             MockedConstruction<UserDAO> userDAOConstruction = mockConstruction(UserDAO.class, (mock, context) -> {
+                 when(mock.lockBalance(anyString(), anyDouble())).thenReturn(true);
+             })
+        ) {
+            BidResult result = manager.processBid(id, 200.0, alice, mock(BidTransactionDAO.class));
+
+            assertEquals(BidResult.Status.SUCCESS, result.getStatus());
+            UserDAO mockedUserDAO = userDAOConstruction.constructed().get(0);
+            
+            verify(mockedUserDAO).unlockBalance("U_BOB", 1000.0);
         }
     }
 }

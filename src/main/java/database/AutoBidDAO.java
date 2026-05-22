@@ -20,12 +20,13 @@ public class AutoBidDAO {
 
     public boolean save(AutoBid autoBid) {
         String sql = """
-                INSERT INTO auto_bids (auto_bid_id, auction_id, user_id, max_bid, increment, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO auto_bids (auto_bid_id, auction_id, user_id, max_bid, increment, created_at, is_anonymous)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     max_bid = VALUES(max_bid),
                     increment = VALUES(increment),
-                    created_at = VALUES(created_at)
+                    created_at = VALUES(created_at),
+                    is_anonymous = VALUES(is_anonymous)
                 """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -35,6 +36,7 @@ public class AutoBidDAO {
             stmt.setDouble(4, autoBid.getMaxBid());
             stmt.setDouble(5, autoBid.getIncrement());
             stmt.setObject(6, autoBid.getCreatedAt());
+            stmt.setBoolean(7, autoBid.isAnonymous());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi lưu AutoBid: " + e.getMessage());
@@ -118,7 +120,8 @@ public class AutoBidDAO {
                 rs.getString("auction_id"),
                 rs.getString("user_id"),
                 rs.getDouble("max_bid"),
-                rs.getDouble("increment")
+                rs.getDouble("increment"),
+                rs.getBoolean("is_anonymous")
         );
         ab.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
         return ab;

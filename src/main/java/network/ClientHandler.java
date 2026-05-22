@@ -211,7 +211,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Thiết lập Auto-Bid cho User.
-     * Định dạng: "SET_AUTOBID:<auctionId>:<userId>:<maxBid>:<increment>"
+     * Định dạng: "SET_AUTOBID:<auctionId>:<userId>:<maxBid>:<increment>:<isAnonymous>"
      */
     private void handleSetAutoBid(String msg) {
         String[] parts = msg.split(":");
@@ -229,9 +229,10 @@ public class ClientHandler implements Runnable {
             send("AUTOBID_FAILED: Số tiền không hợp lệ");
             return;
         }
+        boolean isAnon = parts.length >= 6 && Boolean.parseBoolean(parts[5]);
 
         String result = model.manager.AutoBidManager.getInstance()
-                .registerAutoBid(userId, auctionId, maxBid, increment);
+                .registerAutoBid(userId, auctionId, maxBid, increment, isAnon);
         
         if ("SUCCESS".equals(result)) {
             send("AUTOBID_OK:" + auctionId + ":" + (new UserDAO().getBalance(userId)));
@@ -287,7 +288,8 @@ public class ClientHandler implements Runnable {
 
         model.auction.AutoBid ab = new database.AutoBidDAO().findByUserAndAuction(userId, auctionId);
         if (ab != null) {
-            send(String.format("MY_AUTOBID:%s:%.2f:%.2f", auctionId, ab.getMaxBid(), ab.getIncrement()));
+            send(String.format(java.util.Locale.US, "MY_AUTOBID:%s:%.2f:%.2f:%b", 
+                auctionId, ab.getMaxBid(), ab.getIncrement(), ab.isAnonymous()));
         } else {
             send("MY_AUTOBID_NONE:" + auctionId);
         }
@@ -796,7 +798,7 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
     /**
      * Xử lý bid đồng thời cực nhanh và an toàn.
-     * Định dạng: "BID:<auctionId>:<amount>:<bidderId>"
+     * Định dạng: "BID:<auctionId>:<amount>:<bidderId>[:<isAnonymous>]"
      */
     private void handleConcurrentBid(String msg) {
         String[] parts = msg.split(":");
@@ -817,6 +819,11 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         }
         
         String bidderId = parts[3];
+        boolean isAnonymous = false;
+        if (parts.length >= 5) {
+            isAnonymous = Boolean.parseBoolean(parts[4]);
+        }
+
         User bidder = new UserDAO().findById(bidderId);
         if (bidder == null) {
             send(BidResult.failure(auctionId, amount, ErrorCode.USER_NOT_FOUND,
@@ -829,13 +836,13 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
         String prevBidderId = (auction != null && auction.getHighestBid() != null) 
                                 ? auction.getHighestBid().getBidder().getUserId() : null;
 
-        // Tích hợp luồng lưu DB Atomic của Hiếu
+        // Tích hợp luồng lưu DB Atomic
         BidTransactionDAO bidDao = new BidTransactionDAO();
         BidResult result = ConcurrentBidManager.getInstance()
-                .processBid(auctionId, amount, bidder, bidDao);
+                .processBid(auctionId, amount, bidder, isAnonymous, bidDao);
 
-        System.out.printf(">>> [BID] %s $%.2f phiên %s → %s | %s%n",
-                bidder.getUsername(), amount, auctionId, result.getStatus(),
+        System.out.printf(">>> [BID] %s $%.2f phiên %s (Anon: %b) → %s | %s%n",
+                bidder.getUsername(), amount, auctionId, isAnonymous, result.getStatus(),
                 ConcurrentBidManager.getInstance().metricsSummary());
 
         // Phản hồi riêng cho Client vừa đặt giá
@@ -870,11 +877,12 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
 
             // 3. Thông báo cho SELLER có bid mới
             if (updated != null && updated.getSellerId() != null && !updated.getSellerId().equals(bidderId)) {
+                String displayBidder = isAnonymous ? "Một người dùng ẩn danh" : bidder.getUsername();
                 NotificationService.notifyUser(server, updated.getSellerId(),
                     Notification.Type.AUCTION_NEW_BID,
                     "Có lượt đặt giá mới",
-                    String.format("Người dùng %s đã đặt giá %,.0f ₫ cho \"%s\" của bạn.",
-                        bidder.getUsername(), amount, itemName));
+                    String.format("%s đã đặt giá %,.0f ₫ cho \"%s\" của bạn.",
+                        displayBidder, amount, itemName));
             }
 
             // 4. Broadcast tối ưu: chỉ gửi phiên vừa thay đổi.
@@ -905,13 +913,89 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
     public void send(Object data) {
         try {
             if (out != null) {
-                out.writeObject(data);
+                // Che giấu thông tin nếu cần thiết trước khi gửi
+                Object safeData = sanitizeData(data);
+                out.writeObject(safeData);
                 out.flush();
                 out.reset();
             }
         } catch (IOException e) {
             active = false;
         }
+    }
+
+    /**
+     * Nếu client nhận không phải là Admin, thay thế thông tin thật của người đặt ẩn danh
+     * bằng thông tin ảo. Trả về một bản copy để không làm hỏng dữ liệu gốc trên Server.
+     */
+    private Object sanitizeData(Object data) {
+        // Kiểm tra xem người nhận hiện tại có phải Admin không
+        boolean isAdmin = false;
+        if (currentUserId != null) {
+            User receiver = new UserDAO().findById(currentUserId);
+            isAdmin = (receiver instanceof Admin);
+        }
+
+        if (isAdmin) {
+            return data; // Admin xem full không che
+        }
+
+        // 1. Sanitize Auction (khi broadcast hoặc gửi refresh)
+        if (data instanceof Auction auction) {
+            // Kiểm tra xem trong history có bid ẩn danh nào không
+            boolean hasAnon = false;
+            for (model.auction.BidTransaction tx : auction.getBidHistory()) {
+                if (tx.isAnonymous()) {
+                    hasAnon = true;
+                    break;
+                }
+            }
+
+            if (hasAnon) {
+                // Phải tạo một bản sao của Auction để gửi đi, không sửa trực tiếp obj gốc
+                Auction safeAuction = new Auction(auction.getAuctionId(), auction.getItem(), 
+                                                 auction.getStartTime(), auction.getEndTime());
+                safeAuction.setSellerId(auction.getSellerId());
+                safeAuction.setStatus(auction.getStatus());
+                
+                // Copy history và che tên
+                java.util.List<model.auction.BidTransaction> safeHistory = new java.util.ArrayList<>();
+                for (model.auction.BidTransaction tx : auction.getBidHistory()) {
+                    if (tx.isAnonymous()) {
+                        // Tạo User ảo
+                        User fakeUser = new model.user.Bidder(
+                                "anon_id", 
+                                tx.getAnonymousDisplayName(), 
+                                "anon@hidden.com", 
+                                ""
+                        );
+                        // Dùng icon ẩn danh (phương án 4)
+                        fakeUser.setAvatarPath("https://cdn-icons-png.flaticon.com/512/3208/3208903.png");
+                        
+                        model.auction.BidTransaction safeTx = new model.auction.BidTransaction(
+                                fakeUser, tx.getBidAmount(), tx.getTimestamp(), tx.getBidType(), true
+                        );
+                        safeTx.setAnonymousDisplayName(tx.getAnonymousDisplayName());
+                        safeHistory.add(safeTx);
+                    } else {
+                        safeHistory.add(tx);
+                    }
+                }
+                safeAuction.restoreBidHistory(safeHistory);
+                return safeAuction;
+            }
+        } else if (data instanceof java.util.List<?> list) {
+            // 2. Sanitize danh sách Auctions (khi client login và nhận danh sách)
+            if (!list.isEmpty() && list.get(0) instanceof Auction) {
+                java.util.List<Auction> safeList = new java.util.ArrayList<>();
+                for (Object item : list) {
+                    safeList.add((Auction) sanitizeData(item));
+                }
+                return safeList;
+            }
+        }
+
+        return data;
     }
 
     private void close() {

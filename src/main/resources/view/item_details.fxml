@@ -74,7 +74,12 @@
                                                     </graphic>
                                                 </Label>
                                                 <Region HBox.hgrow="ALWAYS" />
-                                                <Label fx:id="lblHighestBidder" styleClass="details-muted-text" text="Chưa có ai dẫn đầu" />
+                                                <HBox fx:id="paneHighestBidder" alignment="CENTER_LEFT" spacing="8.0" style="-fx-background-color: #EFF6FF; -fx-padding: 4 12; -fx-background-radius: 20; -fx-border-color: #DBEAFE; -fx-border-width: 1; -fx-border-radius: 20;">
+                                                    <children>
+                                                        <Label fx:id="lblHighestIcon" style="-fx-font-size: 14px;" text="👑" />
+                                                        <Label fx:id="lblHighestBidder" style="-fx-text-fill: #1D4ED8; -fx-font-weight: bold; -fx-font-size: 13px;" text="Chưa có ai dẫn đầu" />
+                                                    </children>
+                                                </HBox>
                                             </children>
                                         </HBox>
 
@@ -202,6 +207,8 @@
                                                                                 </VBox>
                                                                             </children>
                                                                         </HBox>
+
+                                                                        <CheckBox fx:id="checkAutoAnonymous" style="-fx-font-size: 13px; -fx-text-fill: #1E293B; -fx-font-weight: bold; -fx-cursor: hand;" text="Thiết lập ẩn danh" />
 
                                                                         <HBox spacing="10.0">
                                                                             <children>

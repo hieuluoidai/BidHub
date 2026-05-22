@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
@@ -61,6 +62,8 @@
                   <Button onAction="#addBid100" styleClass="button-secondary" text="+100" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
                </children>
             </HBox>
+            
+            <CheckBox fx:id="checkAnonymous" style="-fx-font-size: 14px; -fx-text-fill: #1E293B; -fx-font-weight: bold; -fx-cursor: hand;" text="Đặt giá ẩn danh" />
          </children>
       </VBox>
 

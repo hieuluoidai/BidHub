@@ -56,7 +56,10 @@ class AuctionServiceTest {
     @Test
     void testBuildBidCommand() {
         String cmd = auctionService.buildBidCommand("auc-1", 150.0, "user-1");
-        assertEquals("BID:auc-1:150.00:user-1", cmd);
+        assertEquals("BID:auc-1:150.00:user-1:false", cmd);
+
+        String cmdAnon = auctionService.buildBidCommand("auc-1", 150.0, "user-1", true);
+        assertEquals("BID:auc-1:150.00:user-1:true", cmdAnon);
     }
 
     @Test

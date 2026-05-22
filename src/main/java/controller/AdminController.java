@@ -137,7 +137,7 @@ public class AdminController {
                     }
                     if (currentUser.getAvatarPath() != null
                             && !currentUser.getAvatarPath().isEmpty()) {
-                        String uri = ImageStorageService.toFileUri(currentUser.getAvatarPath());
+                        String uri = ImageStorageService.toImageUrl(currentUser.getAvatarPath());
                         if (uri != null) {
                             imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri));
                             imgSidebarAvatar.setVisible(true);
@@ -403,6 +403,7 @@ public class AdminController {
             Parent root = loader.load();
             ((BidController) loader.getController()).setAuctionData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Admin Place Bid");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -461,7 +462,7 @@ public class AdminController {
                         "-fx-background-color: " + color + "; -fx-background-radius: 50%;");
                 avatar.getChildren().add(lblInit);
                 if (u != null && u.getAvatarPath() != null && !u.getAvatarPath().isEmpty()) {
-                    String uri = ImageStorageService.toFileUri(u.getAvatarPath());
+                    String uri = ImageStorageService.toImageUrl(u.getAvatarPath());
                     if (uri != null) {
                         javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(
                                 new javafx.scene.image.Image(uri, 36, 36, true, true));
@@ -633,6 +634,7 @@ public class AdminController {
             ItemDetailsController controller = loader.getController();
             controller.setItemData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Chi tiết phiên: " + auction.getAuctionId());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -652,6 +654,7 @@ public class AdminController {
                     getClass().getResource("/view/create_session.fxml"));
             Parent root = loader.load();
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Tạo phiên đấu giá mới");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -786,10 +789,12 @@ public class AdminController {
             if (controller != null) {
                 controller.setUserData(user, autoApprove);
                 Stage stage = new Stage();
+                utils.SceneManager.setAppIcon(stage);
                 stage.setTitle("Thông tin người dùng: " + user.getUsername());
                 stage.setScene(new Scene(root));
                 stage.initModality(Modality.APPLICATION_MODAL);
                 stage.show();
+                stage.sizeToScene();
             }
         } catch (Exception e) {
             e.printStackTrace();

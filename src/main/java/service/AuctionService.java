@@ -128,6 +128,10 @@ public class AuctionService {
      * Builds the BID command string.
      */
     public String buildBidCommand(String auctionId, double amount, String userId) {
-        return String.format("BID:%s:%.2f:%s", auctionId, amount, userId);
+        return buildBidCommand(auctionId, amount, userId, false);
+    }
+
+    public String buildBidCommand(String auctionId, double amount, String userId, boolean isAnonymous) {
+        return String.format("BID:%s:%.2f:%s:%b", auctionId, amount, userId, isAnonymous);
     }
 }

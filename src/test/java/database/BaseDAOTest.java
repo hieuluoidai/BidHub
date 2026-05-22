@@ -105,6 +105,8 @@ public abstract class BaseDAOTest {
                     "bid_amount DOUBLE NOT NULL, " +
                     "bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "bid_type VARCHAR(20) DEFAULT 'MANUAL', " +
+                    "is_anonymous TINYINT(1) DEFAULT 0, " +
+                    "anonymous_display_name VARCHAR(50), " +
                     "FOREIGN KEY (auction_id) REFERENCES auctions(auction_id) ON DELETE CASCADE, " +
                     "FOREIGN KEY (bidder_id) REFERENCES users(user_id) ON DELETE CASCADE" +
                     ")");
@@ -116,6 +118,7 @@ public abstract class BaseDAOTest {
                     "max_bid DECIMAL(15,2) NOT NULL, " +
                     "increment DECIMAL(15,2) NOT NULL, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "is_anonymous TINYINT(1) DEFAULT 0, " +
                     "FOREIGN KEY (auction_id) REFERENCES auctions(auction_id) ON DELETE CASCADE, " +
                     "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, " +
                     "UNIQUE (auction_id, user_id)" +

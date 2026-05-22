@@ -15,13 +15,19 @@ public class AutoBid implements Serializable {
     private double maxBid;
     private double increment;
     private LocalDateTime createdAt;
+    private boolean isAnonymous = false;
 
     public AutoBid(String autoBidId, String auctionId, String userId, double maxBid, double increment) {
+        this(autoBidId, auctionId, userId, maxBid, increment, false);
+    }
+
+    public AutoBid(String autoBidId, String auctionId, String userId, double maxBid, double increment, boolean isAnonymous) {
         this.autoBidId = autoBidId;
         this.auctionId = auctionId;
         this.userId = userId;
         this.maxBid = maxBid;
         this.increment = increment;
+        this.isAnonymous = isAnonymous;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -62,9 +68,17 @@ public class AutoBid implements Serializable {
         this.createdAt = t;
     }
 
+    public boolean isAnonymous() {
+        return isAnonymous;
+    }
+
+    public void setAnonymous(boolean anonymous) {
+        isAnonymous = anonymous;
+    }
+
     @Override
     public String toString() {
-        return String.format("AutoBid[ID=%s, User=%s, Max=$%.2f, Inc=$%.2f]",
-            autoBidId, userId, maxBid, increment);
+        return String.format("AutoBid[ID=%s, User=%s, Max=$%.2f, Inc=$%.2f, Anon=%b]",
+            autoBidId, userId, maxBid, increment, isAnonymous);
     }
 }

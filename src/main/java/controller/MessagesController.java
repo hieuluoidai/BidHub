@@ -157,7 +157,7 @@ public class MessagesController {
                 : partnerName.substring(0, 1).toUpperCase();
         lblPartnerAvatar.setText(firstChar);
         if (avatarPath != null && !avatarPath.isEmpty()) {
-            String uri = ImageStorageService.toFileUri(avatarPath);
+            String uri = ImageStorageService.toImageUrl(avatarPath);
             if (uri != null) {
                 imgPartnerAvatar.setImage(new Image(uri));
                 imgPartnerAvatar.setVisible(true);
@@ -319,7 +319,7 @@ public class MessagesController {
         avatarPane.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 50%;");
         avatarPane.getChildren().add(initial);
         if (s.partnerAvatarPath != null && !s.partnerAvatarPath.isEmpty()) {
-            String uri = ImageStorageService.toFileUri(s.partnerAvatarPath);
+            String uri = ImageStorageService.toImageUrl(s.partnerAvatarPath);
             if (uri != null) {
                 ImageView iv = new ImageView(new Image(uri, 40, 40, true, true));
                 iv.setFitWidth(40); iv.setFitHeight(40);

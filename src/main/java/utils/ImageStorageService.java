@@ -252,6 +252,39 @@ public final class ImageStorageService {
     }
 
     /**
+     * Upload ảnh đại diện từ file local lên HTTP image server.
+     *
+     * @param imageFile file ảnh cần upload
+     * @param userId    ID user, dùng làm tên file trên server
+     * @return dbPath trả về từ server (vd: "avatars/u-abc.jpg")
+     * @throws IOException nếu lỗi mạng hoặc server lỗi
+     */
+    public static String uploadAvatarToServer(File imageFile, String userId) throws IOException {
+        String ext = getExtension(imageFile.getName());
+        String urlStr = "http://" + IMAGE_SERVER_HOST + ":" + IMAGE_SERVER_PORT
+                + "/upload?id=" + userId + "&ext=" + ext + "&prefix=avatars";
+        HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(30_000);
+
+        byte[] bytes = Files.readAllBytes(imageFile.toPath());
+        conn.setFixedLengthStreamingMode(bytes.length);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = conn.getResponseCode();
+        if (code != 200) {
+            throw new IOException("HTTP " + code + " khi upload ảnh");
+        }
+        try (InputStream is = conn.getInputStream()) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
      * Trả về HTTP URL để mọi client tải ảnh từ server.
      * Ví dụ: "http://206.189.37.5:8080/items/ITEM_123.jpg"
      */

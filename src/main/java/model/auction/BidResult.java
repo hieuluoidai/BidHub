@@ -25,6 +25,8 @@ public class BidResult implements Serializable {
     private final String message;
     private final String winnerUsername;
     private final ErrorCode errorCode;
+    private boolean isAnonymous = false;
+    private String anonymousDisplayName;
 
     private BidResult(Status status, String auctionId, double bidAmount,
                       double currentPrice, String message, String winnerUsername,
@@ -46,6 +48,13 @@ public class BidResult implements Serializable {
         return new BidResult(Status.SUCCESS, auctionId, amount, amount,
                 String.format("Đặt giá %,.0f ₫ thành công! Bạn đang dẫn đầu.", amount),
                 winnerUsername, null);
+    }
+
+    public static BidResult successAnonymous(String auctionId, double amount, String winnerUsername, String anonName) {
+        BidResult res = success(auctionId, amount, winnerUsername);
+        res.isAnonymous = true;
+        res.anonymousDisplayName = anonName;
+        return res;
     }
 
     /**
@@ -72,6 +81,13 @@ public class BidResult implements Serializable {
         ErrorCode resolvedCode = resolveErrorCode(errorCode, ErrorCode.BID_TOO_LOW);
         return new BidResult(Status.OUTBID, auctionId, yourAmount, currentPrice,
                 resolveMessage(resolvedCode, message), null, resolvedCode);
+    }
+
+    public static BidResult outbidAnonymous(String auctionId, double yourAmount, double currentPrice, String anonName) {
+        BidResult res = outbid(auctionId, yourAmount, currentPrice);
+        res.isAnonymous = true;
+        res.anonymousDisplayName = anonName;
+        return res;
     }
 
     public static BidResult outbid(String auctionId, double yourAmount,

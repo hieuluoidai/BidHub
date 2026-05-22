@@ -2,6 +2,7 @@ package controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -28,6 +29,7 @@ public class BidController {
     @FXML private Label labelUserBalance;
     @FXML private Label labelError;
     @FXML private TextField textBidAmount;
+    @FXML private CheckBox checkAnonymous;
     @FXML private Button cancelButton;
     @FXML private Button confirmButton;
 
@@ -71,6 +73,9 @@ public class BidController {
         
         // Không tự gợi ý sẵn giá đặt; để người dùng chủ động nhập mức muốn bid.
         textBidAmount.clear();
+        if (checkAnonymous != null) {
+            checkAnonymous.setSelected(false);
+        }
     }
 
     @FXML
@@ -128,10 +133,12 @@ public class BidController {
             AppState.getInstance().getClient().addStringMessageListener(errorStringListener);
 
             // 3. Gửi lệnh BID theo giao thức đã được đóng gói trong Service
+            boolean isAnonymous = (checkAnonymous != null && checkAnonymous.isSelected());
             String command = auctionService.buildBidCommand(
                     currentAuction.getAuctionId(),
                     amount,
-                    currentUser.getUserId());
+                    currentUser.getUserId(),
+                    isAnonymous);
             
             AppState.getInstance().getClient().send(command);
 

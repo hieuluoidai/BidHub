@@ -70,7 +70,7 @@ public class AuctionManager {
         }
 
         try {
-            auction.placeBid(bidder, newPrice);
+            auction.placeBid(bidder, newPrice, model.auction.BidTransaction.BidType.MANUAL, false);
             return true;
         } catch (InvalidBidException | AuctionClosedException e) {
             System.err.println("Lỗi đặt giá: " + e.getUserMessage());
@@ -126,7 +126,7 @@ public class AuctionManager {
                             ConcurrentBidManager.getInstance().releaseLock(auction.getAuctionId());
 
                             // Dọn dẹp Auto-Bidding (Logic mới: giải phóng tiền bị khóa của những người thua)
-                            AutoBidManager.getInstance().cleanup(auction.getAuctionId());
+                            AutoBidManager.getInstance().cleanupForCancellation(auction.getAuctionId());
 
                             String winner = (auction.getHighestBid() != null)
                                     ? auction.getHighestBid().getBidder().getUsername()
@@ -151,12 +151,15 @@ public class AuctionManager {
                                         itemName, price)
                                 );
                                 if (sellerId != null) {
+                                    String displayWinner = (auction.getHighestBid().isAnonymous()) 
+                                            ? auction.getHighestBid().getAnonymousDisplayName() 
+                                            : auction.getHighestBid().getBidder().getUsername();
                                     utils.NotificationService.notifyUser(server, sellerId,
                                         model.notification.Notification.Type.AUCTION_ENDED_SOLD,
                                         "Phiên của bạn đã kết thúc — có người thắng",
                                         String.format(java.util.Locale.US,
                                             "Phiên \"%s\" kết thúc. Người thắng: %s, giá %,.0f ₫. Chờ thanh toán.",
-                                            itemName, auction.getHighestBid().getBidder().getUsername(), price)
+                                            itemName, displayWinner, price)
                                     );
                                 }
                             } else {

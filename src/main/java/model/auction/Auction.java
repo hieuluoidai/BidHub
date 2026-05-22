@@ -92,10 +92,21 @@ public class Auction extends Entity implements Serializable, Subject {
 
     public synchronized void placeBid(User bidder, double amount)
             throws IllegalStateException, IllegalArgumentException {
-        placeBid(bidder, amount, BidTransaction.BidType.MANUAL);
+        placeBid(bidder, amount, BidTransaction.BidType.MANUAL, false);
     }
 
     public synchronized void placeBid(User bidder, double amount, BidTransaction.BidType bidType)
+            throws IllegalStateException, IllegalArgumentException {
+        placeBid(bidder, amount, bidType, false);
+    }
+
+    public synchronized void placeBid(User bidder, double amount, BidTransaction.BidType bidType, boolean isAnonymous)
+            throws IllegalStateException, IllegalArgumentException {
+        placeBid(bidder, amount, bidType, isAnonymous, null);
+    }
+
+    public synchronized void placeBid(User bidder, double amount, BidTransaction.BidType bidType, 
+                                      boolean isAnonymous, String anonymousDisplayName)
             throws IllegalStateException, IllegalArgumentException {
 
         if (!"RUNNING".equals(this.status)) {
@@ -108,6 +119,7 @@ public class Auction extends Entity implements Serializable, Subject {
         if (!Double.isFinite(amount) || amount <= 0) {
             throw InvalidBidException.invalidAmount(getAuctionId(), amount);
         }
+
         if (bidType == null) {
             bidType = BidTransaction.BidType.MANUAL;
         }
@@ -117,14 +129,21 @@ public class Auction extends Entity implements Serializable, Subject {
             throw new InvalidBidException(getAuctionId(), amount, currentPrice);
         }
 
-        BidTransaction newBid = new BidTransaction(bidder, amount, bidType);
+        BidTransaction newBid = new BidTransaction(bidder, amount, LocalDateTime.now(), bidType, isAnonymous);
+        if (isAnonymous && anonymousDisplayName != null) {
+            newBid.setAnonymousDisplayName(anonymousDisplayName);
+        }
         this.highestBid = newBid;
         this.bidHistory.add(newBid);
 
         boolean extended = applyAntiSnipingIfNeeded(newBid.getTimestamp());
 
+        String displayLogName = isAnonymous 
+                ? (anonymousDisplayName != null ? anonymousDisplayName : "Người dùng ẩn danh") 
+                : (bidder != null ? bidder.getUsername() : "Ẩn danh");
+        
         String msg = String.format("[BID] %s đặt $%.2f cho phiên %s",
-                bidder != null ? bidder.getUsername() : "Ẩn danh",
+                displayLogName,
                 amount,
                 getAuctionId()
         );
@@ -137,7 +156,8 @@ public class Auction extends Entity implements Serializable, Subject {
         }
 
         System.out.println(">>> Bid thành công: "
-                + (bidder != null ? bidder.getUsername() : "?") + " trả $" + amount
+                + displayLogName
+                + " trả $" + amount
                 + (extended ? "  [ANTI-SNIPE → endTime mới: " + endTime + "]" : ""));
     }
 

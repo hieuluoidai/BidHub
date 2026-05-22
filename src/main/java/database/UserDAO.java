@@ -293,6 +293,89 @@ public class UserDAO {
     }
 
     /**
+     * Tính toán lại và cập nhật locked_balance dựa trên trạng thái thực tế.
+     * Dùng để sửa các lỗi "tiền bị kẹt" do logic cũ.
+     */
+    public boolean recalculateLockedBalance(String userId) {
+        String sql = "UPDATE users u "
+                + "SET u.locked_balance = ("
+                + "  SELECT COALESCE(SUM(locked_per_auction), 0) FROM ("
+                + "    /* 1. Tiền từ các phiên đang dẫn đầu (manual) */"
+                + "    SELECT auction_id, current_price AS locked_per_auction "
+                + "    FROM auctions "
+                + "    WHERE highest_bidder_id = ? AND status = 'RUNNING' "
+                + "    UNION ALL "
+                + "    /* 2. Tiền từ các thiết lập Auto-Bid */"
+                + "    SELECT auction_id, max_bid AS locked_per_auction "
+                + "    FROM auto_bids "
+                + "    WHERE user_id = ? "
+                + "  ) AS combined "
+                + "  /* Group by auction_id để lấy MAX nếu một người có cả 2 loại lock */"
+                + "  GROUP BY auction_id"
+                + ") "
+                + "WHERE u.user_id = ?";
+        
+        // Cần bọc thêm 1 lớp SELECT để MySQL không lỗi "can't update table in subquery"
+        // Nhưng ở đây là update table 'u' với subquery từ table khác nên OK.
+        // Tuy nhiên logic GROUP BY + SUM(MAX) phức tạp hơn 1 câu SQL đơn.
+        // Tôi sẽ dùng logic Java cho chính xác và an toàn.
+        
+        double totalNeeded = 0;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            // Lấy max_bid từ auto_bids
+            String sqlAB = "SELECT auction_id, max_bid FROM auto_bids WHERE user_id = ?";
+            java.util.Map<String, Double> locks = new java.util.HashMap<>();
+            try (PreparedStatement stmt = conn.prepareStatement(sqlAB)) {
+                stmt.setString(1, userId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        locks.put(rs.getString("auction_id"), rs.getDouble("max_bid"));
+                    }
+                }
+            }
+            
+            // Lấy bid cao nhất từ bid_transactions nếu đang dẫn đầu các phiên đang RUNNING
+            String sqlAuc = "SELECT b1.auction_id, b1.bid_amount "
+                          + "FROM bid_transactions b1 "
+                          + "JOIN auctions a ON b1.auction_id = a.auction_id "
+                          + "WHERE a.status = 'RUNNING' AND b1.bidder_id = ? "
+                          + "AND b1.bid_amount = ("
+                          + "    SELECT MAX(b2.bid_amount) FROM bid_transactions b2 "
+                          + "    WHERE b2.auction_id = b1.auction_id"
+                          + ")";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlAuc)) {
+                stmt.setString(1, userId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        String aid = rs.getString("auction_id");
+                        double price = rs.getDouble("bid_amount");
+                        locks.put(aid, Math.max(locks.getOrDefault(aid, 0.0), price));
+                    }
+                }
+            }
+            
+            for (double amt : locks.values()) {
+                totalNeeded += amt;
+            }
+            
+            // Cập nhật lại locked_balance và điều chỉnh balance tương ứng
+            // Logic: balance_mới = (balance_cũ + locked_cũ) - totalNeeded
+            String sqlUpdate = "UPDATE users SET balance = (balance + locked_balance) - ?, "
+                             + "locked_balance = ? WHERE user_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlUpdate)) {
+                stmt.setDouble(1, totalNeeded);
+                stmt.setDouble(2, totalNeeded);
+                stmt.setString(3, userId);
+                return stmt.executeUpdate() > 0;
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi recalculate: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Chuyển tiền ATOMIC giữa 2 tài khoản — TRANSACTION đảm bảo all-or-nothing.
      */
     public boolean transferAtomic(String fromUserId, String toUserId, double amount) {

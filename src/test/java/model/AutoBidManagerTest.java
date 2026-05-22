@@ -36,10 +36,13 @@ class AutoBidManagerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Reset singleton
+        // Reset singleton field to null first
         Field instanceField = AutoBidManager.class.getDeclaredField("instance");
         instanceField.setAccessible(true);
         instanceField.set(null, null);
+
+        // Re-initialize manager (will call private constructor)
+        manager = AutoBidManager.getInstance();
 
         // Mock DAOs
         autoBidDAO = mock(AutoBidDAO.class);
@@ -47,7 +50,6 @@ class AutoBidManagerTest {
         bidTransactionDAO = mock(BidTransactionDAO.class);
 
         // Inject mocks via reflection
-        manager = AutoBidManager.getInstance();
         setPrivateField(manager, "autoBidDAO", autoBidDAO);
         setPrivateField(manager, "userDAO", userDAO);
 
@@ -128,7 +130,7 @@ class AutoBidManagerTest {
         // 5. Verify: Price should jump from 100 to 150 (Current + Increment)
         assertEquals(150.0, auction.getCurrentPrice());
         assertEquals("U001", auction.getHighestBid().getBidder().getUserId());
-        verify(bidTransactionDAO).save(eq(auctionId), eq("U001"), eq(150.0), any(), any());
+        verify(bidTransactionDAO).save(eq(auctionId), eq("U001"), eq(150.0), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -213,9 +215,9 @@ class AutoBidManagerTest {
         auction.placeBid(new Bidder("U_ALICE", "alice", "a@t.com", "p"), 500);
         AuctionManager.getInstance().addAuction(auction);
 
-        manager.cleanup(auctionId);
+        manager.cleanupForCancellation(auctionId);
 
-        verify(userDAO).unlockBalance("U_ALICE", 500.0);
+        verify(userDAO).unlockBalance("U_ALICE", 1000.0);
         verify(userDAO).unlockBalance("U_BOB", 800.0);
         verify(autoBidDAO).delete("AB_A");
         verify(autoBidDAO).delete("AB_B");

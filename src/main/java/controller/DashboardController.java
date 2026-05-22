@@ -368,7 +368,7 @@ public class DashboardController {
                 if (imgSidebarAvatar != null) {
                     if (sidebarAvatarClip != null) imgSidebarAvatar.setClip(sidebarAvatarClip);
                     if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
-                        String uri = utils.ImageStorageService.toFileUri(user.getAvatarPath());
+                        String uri = utils.ImageStorageService.toImageUrl(user.getAvatarPath());
                         if (uri != null) {
                             imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri));
                             imgSidebarAvatar.setVisible(true);
@@ -398,7 +398,7 @@ public class DashboardController {
         User user = AppState.getInstance().getCurrentUser();
         if (user == null || imgSidebarAvatar == null) return;
         if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
-            String uri = utils.ImageStorageService.toFileUri(user.getAvatarPath());
+            String uri = utils.ImageStorageService.toImageUrl(user.getAvatarPath());
             if (uri != null) {
                 imgSidebarAvatar.setImage(new javafx.scene.image.Image(uri, true));
                 imgSidebarAvatar.setVisible(true);
@@ -422,6 +422,7 @@ public class DashboardController {
             controller.TopUpController controller = loader.getController();
             controller.setOnTopUpSuccess(this::refreshBalanceLabel);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Nạp tiền vào ví");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -459,6 +460,7 @@ public class DashboardController {
             Parent root = loader.load();
             ((BidController)loader.getController()).setAuctionData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Place Your Bid");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -480,6 +482,7 @@ public class DashboardController {
             currentDetailController = loader.getController();
             currentDetailController.setItemData(auction);
             currentDetailStage = new Stage();
+            utils.SceneManager.setAppIcon(currentDetailStage);
             currentDetailStage.setTitle("Item Details");
             currentDetailStage.setScene(new Scene(root));
             currentDetailStage.initModality(Modality.APPLICATION_MODAL);
@@ -505,10 +508,12 @@ public class DashboardController {
             controller.setUserData(AppState.getInstance().getCurrentUser());
             controller.setOnAvatarChanged(this::refreshSidebarAvatar);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Thông tin cá nhân");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.show();
+            stage.sizeToScene();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -539,6 +544,7 @@ public class DashboardController {
 
     private void showStage(Parent root, String title) {
         Stage stage = new Stage();
+        utils.SceneManager.setAppIcon(stage);
         stage.setTitle(title);
         stage.setScene(new Scene(root));
         stage.initModality(Modality.APPLICATION_MODAL);

@@ -8,10 +8,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -74,6 +76,8 @@ public class ItemDetailsController {
     @FXML private Label lblBidTime;
     @FXML private ImageView itemImageView;
     @FXML private VBox noImagePlaceholder;
+    @FXML private javafx.scene.layout.HBox paneHighestBidder;
+    @FXML private Label lblHighestIcon;
 
     @FXML private AreaChart<Number, Number> bidChart;
     @FXML private NumberAxis bidXAxis;
@@ -97,6 +101,7 @@ public class ItemDetailsController {
     @FXML private VBox paneAutoBid;
     @FXML private TextField txtAutoMaxBid;
     @FXML private TextField txtAutoIncrement;
+    @FXML private CheckBox checkAutoAnonymous;
     @FXML private Button btnSetAutoBid;
     @FXML private Button btnCancelAutoBid;
 
@@ -121,6 +126,7 @@ public class ItemDetailsController {
     private javafx.animation.ScaleTransition pulseAnimation;
     private double lastDisplayedPrice = -1.0;
     private java.util.function.Consumer<String> antiSnipeListener;
+    private java.util.function.Consumer<String> autoBidCancelListener;
     private java.util.function.Consumer<String> friendStatusListener;
     private String currentFriendStatus = "NONE";
 
@@ -165,6 +171,18 @@ public class ItemDetailsController {
                 }
             };
             AppState.getInstance().getClient().addStringMessageListener(antiSnipeListener);
+        }
+
+        if (autoBidCancelListener == null) {
+            autoBidCancelListener = msg -> {
+                if (msg.startsWith("CANCEL_AUTOBID_OK:")) {
+                    String[] parts = msg.split(":");
+                    if (parts.length >= 2 && this.auction != null && parts[1].equals(this.auction.getAuctionId())) {
+                        Platform.runLater(this::checkExistingAutoBid);
+                    }
+                }
+            };
+            AppState.getInstance().getClient().addStringMessageListener(autoBidCancelListener);
         }
 
         this.auction = auction;
@@ -347,6 +365,24 @@ public class ItemDetailsController {
         });
     }
 
+    private String getDisplayName(BidTransaction bid) {
+        if (bid == null) return "Ẩn danh";
+        if (bid.isAnonymous()) {
+            User me = AppState.getInstance().getCurrentUser();
+            if (me != null && (me instanceof model.user.Admin)) {
+                String realName = (bid.getBidder() != null) ? bid.getBidder().getUsername() : "Ẩn danh";
+                return realName + " (Ẩn danh)";
+            }
+            // Ưu tiên dùng tên ẩn danh từ server (AnonymousBidder_XXX)
+            if (bid.getAnonymousDisplayName() != null && !bid.getAnonymousDisplayName().isBlank()) {
+                return bid.getAnonymousDisplayName();
+            }
+            // Fallback nếu server chưa kịp gửi hoặc dữ liệu cũ
+            return "Người dùng ẩn danh";
+        }
+        return (bid.getBidder() != null) ? bid.getBidder().getUsername() : "Ẩn danh";
+    }
+
     /**
      * Tạo layout "Activity Feed" cho mỗi dòng bid.
      */
@@ -355,21 +391,64 @@ public class ItemDetailsController {
         container.setAlignment(Pos.CENTER_LEFT);
         container.getStyleClass().add("bid-feed-item");
 
-        // 1. Avatar (Initial)
-        String name = (bid.getBidder() != null) ? bid.getBidder().getUsername() : "Ẩn danh";
-        String initial = name.substring(0, 1).toUpperCase();
-        Label lblAvatar = new Label(initial);
-        lblAvatar.getStyleClass().add("bid-avatar");
-        // Đổi màu avatar dựa trên tên để tạo sự khác biệt
-        int colorIdx = Math.abs(name.hashCode() % 5);
-        lblAvatar.getStyleClass().add("avatar-color-" + colorIdx);
+        // 1. Xử lý Tên và Trạng thái ẩn danh
+        String name = getDisplayName(bid);
 
-        // 2. Nội dung chính (User + Hành động)
+        boolean isAdmin = false;
+        User me = AppState.getInstance().getCurrentUser();
+        if (me != null && (me instanceof model.user.Admin)) {
+            isAdmin = true;
+        }
+
+        // 2. Avatar
+        Node avatarNode;
+        if (bid.isAnonymous() && !isAdmin) {
+            try {
+                ImageView incognitoView = new ImageView(new Image(
+                    getClass().getResourceAsStream("/Images/incognito.png")
+                ));
+                incognitoView.setFitWidth(22);
+                incognitoView.setFitHeight(22);
+                
+                StackPane shell = new StackPane(incognitoView);
+                shell.setPrefSize(40, 40);
+                shell.setMinSize(40, 40);
+                shell.setMaxSize(40, 40);
+                shell.setStyle("-fx-background-color: #F1F5F9; -fx-background-radius: 50%; "
+                        + "-fx-border-color: #E2E8F0; -fx-border-radius: 50%; -fx-border-width: 1;");
+                avatarNode = shell;
+            } catch (Exception e) {
+                javafx.scene.shape.SVGPath incognito = new javafx.scene.shape.SVGPath();
+                incognito.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 "
+                        + "3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22"
+                        + ".03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z");
+                incognito.setFill(Color.web("#475569"));
+                
+                StackPane avatarPane = new StackPane(incognito);
+                avatarPane.setPrefSize(22, 22);
+                avatarPane.setMinSize(22, 22);
+                avatarPane.setMaxSize(22, 22);
+                avatarPane.getStyleClass().add("bid-avatar");
+                avatarPane.setStyle("-fx-background-color: #E2E8F0; -fx-background-radius: 50%;");
+                avatarNode = avatarPane;
+            }
+        } else {
+            String initial = (name.length() > 0) ? name.substring(0, 1).toUpperCase() : "?";
+            Label lblAvatar = new Label(initial);
+            lblAvatar.getStyleClass().add("bid-avatar");
+            int colorIdx = Math.abs(name.hashCode() % 5);
+            lblAvatar.getStyleClass().add("avatar-color-" + colorIdx);
+            avatarNode = lblAvatar;
+        }
+
+        // 3. Nội dung chính (User + Hành động)
         VBox vContent = new VBox(2);
         vContent.setAlignment(Pos.CENTER_LEFT);
 
         Label lblUser = new Label(name);
         lblUser.getStyleClass().add("bid-user-name");
+        lblUser.setCursor(javafx.scene.Cursor.HAND);
+        lblUser.setOnMouseClicked(e -> handleViewProfile(bid));
 
         Label lblAction = new Label("đã đặt giá cho sản phẩm");
         lblAction.getStyleClass().add("bid-action-text");
@@ -399,7 +478,7 @@ public class ItemDetailsController {
 
         vPrice.getChildren().addAll(lblAmount, lblTime);
 
-        container.getChildren().addAll(lblAvatar, vContent, spacer, vPrice);
+        container.getChildren().addAll(avatarNode, vContent, spacer, vPrice);
         return container;
     }
 
@@ -486,21 +565,57 @@ public class ItemDetailsController {
 
         if (!history.isEmpty()) {
             BidTransaction latestBid = history.get(history.size() - 1);
-            lblHighestBidder.setText(latestBid.getBidder() != null
-                    ? latestBid.getBidder().getUsername()
-                    : "Ẩn danh");
+            lblHighestBidder.setText(getDisplayName(latestBid));
             lblBidTime.setText(latestBid.getTimestamp().format(dateTimeFormatter));
+
+            // Cập nhật giao diện Người dẫn đầu nổi bật
+            if (paneHighestBidder != null) {
+                paneHighestBidder.setVisible(true);
+                paneHighestBidder.setManaged(true);
+                if (latestBid.isAnonymous()) {
+                    try {
+                        ImageView iv = new ImageView(new Image(
+                            getClass().getResourceAsStream("/Images/incognito.png")
+                        ));
+                        iv.setFitWidth(14);
+                        iv.setFitHeight(14);
+                        lblHighestIcon.setGraphic(iv);
+                        lblHighestIcon.setText("");
+                    } catch (Exception e) {
+                        lblHighestIcon.setGraphic(null);
+                        lblHighestIcon.setText("🕵");
+                    }
+                    paneHighestBidder.setStyle("-fx-background-color: #F8FAFC; -fx-padding: 4 12; "
+                            + "-fx-background-radius: 20; -fx-border-color: #E2E8F0; "
+                            + "-fx-border-width: 1; -fx-border-radius: 20;");
+                    lblHighestBidder.setStyle("-fx-text-fill: #475569; -fx-font-weight: bold; -fx-font-size: 13px;");
+                } else {
+                    javafx.scene.shape.SVGPath crown = new javafx.scene.shape.SVGPath();
+                    crown.setContent("M12 2l-3 4-3-4-2 7h16l-2-7-3 4-3-4zM3 10v2h18v-2H3zm0 3v2h18v-2H3z");
+                    crown.setFill(Color.web("#1D4ED8"));
+                    lblHighestIcon.setGraphic(crown);
+                    lblHighestIcon.setText("");
+                    paneHighestBidder.setStyle("-fx-background-color: #EFF6FF; -fx-padding: 4 12; "
+                            + "-fx-background-radius: 20; -fx-border-color: #DBEAFE; "
+                            + "-fx-border-width: 1; -fx-border-radius: 20;");
+                    lblHighestBidder.setStyle("-fx-text-fill: #1D4ED8; -fx-font-weight: bold; -fx-font-size: 13px;");
+                }
+            }
 
             // Hiển thị người thắng nếu phiên đã kết thúc
             if ("FINISHED".equals(auction.getStatus()) || "PAID".equals(auction.getStatus())) {
                 paneWinner.setVisible(true);
                 paneWinner.setManaged(true);
-                lblWinnerName.setText(latestBid.getBidder() != null ? latestBid.getBidder().getUsername() : "Ẩn danh");
+                lblWinnerName.setText(getDisplayName(latestBid));
             } else {
                 paneWinner.setVisible(false);
                 paneWinner.setManaged(false);
             }
         } else {
+            if (paneHighestBidder != null) {
+                paneHighestBidder.setVisible(false);
+                paneHighestBidder.setManaged(false);
+            }
             lblHighestBidder.setText("Chưa có ai dẫn đầu");
             lblBidTime.setText("-");
             paneWinner.setVisible(false);
@@ -542,6 +657,50 @@ public class ItemDetailsController {
         Collections.reverse(newestFirst);
         bidRows.setAll(newestFirst);
         scrollBidHistoryToTop();
+    }
+
+    private void handleViewProfile(BidTransaction bid) {
+        if (bid == null) return;
+
+        boolean isAdmin = AppState.getInstance().getCurrentUser() instanceof model.user.Admin;
+        boolean isAnonymous = bid.isAnonymous() && !isAdmin;
+
+        String userIdToFetch = null;
+        if (!isAnonymous && bid.getBidder() != null) {
+            userIdToFetch = bid.getBidder().getUserId();
+        }
+
+        final String finalUserId = userIdToFetch;
+        new Thread(() -> {
+            User targetUser;
+            if (isAnonymous) {
+                // Tạo user giả cho giao diện ẩn danh
+                targetUser = new model.user.Bidder("anon", bid.getAnonymousDisplayName(), "", "");
+            } else {
+                if (finalUserId == null) return;
+                targetUser = new database.UserDAO().findById(finalUserId);
+            }
+
+            Platform.runLater(() -> {
+                if (targetUser == null) return;
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/user_details.fxml"));
+                    Parent root = loader.load();
+                    UserDetailsController controller = loader.getController();
+                    controller.setUserData(targetUser, false, isAnonymous);
+
+                    Stage stage = new Stage();
+                    utils.SceneManager.setAppIcon(stage);
+                    stage.setTitle("Thông tin người dùng: " + targetUser.getUsername());
+                    stage.setScene(new Scene(root));
+                    stage.initModality(Modality.APPLICATION_MODAL);
+                    stage.show();
+                    stage.sizeToScene(); // Đảm bảo cửa sổ thu nhỏ vừa vặn nội dung
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+        }).start();
     }
 
     /**
@@ -664,7 +823,7 @@ public class ItemDetailsController {
         point.setMinSize(10, 10);
         point.setMaxSize(10, 10);
 
-        String bidderName = bid.getBidder() != null ? bid.getBidder().getUsername() : "Ẩn danh";
+        String bidderName = getDisplayName(bid);
         Tooltip.install(point, new Tooltip(
                 bidderName + "\n"
                         + String.format("%,.0f ₫", bid.getBidAmount()) + "\n"
@@ -796,8 +955,9 @@ public class ItemDetailsController {
             }
 
             var user = AppState.getInstance().getCurrentUser();
-            String cmd = String.format("SET_AUTOBID:%s:%s:%.2f:%.2f",
-                    auction.getAuctionId(), user.getUserId(), maxBid, increment);
+            boolean isAnon = (checkAutoAnonymous != null && checkAutoAnonymous.isSelected());
+            String cmd = String.format(java.util.Locale.US, "SET_AUTOBID:%s:%s:%.2f:%.2f:%b",
+                    auction.getAuctionId(), user.getUserId(), maxBid, increment, isAnon);
 
             AppState.getInstance().getClient().setStringMessageCallback(this::handleAutoBidResponse);
             AppState.getInstance().getClient().send(cmd);
@@ -846,18 +1006,22 @@ public class ItemDetailsController {
             }
             AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
             AlertHelper.show(AlertHelper.Type.SUCCESS, "Thành công", "Đã thiết lập đấu giá tự động!");
-            updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText());
+            updateAutoBidUI(true, txtAutoMaxBid.getText(), txtAutoIncrement.getText(), checkAutoAnonymous.isSelected());
 
         } else if (msg.startsWith("MY_AUTOBID:")) {
             String[] parts = msg.split(":");
-            if (parts.length >= 4) {
+            if (parts.length >= 5) {
                 AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
-                updateAutoBidUI(true, parts[2], parts[3]);
+                boolean isAnon = Boolean.parseBoolean(parts[4]);
+                updateAutoBidUI(true, parts[2], parts[3], isAnon);
+            } else if (parts.length >= 4) {
+                AppState.getInstance().setMyAutoBid(auction.getAuctionId(), true);
+                updateAutoBidUI(true, parts[2], parts[3], false);
             }
 
         } else if (msg.startsWith("MY_AUTOBID_NONE")) {
             AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
-            updateAutoBidUI(false, "", "");
+            updateAutoBidUI(false, "", "", false);
 
         } else if (msg.startsWith("CANCEL_AUTOBID_OK")) {
             String[] parts = msg.split(":");
@@ -871,7 +1035,7 @@ public class ItemDetailsController {
             AppState.getInstance().setMyAutoBid(auction.getAuctionId(), false);
             AlertHelper.show(AlertHelper.Type.INFO, "Đã hủy",
                     "Đã hủy đấu giá tự động và hoàn lại tiền khóa.");
-            updateAutoBidUI(false, "", "");
+            updateAutoBidUI(false, "", "", false);
 
         } else if (msg.startsWith("AUTOBID_FAILED")) {
             String reason = msg.substring("AUTOBID_FAILED:".length());
@@ -882,7 +1046,7 @@ public class ItemDetailsController {
         }
     }
 
-    private void updateAutoBidUI(boolean active, String max, String inc) {
+    private void updateAutoBidUI(boolean active, String max, String inc, boolean isAnon) {
         btnSetAutoBid.setVisible(!active);
         btnSetAutoBid.setManaged(!active);
         btnSetAutoBid.setDisable(false);
@@ -896,6 +1060,10 @@ public class ItemDetailsController {
         txtAutoIncrement.setText(inc);
         txtAutoMaxBid.setEditable(!active);
         txtAutoIncrement.setEditable(!active);
+        if (checkAutoAnonymous != null) {
+            checkAutoAnonymous.setSelected(isAnon);
+            checkAutoAnonymous.setDisable(active);
+        }
     }
 
     @FXML
@@ -908,6 +1076,7 @@ public class ItemDetailsController {
             controller.setAuctionData(this.auction);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Đặt giá cho " + auction.getItemName());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -929,6 +1098,7 @@ public class ItemDetailsController {
             controller.setOnSavedCallback(this::closeWindow);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Sửa phiên: " + auction.getItemName());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -948,6 +1118,7 @@ public class ItemDetailsController {
             controller.setAuctionData(this.auction);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
             stage.initOwner(lblItemName.getScene().getWindow());
@@ -991,6 +1162,7 @@ public class ItemDetailsController {
             controller.setAuctionData(this.auction);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
             stage.initOwner(lblItemName.getScene().getWindow());
@@ -1038,6 +1210,7 @@ public class ItemDetailsController {
             controller.setPaymentData(finalPrice, currentBalance);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.TRANSPARENT);
             stage.initOwner(lblItemName.getScene().getWindow());
@@ -1133,7 +1306,7 @@ public class ItemDetailsController {
                 avatarPane.setStyle("-fx-background-color: #3B82F6; -fx-background-radius: 50%;");
                 avatarPane.getChildren().add(initial);
                 if (seller.getAvatarPath() != null && !seller.getAvatarPath().isEmpty()) {
-                    String uri = utils.ImageStorageService.toFileUri(seller.getAvatarPath());
+                    String uri = utils.ImageStorageService.toImageUrl(seller.getAvatarPath());
                     if (uri != null) {
                         javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(
                                 new javafx.scene.image.Image(uri, 22, 22, true, true));

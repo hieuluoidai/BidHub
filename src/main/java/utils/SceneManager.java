@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.image.Image;
 import java.io.IOException;
 import java.util.function.Consumer;
 
@@ -18,6 +19,19 @@ public class SceneManager {
 
     public SceneManager(Stage stage) {
         this.stage = stage;
+        setAppIcon(stage);
+    }
+
+    /**
+     * Gán icon BidHub cho bất kỳ cửa sổ (Stage) nào.
+     */
+    public static void setAppIcon(Stage stage) {
+        if (stage == null) return;
+        try {
+            stage.getIcons().add(new Image(SceneManager.class.getResourceAsStream("/Images/bid-hub-logo.png")));
+        } catch (Exception e) {
+            System.err.println(">>> [WARN] Không thể nạp ứng dụng icon: " + e.getMessage());
+        }
     }
 
     public void showLogin() {
@@ -79,6 +93,7 @@ public class SceneManager {
             }
 
             Stage modalStage = new Stage();
+            setAppIcon(modalStage);
             modalStage.setTitle(title);
             modalStage.initModality(Modality.APPLICATION_MODAL);
             

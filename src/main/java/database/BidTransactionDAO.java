@@ -30,10 +30,20 @@ public class BidTransactionDAO {
     }
 
     public boolean save(String auctionId, String bidderId, double amount, BidTransaction.BidType bidType, LocalDateTime bidTime) {
+        return save(auctionId, bidderId, amount, bidType, bidTime, false, null);
+    }
+
+    public boolean save(String auctionId, String bidderId, double amount, 
+                        BidTransaction.BidType bidType, LocalDateTime bidTime, boolean isAnonymous) {
+        return save(auctionId, bidderId, amount, bidType, bidTime, isAnonymous, null);
+    }
+
+    public boolean save(String auctionId, String bidderId, double amount, 
+                        BidTransaction.BidType bidType, LocalDateTime bidTime, boolean isAnonymous, String anonymousDisplayName) {
         String sql = """
                 INSERT INTO bid_transactions
-                    (transaction_id, auction_id, bidder_id, bid_amount, bid_time, bid_type)
-                VALUES (?, ?, ?, ?, ?, ?)
+                    (transaction_id, auction_id, bidder_id, bid_amount, bid_time, bid_type, is_anonymous, anonymous_display_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -43,6 +53,8 @@ public class BidTransactionDAO {
             stmt.setDouble(4, amount);
             stmt.setObject(5, bidTime != null ? bidTime : LocalDateTime.now());
             stmt.setString(6, (bidType != null ? bidType : BidTransaction.BidType.MANUAL).name());
+            stmt.setBoolean(7, isAnonymous);
+            stmt.setString(8, anonymousDisplayName);
             stmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -54,7 +66,7 @@ public class BidTransactionDAO {
     public List<BidTransaction> findTransactionsByAuctionId(String auctionId) {
         List<BidTransaction> history = new ArrayList<>();
         String sql = """
-                SELECT bidder_id, bid_amount, bid_time, bid_type
+                SELECT bidder_id, bid_amount, bid_time, bid_type, is_anonymous, anonymous_display_name
                 FROM bid_transactions
                 WHERE auction_id = ?
                 ORDER BY bid_time ASC, bid_amount ASC
@@ -70,6 +82,8 @@ public class BidTransactionDAO {
                 String bidderId = rs.getString("bidder_id");
                 User bidder = userDAO.findById(bidderId);
                 double amount = rs.getDouble("bid_amount");
+                boolean isAnon = rs.getBoolean("is_anonymous");
+                String anonName = rs.getString("anonymous_display_name");
 
                 // JDBC 4.2: Đọc trực tiếp LocalDateTime để tránh driver tự ý convert qua lại UTC
                 LocalDateTime timestamp = rs.getObject("bid_time", LocalDateTime.class);
@@ -77,12 +91,15 @@ public class BidTransactionDAO {
 
                 BidTransaction.BidType bidType = parseBidType(rs.getString("bid_type"));
 
-                history.add(new BidTransaction(
+                BidTransaction tx = new BidTransaction(
                         bidder,
                         amount,
                         timestamp,
-                        bidType
-                ));
+                        bidType,
+                        isAnon
+                );
+                tx.setAnonymousDisplayName(anonName);
+                history.add(tx);
             }
         } catch (SQLException e) {
             System.err.println("Lỗi khi tải lịch sử giá cho phiên " + auctionId + ": " + e.getMessage());

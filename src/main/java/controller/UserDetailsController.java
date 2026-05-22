@@ -34,6 +34,21 @@ public class UserDetailsController {
     @FXML private Label lblDOB;
     @FXML private Label lblAvatar;
     @FXML private ImageView imgAvatar;
+
+    @FXML private Label lblEmailTitle;
+    @FXML private Label lblPhoneTitle;
+    @FXML private Label lblDOBTitle;
+    @FXML private Label lblBalanceTitle;
+    @FXML private Label lblLockedBalanceTitle;
+    @FXML private javafx.scene.Node separator1;
+    @FXML private javafx.scene.Node separator2;
+    @FXML private javafx.scene.Node statsSection;
+    @FXML private javafx.scene.layout.GridPane gridAccountInfo;
+    @FXML private javafx.scene.layout.VBox accountInfoSection;
+    @FXML private javafx.scene.layout.HBox accountInfoTitleBox;
+    @FXML private javafx.scene.layout.VBox paneAnonymousMystery;
+    @FXML private javafx.scene.layout.VBox panePublicInfo;
+    @FXML private javafx.scene.layout.HBox profileHeader;
     
     @FXML private TextField txtEmail;
     @FXML private TextField txtPhone;
@@ -67,15 +82,78 @@ public class UserDetailsController {
     }
 
     public void setUserData(User user) {
-        setUserData(user, false);
+        setUserData(user, false, false);
     }
 
     public void setUserData(User user, boolean autoApprove) {
+        setUserData(user, autoApprove, false);
+    }
+
+    public void setUserData(User user, boolean autoApprove, boolean isAnonymousMode) {
         this.user = user;
+        User currentUser = AppState.getInstance().getCurrentUser();
+        boolean isOwnProfile = currentUser != null && currentUser.getUserId().equals(user.getUserId());
+        boolean isAdmin = currentUser instanceof Admin;
+
+        if (isAnonymousMode) {
+            lblUsername.setText(user.getUsername());
+            lblUserId.setVisible(false);
+            lblUserId.setManaged(false);
+            lblRoleBadge.setVisible(false);
+            lblRoleBadge.setManaged(false);
+            
+            // Trang trí phần Mystery cho ẩn danh
+            if (paneAnonymousMystery != null) {
+                paneAnonymousMystery.setVisible(true);
+                paneAnonymousMystery.setManaged(true);
+            }
+            if (profileHeader != null) {
+                profileHeader.setStyle("-fx-background-color: #F1F5F9; -fx-padding: 15; -fx-background-radius: 12;");
+            }
+            
+            // Ẩn toàn bộ phần thông tin tài khoản (bao gồm cả các nút Duyệt/Sửa/Đổi mật khẩu)
+            if (accountInfoSection != null) {
+                accountInfoSection.setVisible(false);
+                accountInfoSection.setManaged(false);
+            }
+            
+            if (separator1 != null) {
+                separator1.setVisible(false);
+                separator1.setManaged(false);
+            }
+
+            if (statsSection != null) {
+                statsSection.setVisible(false);
+                statsSection.setManaged(false);
+            }
+            if (separator2 != null) {
+                separator2.setVisible(false);
+                separator2.setManaged(false);
+            }
+            
+            imgAvatar.setImage(new Image(getClass().getResourceAsStream("/Images/incognito.png")));
+            imgAvatar.setVisible(true);
+            lblAvatar.setVisible(false);
+            
+            avatarContainer.setDisable(true);
+            return;
+        }
+
+        // Đảm bảo ẩn Mystery pane nếu không phải ẩn danh
+        if (paneAnonymousMystery != null) {
+            paneAnonymousMystery.setVisible(false);
+            paneAnonymousMystery.setManaged(false);
+        }
+        if (profileHeader != null) {
+            profileHeader.setStyle("-fx-background-color: transparent;");
+        }
+
         lblUsername.setText(user.getUsername());
         lblEmail.setText(user.getEmail());
         lblRoleBadge.setText(user.getClass().getSimpleName().toUpperCase());
-        lblUserId.setText(user.getUserId());
+        lblUserId.setText("(" + user.getUserId() + ")");
+        lblUserId.setVisible(true);
+        lblUserId.setManaged(true);
         
         lblPhone.setText(user.getPhoneNumber() != null ? user.getPhoneNumber() : "Chưa cập nhật");
         if (user.getDateOfBirth() != null) {
@@ -84,12 +162,11 @@ public class UserDetailsController {
             lblDOB.setText("Chưa cập nhật");
         }
         
-        boolean isAdmin = AppState.getInstance().getCurrentUser() instanceof Admin;
         boolean isPending = user.isPendingSeller();
         
         if (lblPendingStatus != null) {
-            lblPendingStatus.setVisible(isPending);
-            lblPendingStatusLabel.setVisible(isPending);
+            lblPendingStatus.setVisible(isPending && (isOwnProfile || isAdmin));
+            lblPendingStatusLabel.setVisible(isPending && (isOwnProfile || isAdmin));
         }
         
         if (btnApproveSeller != null) {
@@ -99,10 +176,72 @@ public class UserDetailsController {
         }
 
         if (btnRevokeSeller != null) {
-            boolean isSelf = AppState.getInstance().getCurrentUser().getUserId().equals(user.getUserId());
-            boolean canRevoke = isAdmin && !isSelf && (user instanceof Seller);
+            boolean canRevoke = isAdmin && !isOwnProfile && (user instanceof Seller);
             btnRevokeSeller.setVisible(canRevoke);
             btnRevokeSeller.setManaged(canRevoke);
+        }
+
+        // Chế độ xem cho Admin hoặc Chủ sở hữu
+        if (isOwnProfile || isAdmin) {
+            // Đảm bảo ẩn các pane trang trí
+            if (paneAnonymousMystery != null) {
+                paneAnonymousMystery.setVisible(false);
+                paneAnonymousMystery.setManaged(false);
+            }
+            if (panePublicInfo != null) {
+                panePublicInfo.setVisible(false);
+                panePublicInfo.setManaged(false);
+            }
+            if (profileHeader != null) {
+                profileHeader.setStyle("-fx-background-color: transparent;");
+            }
+
+            // Hiện lại các thành phần nếu chúng từng bị ẩn (do reuse controller)
+            if (separator1 != null) {
+                separator1.setVisible(true);
+                separator1.setManaged(true);
+            }
+            if (accountInfoSection != null) {
+                accountInfoSection.setVisible(true);
+                accountInfoSection.setManaged(true);
+            }
+            if (accountInfoTitleBox != null) {
+                accountInfoTitleBox.setVisible(isOwnProfile);
+                accountInfoTitleBox.setManaged(isOwnProfile);
+            }
+            if (gridAccountInfo != null) {
+                gridAccountInfo.setVisible(true);
+                gridAccountInfo.setManaged(true);
+            }
+
+            // Hiện tất cả các dòng thông tin
+            showAllAccountInfo();
+
+            // Chỉ chủ sở hữu mới được thấy nút Sửa và Đổi mật khẩu
+            if (btnEditProfile != null) {
+                btnEditProfile.setVisible(isOwnProfile);
+                btnEditProfile.setManaged(isOwnProfile);
+            }
+            if (btnChangePassword != null) {
+                btnChangePassword.setVisible(isOwnProfile);
+                btnChangePassword.setManaged(isOwnProfile);
+            }
+        } else {
+            // Chế độ xem hạn chế cho người dùng bình thường
+            hideSensitiveInfo(isAdmin, isPending);
+
+            // Trang trí cho hồ sơ công khai
+            if (panePublicInfo != null) {
+                panePublicInfo.setVisible(true);
+                panePublicInfo.setManaged(true);
+            }
+            if (profileHeader != null) {
+                profileHeader.setStyle("-fx-background-color: #F0F9FF; -fx-padding: 15; -fx-background-radius: 12;");
+            }
+            if (paneAnonymousMystery != null) {
+                paneAnonymousMystery.setVisible(false);
+                paneAnonymousMystery.setManaged(false);
+            }
         }
 
         setupAvatarEffects();
@@ -111,8 +250,59 @@ public class UserDetailsController {
         loadStats();
         attachRealtimeStats();
 
-        if (autoApprove && user.isPendingSeller() && AppState.getInstance().getCurrentUser() instanceof Admin) {
+        if (autoApprove && user.isPendingSeller() && isAdmin) {
             javafx.application.Platform.runLater(this::handleApproveSeller);
+        }
+    }
+
+    private void showAllAccountInfo() {
+        lblEmail.setVisible(true);
+        if (lblEmailTitle != null) {
+            lblEmailTitle.setVisible(true);
+        }
+        lblPhone.setVisible(true);
+        if (lblPhoneTitle != null) {
+            lblPhoneTitle.setVisible(true);
+        }
+        lblDOB.setVisible(true);
+        if (lblDOBTitle != null) {
+            lblDOBTitle.setVisible(true);
+        }
+        lblBalance.setVisible(true);
+        if (lblBalanceTitle != null) {
+            lblBalanceTitle.setVisible(true);
+        }
+        lblLockedBalance.setVisible(true);
+        if (lblLockedBalanceTitle != null) {
+            lblLockedBalanceTitle.setVisible(true);
+        }
+    }
+
+    private void hideSensitiveInfo(boolean isAdmin, boolean isPending) {
+        // Ẩn tiêu đề và grid thông tin
+        if (accountInfoTitleBox != null) {
+            accountInfoTitleBox.setVisible(false);
+            accountInfoTitleBox.setManaged(false);
+        }
+        if (gridAccountInfo != null) {
+            gridAccountInfo.setVisible(false);
+            gridAccountInfo.setManaged(false);
+        }
+
+        // Chỉ hiện lại accountInfoSection nếu có nút Duyệt/Hủy Seller (dành cho Admin)
+        User currentUser = AppState.getInstance().getCurrentUser();
+        boolean hasAdminAction = isAdmin && (isPending || (user instanceof Seller
+                && currentUser != null && !currentUser.getUserId().equals(user.getUserId())));
+
+        if (!hasAdminAction) {
+            if (accountInfoSection != null) {
+                accountInfoSection.setVisible(false);
+                accountInfoSection.setManaged(false);
+            }
+            if (separator1 != null) {
+                separator1.setVisible(false);
+                separator1.setManaged(false);
+            }
         }
     }
 
@@ -173,7 +363,7 @@ public class UserDetailsController {
 
     private void refreshAvatar() {
         if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) {
-            String uri = ImageStorageService.toFileUri(user.getAvatarPath());
+            String uri = ImageStorageService.toImageUrl(user.getAvatarPath());
             if (uri != null) {
                 imgAvatar.setImage(new Image(uri));
                 imgAvatar.setVisible(true);
@@ -227,6 +417,7 @@ public class UserDetailsController {
             AvatarCropController cropCtrl = loader.getController();
             cropCtrl.setImage(new Image(selectedFile.toURI().toString()), this::uploadCroppedAvatar);
             Stage cropStage = new Stage();
+            utils.SceneManager.setAppIcon(cropStage);
             cropStage.setScene(new javafx.scene.Scene(root));
             cropStage.showAndWait();
         } catch (Exception e) {
@@ -235,22 +426,27 @@ public class UserDetailsController {
     }
 
     private void uploadCroppedAvatar(File croppedFile) {
-        try {
-            String newAvatarPath = ImageStorageService.saveAvatar(croppedFile, user.getUserId());
-            AppState.getInstance().getClient().setStringMessageCallback(msg -> {
-                javafx.application.Platform.runLater(() -> {
-                    if (msg.equals("UPDATE_AVATAR_OK")) {
-                        user.setAvatarPath(newAvatarPath);
-                        refreshAvatar();
-                        if (onAvatarChanged != null) onAvatarChanged.run();
-                        AlertHelper.show(AlertHelper.Type.SUCCESS, "Đã cập nhật ảnh đại diện!");
-                    }
+        new Thread(() -> {
+            try {
+                String newAvatarPath = ImageStorageService.uploadAvatarToServer(croppedFile, user.getUserId());
+                AppState.getInstance().getClient().setStringMessageCallback(msg -> {
+                    javafx.application.Platform.runLater(() -> {
+                        if (msg.equals("UPDATE_AVATAR_OK")) {
+                            user.setAvatarPath(newAvatarPath);
+                            refreshAvatar();
+                            if (onAvatarChanged != null) onAvatarChanged.run();
+                            AlertHelper.show(AlertHelper.Type.SUCCESS, "Đã cập nhật ảnh đại diện!");
+                        }
+                    });
                 });
-            });
-            AppState.getInstance().getClient().send("UPDATE_AVATAR:" + user.getUserId() + ":" + newAvatarPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                AppState.getInstance().getClient().send("UPDATE_AVATAR:" + user.getUserId() + ":" + newAvatarPath);
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    AlertHelper.show(AlertHelper.Type.ERROR, "Lỗi upload ảnh", e.getMessage());
+                });
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     @FXML
@@ -294,6 +490,7 @@ public class UserDetailsController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/change_password.fxml"));
             Parent root = loader.load();
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Đổi mật khẩu");
             stage.setScene(new javafx.scene.Scene(root));
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
