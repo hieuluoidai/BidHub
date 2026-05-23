@@ -2,7 +2,12 @@ package controller;
 
 import java.io.IOException;
 
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -14,6 +19,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
@@ -34,6 +41,7 @@ public class DashboardController {
     @FXML private Label titleLabel;
     @FXML private Label auctionSubtitleLabel;
     @FXML private Label lblHomeWelcome;
+    @FXML private Label lblHomeHeroSubtitle;
     @FXML private Label lblBalance;        // hiển thị số dư hiện tại
     @FXML private Label lblLockedBalance;  // hiển thị số dư bị khóa
     @FXML private TextField textSearch;
@@ -68,7 +76,13 @@ public class DashboardController {
     @FXML private javafx.scene.layout.StackPane bellNotif;
     @FXML private Label lblNotifBadge;
     @FXML private javafx.scene.layout.StackPane paneHomeHero;
-    @FXML private javafx.scene.image.ImageView imgHomeHeroBackground;
+    @FXML private javafx.scene.layout.VBox boxHomeHeroContent;
+    @FXML private ImageView imgHomeHeroBackground;
+    @FXML private ImageView imgHomeHeroNextBackground;
+    @FXML private Label dotHomeSlide0;
+    @FXML private Label dotHomeSlide1;
+    @FXML private Label dotHomeSlide2;
+    @FXML private Label dotHomeSlide3;
 
     // View Navigation
     @FXML private Button btnNavHome;
@@ -100,6 +114,24 @@ public class DashboardController {
     private Popup auctionFlyout;
     private javafx.scene.layout.VBox auctionFlyoutBox;
     private PauseTransition auctionFlyoutHideDelay;
+    private static final double HOME_HERO_IMAGE_OPACITY = 0.82;
+    private static final Duration HOME_HERO_FADE_DURATION = Duration.millis(950);
+    private static final Duration HOME_HERO_AUTO_ADVANCE = Duration.seconds(5);
+    private final java.util.List<HomeHeroSlide> homeHeroSlides = java.util.List.of(
+            new HomeHeroSlide("/Images/home-welcome.png", "Welcome",
+                    "Khám phá các phiên đấu giá đang diễn ra và chọn danh mục bạn quan tâm"),
+            new HomeHeroSlide("/Images/home-art.png", "Art Auctions",
+                    "Khám phá tác phẩm nghệ thuật, bộ sưu tập hiếm và các phiên được tuyển chọn"),
+            new HomeHeroSlide("/Images/home-electronics.png", "Electronics Auctions",
+                    "Tìm thiết bị công nghệ, phụ kiện thông minh và sản phẩm điện tử đáng chú ý"),
+            new HomeHeroSlide("/Images/home-vehicle.png", "Vehicle Auctions",
+                    "Theo dõi ô tô, xe máy và phương tiện nổi bật trong các phiên đấu giá mới")
+    );
+    private int currentHomeSlideIndex = 0;
+    private Timeline homeHeroAutoPlay;
+    private boolean homeHeroAnimating;
+
+    private record HomeHeroSlide(String imagePath, String title, String subtitle) {}
 
     /**
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
@@ -261,10 +293,155 @@ public class DashboardController {
         clip.heightProperty().bind(paneHomeHero.heightProperty());
         paneHomeHero.setClip(clip);
 
-        if (imgHomeHeroBackground != null) {
-            imgHomeHeroBackground.fitWidthProperty().bind(paneHomeHero.widthProperty());
-            imgHomeHeroBackground.fitHeightProperty().bind(paneHomeHero.heightProperty());
+        bindHomeHeroImage(imgHomeHeroBackground);
+        bindHomeHeroImage(imgHomeHeroNextBackground);
+
+        if (!homeHeroSlides.isEmpty()) {
+            setHomeHeroImage(imgHomeHeroBackground, homeHeroSlides.get(0));
+            if (imgHomeHeroBackground != null) imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
+            if (imgHomeHeroNextBackground != null) imgHomeHeroNextBackground.setOpacity(0);
+            updateHomeHeroText(0);
+            updateHomeHeroDots(0);
+            startHomeHeroAutoPlay();
         }
+    }
+
+    private void bindHomeHeroImage(ImageView imageView) {
+        if (imageView == null) return;
+        imageView.fitWidthProperty().bind(paneHomeHero.widthProperty());
+        imageView.fitHeightProperty().bind(paneHomeHero.heightProperty());
+    }
+
+    private void setHomeHeroImage(ImageView imageView, HomeHeroSlide slide) {
+        if (imageView == null || slide == null) return;
+        var resource = getClass().getResource(slide.imagePath());
+        if (resource != null) {
+            imageView.setImage(new Image(resource.toExternalForm()));
+        }
+    }
+
+    private void updateHomeHeroText(int slideIndex) {
+        if (homeHeroSlides.isEmpty()) return;
+        int normalizedIndex = normalizeHomeSlideIndex(slideIndex);
+        HomeHeroSlide slide = homeHeroSlides.get(normalizedIndex);
+        if (lblHomeWelcome != null) {
+            lblHomeWelcome.setText(normalizedIndex == 0 ? "Welcome, " + getHomeUsername() : slide.title());
+        }
+        if (lblHomeHeroSubtitle != null) {
+            lblHomeHeroSubtitle.setText(slide.subtitle());
+        }
+    }
+
+    private String getHomeUsername() {
+        User user = AppState.getInstance().getCurrentUser();
+        if (user == null || user.getUsername() == null || user.getUsername().isBlank()) return "bidder";
+        return user.getUsername();
+    }
+
+    private void updateHomeHeroDots(int activeIndex) {
+        updateHomeHeroDot(dotHomeSlide0, activeIndex == 0);
+        updateHomeHeroDot(dotHomeSlide1, activeIndex == 1);
+        updateHomeHeroDot(dotHomeSlide2, activeIndex == 2);
+        updateHomeHeroDot(dotHomeSlide3, activeIndex == 3);
+    }
+
+    private void updateHomeHeroDot(Label dot, boolean active) {
+        if (dot == null) return;
+        dot.getStyleClass().removeAll("home-hero-dot-active");
+        if (active) {
+            dot.getStyleClass().add("home-hero-dot-active");
+        }
+    }
+
+    private int normalizeHomeSlideIndex(int index) {
+        int size = homeHeroSlides.size();
+        if (size == 0) return 0;
+        return Math.floorMod(index, size);
+    }
+
+    private void startHomeHeroAutoPlay() {
+        if (homeHeroSlides.size() < 2) return;
+        if (homeHeroAutoPlay == null) {
+            homeHeroAutoPlay = new Timeline(new KeyFrame(HOME_HERO_AUTO_ADVANCE,
+                    event -> showHomeSlide(currentHomeSlideIndex + 1, false)));
+            homeHeroAutoPlay.setCycleCount(Animation.INDEFINITE);
+        }
+        homeHeroAutoPlay.playFromStart();
+    }
+
+    private void stopHomeHeroAutoPlay() {
+        if (homeHeroAutoPlay != null) {
+            homeHeroAutoPlay.stop();
+        }
+    }
+
+    private void restartHomeHeroAutoPlay() {
+        stopHomeHeroAutoPlay();
+        startHomeHeroAutoPlay();
+    }
+
+    private void showHomeSlide(int requestedIndex, boolean manual) {
+        if (homeHeroSlides.isEmpty() || imgHomeHeroBackground == null) return;
+        int targetIndex = normalizeHomeSlideIndex(requestedIndex);
+        if (targetIndex == currentHomeSlideIndex) {
+            if (manual) restartHomeHeroAutoPlay();
+            return;
+        }
+        if (homeHeroAnimating) return;
+
+        if (manual) stopHomeHeroAutoPlay();
+        HomeHeroSlide targetSlide = homeHeroSlides.get(targetIndex);
+        fadeHomeHeroTextTo(targetIndex);
+        updateHomeHeroDots(targetIndex);
+
+        if (imgHomeHeroNextBackground == null) {
+            setHomeHeroImage(imgHomeHeroBackground, targetSlide);
+            currentHomeSlideIndex = targetIndex;
+            if (manual) restartHomeHeroAutoPlay();
+            return;
+        }
+
+        homeHeroAnimating = true;
+        setHomeHeroImage(imgHomeHeroNextBackground, targetSlide);
+        imgHomeHeroNextBackground.setOpacity(0);
+
+        FadeTransition fadeOut = new FadeTransition(HOME_HERO_FADE_DURATION, imgHomeHeroBackground);
+        fadeOut.setFromValue(HOME_HERO_IMAGE_OPACITY);
+        fadeOut.setToValue(0);
+
+        FadeTransition fadeIn = new FadeTransition(HOME_HERO_FADE_DURATION, imgHomeHeroNextBackground);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(HOME_HERO_IMAGE_OPACITY);
+
+        ParallelTransition transition = new ParallelTransition(fadeOut, fadeIn);
+        transition.setOnFinished(event -> {
+            imgHomeHeroBackground.setImage(imgHomeHeroNextBackground.getImage());
+            imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
+            imgHomeHeroNextBackground.setOpacity(0);
+            currentHomeSlideIndex = targetIndex;
+            homeHeroAnimating = false;
+            if (manual) restartHomeHeroAutoPlay();
+        });
+        transition.play();
+    }
+
+    private void fadeHomeHeroTextTo(int targetIndex) {
+        if (boxHomeHeroContent == null) {
+            updateHomeHeroText(targetIndex);
+            return;
+        }
+
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(260), boxHomeHeroContent);
+        fadeOut.setFromValue(boxHomeHeroContent.getOpacity());
+        fadeOut.setToValue(0.35);
+        fadeOut.setOnFinished(event -> {
+            updateHomeHeroText(targetIndex);
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(420), boxHomeHeroContent);
+            fadeIn.setFromValue(0.35);
+            fadeIn.setToValue(1);
+            fadeIn.play();
+        });
+        fadeOut.play();
     }
 
     private void updateStats() {
@@ -423,7 +600,7 @@ public class DashboardController {
     private void setupPermissions() {
         User user = AppState.getInstance().getCurrentUser();
         if (user != null) {
-            if (lblHomeWelcome != null) lblHomeWelcome.setText("Welcome, " + user.getUsername());
+            updateHomeHeroText(currentHomeSlideIndex);
             if (lblSidebarUsername != null) lblSidebarUsername.setText(user.getUsername());
             if (lblSidebarRole != null) lblSidebarRole.setText(user.getClass().getSimpleName().toUpperCase());
             if (lblSidebarAvatar != null) {
@@ -499,6 +676,7 @@ public class DashboardController {
 
     @FXML
     void handleLogout() {
+        stopHomeHeroAutoPlay();
         utils.NotificationCenter.reset();
         utils.ChatCenter.reset();
         utils.FriendCenter.reset();
@@ -682,6 +860,36 @@ public class DashboardController {
     @FXML
     void handleHomeVehicle() {
         openAuctionCategory("VEHICLE");
+    }
+
+    @FXML
+    void handleHomeSlidePrev() {
+        showHomeSlide(currentHomeSlideIndex - 1, true);
+    }
+
+    @FXML
+    void handleHomeSlideNext() {
+        showHomeSlide(currentHomeSlideIndex + 1, true);
+    }
+
+    @FXML
+    void handleHomeSlide0() {
+        showHomeSlide(0, true);
+    }
+
+    @FXML
+    void handleHomeSlide1() {
+        showHomeSlide(1, true);
+    }
+
+    @FXML
+    void handleHomeSlide2() {
+        showHomeSlide(2, true);
+    }
+
+    @FXML
+    void handleHomeSlide3() {
+        showHomeSlide(3, true);
     }
 
     private void openAuctionCategory(String category) {

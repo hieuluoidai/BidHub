@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat: redesign home and add category-based auctions navigation" />
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="fix: redesign frame">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/view/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/style.css" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -46,23 +51,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.6289223777243667" />
-      <entry key="MS500" value="4.620968531603518" />
-      <entry key="S2" value="9.012164094144147" />
-      <entry key="S5" value="15.390516586612438" />
-      <entry key="S10" value="22.134120924618134" />
-      <entry key="S30" value="30.380299303569863" />
-      <entry key="S60" value="37.15805567289085" />
-      <entry key="M2" value="62.7696878649559" />
-      <entry key="M5" value="171.13904872180652" />
-      <entry key="M10" value="336.547344860153" />
-      <entry key="M15" value="475.81340475014156" />
-      <entry key="M30" value="774.8914219533582" />
-      <entry key="H1" value="1108.7380491816257" />
-      <entry key="H2" value="1429.4942720497752" />
-      <entry key="H4" value="1680.8374632410662" />
-      <entry key="D1" value="1971.7036174895459" />
-      <entry key="W1" value="2031.668875089904" />
+      <entry key="MS100" value="1.5405483744702404" />
+      <entry key="MS500" value="5.423251221390053" />
+      <entry key="S2" value="15.24304789853559" />
+      <entry key="S5" value="29.25049134968869" />
+      <entry key="S10" value="50.28145453209673" />
+      <entry key="S30" value="114.19406577421054" />
+      <entry key="S60" value="175.40184797252746" />
+      <entry key="M2" value="246.07115753742303" />
+      <entry key="M5" value="383.78400258230107" />
+      <entry key="M10" value="567.9735524364451" />
+      <entry key="M15" value="706.4527502784072" />
+      <entry key="M30" value="1025.9508638858338" />
+      <entry key="H1" value="1505.2079377992097" />
+      <entry key="H2" value="2071.6389770145183" />
+      <entry key="H4" value="2567.905079989494" />
+      <entry key="D1" value="3190.3760367653704" />
+      <entry key="W1" value="3324.6653825904473" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -84,23 +89,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.5266421235504568" />
-      <entry key="MS500" value="4.555344235102824" />
-      <entry key="S2" value="8.97981503323092" />
-      <entry key="S5" value="15.367886466089688" />
-      <entry key="S10" value="22.117598609052703" />
-      <entry key="S30" value="30.37266187823126" />
-      <entry key="S60" value="37.15344478596357" />
-      <entry key="M2" value="62.766032881626415" />
-      <entry key="M5" value="171.1353723643685" />
-      <entry key="M10" value="336.54375577699466" />
-      <entry key="M15" value="475.80994450460076" />
-      <entry key="M30" value="774.8884306440934" />
-      <entry key="H1" value="1108.7357804201376" />
-      <entry key="H2" value="1429.4927422018625" />
-      <entry key="H4" value="1680.836538198314" />
-      <entry key="D1" value="1971.703431828924" />
-      <entry key="W1" value="2031.6688476309755" />
+      <entry key="MS100" value="1.4535949099724086" />
+      <entry key="MS500" value="5.343361498475301" />
+      <entry key="S2" value="15.185957895268544" />
+      <entry key="S5" value="29.208016142878627" />
+      <entry key="S10" value="50.24586061507569" />
+      <entry key="S30" value="114.16773855566734" />
+      <entry key="S60" value="175.38188824452067" />
+      <entry key="M2" value="246.05732266047903" />
+      <entry key="M5" value="383.7754965483498" />
+      <entry key="M10" value="567.9671915526267" />
+      <entry key="M15" value="706.4474061640848" />
+      <entry key="M30" value="1025.9468999847886" />
+      <entry key="H1" value="1505.2049541795532" />
+      <entry key="H2" value="2071.636860964057" />
+      <entry key="H4" value="2567.903736837362" />
+      <entry key="D1" value="3190.3757514388235" />
+      <entry key="W1" value="3324.6653399044944" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -183,7 +188,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779550291971</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="fix: redesign frame">
+      <option name="closed" value="true" />
+      <created>1779550742828</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1779550742828</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -205,7 +218,8 @@
     <MESSAGE value="refactor(exception): optimize exception handling logic in auction controller" />
     <MESSAGE value="feat: redesign bidder home and add category-based auctions navigation" />
     <MESSAGE value="feat: redesign home and add category-based auctions navigation" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: redesign home and add category-based auctions navigation" />
+    <MESSAGE value="fix: redesign frame" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: redesign frame" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

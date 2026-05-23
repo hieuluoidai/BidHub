@@ -18,6 +18,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
 <BorderPane prefHeight="760.0" prefWidth="1450.0" styleClass="dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.DashboardController">
 
@@ -110,22 +111,57 @@
                <children>
                   <StackPane fx:id="paneHomeHero" maxHeight="465.0" minHeight="465.0" prefHeight="465.0" styleClass="home-hero">
                      <children>
-                        <ImageView fx:id="imgHomeHeroBackground" fitHeight="465.0" fitWidth="1100.0" managed="false" mouseTransparent="true" opacity="0.22" preserveRatio="false">
+                        <ImageView fx:id="imgHomeHeroBackground" fitHeight="465.0" fitWidth="1100.0" managed="false" mouseTransparent="true" opacity="0.82" preserveRatio="false">
                            <image>
-                              <Image url="@../Images/bid-hub-logo.png" />
+                              <Image url="@../Images/home-welcome.png" />
                            </image>
                            <effect>
-                              <GaussianBlur radius="18.0" />
+                              <GaussianBlur radius="7.0" />
                            </effect>
                         </ImageView>
-                        <Region styleClass="home-hero-tint" />
-                        <VBox alignment="CENTER" spacing="22.0">
+                        <ImageView fx:id="imgHomeHeroNextBackground" fitHeight="465.0" fitWidth="1100.0" managed="false" mouseTransparent="true" opacity="0.0" preserveRatio="false">
+                           <image>
+                              <Image url="@../Images/home-welcome.png" />
+                           </image>
+                           <effect>
+                              <GaussianBlur radius="7.0" />
+                           </effect>
+                        </ImageView>
+                        <Region mouseTransparent="true" styleClass="home-hero-tint" />
+                        <VBox fx:id="boxHomeHeroContent" alignment="CENTER" mouseTransparent="true" spacing="22.0">
                            <children>
                               <Label styleClass="home-hero-badge" text="☆ BidHub Auction System" />
                               <Label fx:id="lblHomeWelcome" alignment="CENTER" styleClass="home-welcome-title" text="Welcome, bidder" textAlignment="CENTER" wrapText="true" />
-                              <Label alignment="CENTER" styleClass="home-welcome-subtitle" text="Khám phá các phiên đấu giá đang diễn ra và chọn danh mục bạn quan tâm" textAlignment="CENTER" wrapText="true" />
+                              <Label fx:id="lblHomeHeroSubtitle" alignment="CENTER" styleClass="home-welcome-subtitle" text="Khám phá các phiên đấu giá đang diễn ra và chọn danh mục bạn quan tâm" textAlignment="CENTER" wrapText="true" />
                            </children>
                         </VBox>
+                        <HBox alignment="CENTER" maxHeight="20.0" maxWidth="130.0" pickOnBounds="false" spacing="8.0" StackPane.alignment="BOTTOM_CENTER">
+                           <StackPane.margin>
+                              <Insets bottom="24.0" />
+                           </StackPane.margin>
+                           <children>
+                              <Label fx:id="dotHomeSlide0" minHeight="10.0" minWidth="10.0" onMouseClicked="#handleHomeSlide0" styleClass="home-hero-dot, home-hero-dot-active" />
+                              <Label fx:id="dotHomeSlide1" minHeight="10.0" minWidth="10.0" onMouseClicked="#handleHomeSlide1" styleClass="home-hero-dot" />
+                              <Label fx:id="dotHomeSlide2" minHeight="10.0" minWidth="10.0" onMouseClicked="#handleHomeSlide2" styleClass="home-hero-dot" />
+                              <Label fx:id="dotHomeSlide3" minHeight="10.0" minWidth="10.0" onMouseClicked="#handleHomeSlide3" styleClass="home-hero-dot" />
+                           </children>
+                        </HBox>
+                        <Button fx:id="btnHomeSlidePrev" focusTraversable="false" mnemonicParsing="false" onAction="#handleHomeSlidePrev" styleClass="home-hero-arrow" StackPane.alignment="CENTER_LEFT">
+                           <graphic>
+                              <SVGPath content="M14 4 L6 12 L14 20" fill="TRANSPARENT" stroke="WHITE" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeWidth="3.0" />
+                           </graphic>
+                           <StackPane.margin>
+                              <Insets left="18.0" />
+                           </StackPane.margin>
+                        </Button>
+                        <Button fx:id="btnHomeSlideNext" focusTraversable="false" mnemonicParsing="false" onAction="#handleHomeSlideNext" styleClass="home-hero-arrow" StackPane.alignment="CENTER_RIGHT">
+                           <graphic>
+                              <SVGPath content="M6 4 L14 12 L6 20" fill="TRANSPARENT" stroke="WHITE" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeWidth="3.0" />
+                           </graphic>
+                           <StackPane.margin>
+                              <Insets right="18.0" />
+                           </StackPane.margin>
+                        </Button>
                      </children>
                   </StackPane>
 
