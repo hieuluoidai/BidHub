@@ -965,7 +965,7 @@
 
 /* --- HOME VIEW --- */
 .home-hero {
-    -fx-background-color: linear-gradient(to right, #67C7BD, #84C9D5);
+    -fx-background-color: linear-gradient(to right, #0284C7, #38BDF8);
     -fx-background-radius: 24px;
     -fx-border-radius: 24px;
     -fx-border-color: rgba(255,255,255,0.55);
@@ -978,12 +978,12 @@
 
 .home-hero-tint {
     -fx-background-color:
-        linear-gradient(to right, rgba(74, 183, 173, 0.88), rgba(125, 194, 210, 0.70));
+        linear-gradient(to right, rgba(2, 132, 199, 0.88), rgba(14, 165, 233, 0.72));
     -fx-background-radius: 24px;
 }
 
 .home-hero-badge {
-    -fx-background-color: rgba(15, 118, 110, 0.24);
+    -fx-background-color: rgba(7, 89, 133, 0.28);
     -fx-background-radius: 18px;
     -fx-border-color: rgba(255,255,255,0.24);
     -fx-border-radius: 18px;

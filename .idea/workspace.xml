@@ -4,19 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat: redesign bidder home and add category-based auctions navigation">
-      <change afterPath="$PROJECT_DIR$/src/main/java/utils/FixBidder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/FixBidder.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/CreateSessionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/CreateSessionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/MessagesController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/MessagesController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/utils/SceneManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/utils/SceneManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/create_session.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/create_session.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/messages_view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/messages_view.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/style.css" afterDir="false" />
-    </list>
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat: redesign home and add category-based auctions navigation" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -187,7 +175,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779291028694</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat: redesign home and add category-based auctions navigation">
+      <option name="closed" value="true" />
+      <created>1779550291970</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1779550291971</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -208,7 +204,8 @@
     <MESSAGE value="feat: bộ lọc trạng thái dashboard, thẻ đếm phiên, badge phiên của bạn và thống kê real-time&#10;&#10;- Thêm bộ lọc trạng thái (TẤT CẢ / SẮP DIỄN RA / ĐANG DIỄN RA / ĐÃ KẾT THÚC) trên dashboard người dùng&#10;- Thêm 3 thẻ đếm số: Tổng phiên / Đang diễn ra / Đã kết thúc&#10;- Bỏ nút &quot;+ Nạp tiền&quot; và pill số dư khỏi header dashboard (đã có trong Ví &amp; Giao dịch)&#10;- Fix admin không đăng nhập được: thêm import Separator còn thiếu trong admin_dashboard.fxml&#10;- Thêm badge &quot;PHIÊN CỦA BẠN&quot; trên item card khi user là người tạo phiên&#10;- Tính thống kê thực (Phiên đã tạo / Lượt bid / Phiên thắng) thay cho hardcode 0 trong UserDetails&#10;- Stats và số dư trong UserDetails tự cập nhật real-time qua ListChangeListener" />
     <MESSAGE value="refactor(exception): optimize exception handling logic in auction controller" />
     <MESSAGE value="feat: redesign bidder home and add category-based auctions navigation" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: redesign bidder home and add category-based auctions navigation" />
+    <MESSAGE value="feat: redesign home and add category-based auctions navigation" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: redesign home and add category-based auctions navigation" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
