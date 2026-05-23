@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="fix: redesign frame">
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat: redesign home hero carousel and category navigation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/style.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,23 +50,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.5405483744702404" />
-      <entry key="MS500" value="5.423251221390053" />
-      <entry key="S2" value="15.24304789853559" />
-      <entry key="S5" value="29.25049134968869" />
-      <entry key="S10" value="50.28145453209673" />
-      <entry key="S30" value="114.19406577421054" />
-      <entry key="S60" value="175.40184797252746" />
-      <entry key="M2" value="246.07115753742303" />
-      <entry key="M5" value="383.78400258230107" />
-      <entry key="M10" value="567.9735524364451" />
-      <entry key="M15" value="706.4527502784072" />
-      <entry key="M30" value="1025.9508638858338" />
-      <entry key="H1" value="1505.2079377992097" />
-      <entry key="H2" value="2071.6389770145183" />
-      <entry key="H4" value="2567.905079989494" />
-      <entry key="D1" value="3190.3760367653704" />
-      <entry key="W1" value="3324.6653825904473" />
+      <entry key="MS100" value="1.7680832230853276" />
+      <entry key="MS500" value="5.5469600172370255" />
+      <entry key="S2" value="15.506444104527011" />
+      <entry key="S5" value="24.373804832631034" />
+      <entry key="S10" value="29.335264272812474" />
+      <entry key="S30" value="33.70998588560628" />
+      <entry key="S60" value="37.94579400272948" />
+      <entry key="M2" value="55.64066101170153" />
+      <entry key="M5" value="154.3786751351169" />
+      <entry key="M10" value="356.2921711873355" />
+      <entry key="M15" value="540.1218879642191" />
+      <entry key="M30" value="965.8627468006199" />
+      <entry key="H1" value="1551.500000607934" />
+      <entry key="H2" value="2223.948037832349" />
+      <entry key="H4" value="2814.151506273872" />
+      <entry key="D1" value="3561.3831050554886" />
+      <entry key="W1" value="3723.7448518771803" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -89,23 +88,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.4535949099724086" />
-      <entry key="MS500" value="5.343361498475301" />
-      <entry key="S2" value="15.185957895268544" />
-      <entry key="S5" value="29.208016142878627" />
-      <entry key="S10" value="50.24586061507569" />
-      <entry key="S30" value="114.16773855566734" />
-      <entry key="S60" value="175.38188824452067" />
-      <entry key="M2" value="246.05732266047903" />
-      <entry key="M5" value="383.7754965483498" />
-      <entry key="M10" value="567.9671915526267" />
-      <entry key="M15" value="706.4474061640848" />
-      <entry key="M30" value="1025.9468999847886" />
-      <entry key="H1" value="1505.2049541795532" />
-      <entry key="H2" value="2071.636860964057" />
-      <entry key="H4" value="2567.903736837362" />
-      <entry key="D1" value="3190.3757514388235" />
-      <entry key="W1" value="3324.6653399044944" />
+      <entry key="MS100" value="1.6338010913624403" />
+      <entry key="MS500" value="5.459655855424122" />
+      <entry key="S2" value="15.449642675583547" />
+      <entry key="S5" value="24.3386927791352" />
+      <entry key="S10" value="29.314210895240816" />
+      <entry key="S30" value="33.70192712697522" />
+      <entry key="S60" value="37.9412038060002" />
+      <entry key="M2" value="55.63725325683645" />
+      <entry key="M5" value="154.37507690257277" />
+      <entry key="M10" value="356.2881315928734" />
+      <entry key="M15" value="540.1178080582521" />
+      <entry key="M30" value="965.8590571492188" />
+      <entry key="H1" value="1551.496970159423" />
+      <entry key="H2" value="2223.9458023850084" />
+      <entry key="H4" value="2814.150057981071" />
+      <entry key="D1" value="3561.3827915228353" />
+      <entry key="W1" value="3723.744804807014" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -196,7 +195,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779550742828</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="feat: redesign home hero carousel and category navigation">
+      <option name="closed" value="true" />
+      <created>1779555444198</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779555444198</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -219,7 +226,8 @@
     <MESSAGE value="feat: redesign bidder home and add category-based auctions navigation" />
     <MESSAGE value="feat: redesign home and add category-based auctions navigation" />
     <MESSAGE value="fix: redesign frame" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix: redesign frame" />
+    <MESSAGE value="feat: redesign home hero carousel and category navigation" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: redesign home hero carousel and category navigation" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

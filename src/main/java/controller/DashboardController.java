@@ -3,9 +3,7 @@ package controller;
 import java.io.IOException;
 
 import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
-import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
@@ -115,7 +113,6 @@ public class DashboardController {
     private javafx.scene.layout.VBox auctionFlyoutBox;
     private PauseTransition auctionFlyoutHideDelay;
     private static final double HOME_HERO_IMAGE_OPACITY = 0.82;
-    private static final Duration HOME_HERO_FADE_DURATION = Duration.millis(950);
     private static final Duration HOME_HERO_AUTO_ADVANCE = Duration.seconds(5);
     private final java.util.List<HomeHeroSlide> homeHeroSlides = java.util.List.of(
             new HomeHeroSlide("/Images/home-welcome.png", "Welcome",
@@ -129,7 +126,6 @@ public class DashboardController {
     );
     private int currentHomeSlideIndex = 0;
     private Timeline homeHeroAutoPlay;
-    private boolean homeHeroAnimating;
 
     private record HomeHeroSlide(String imagePath, String title, String subtitle) {}
 
@@ -387,61 +383,18 @@ public class DashboardController {
             if (manual) restartHomeHeroAutoPlay();
             return;
         }
-        if (homeHeroAnimating) return;
 
         if (manual) stopHomeHeroAutoPlay();
         HomeHeroSlide targetSlide = homeHeroSlides.get(targetIndex);
-        fadeHomeHeroTextTo(targetIndex);
-        updateHomeHeroDots(targetIndex);
-
-        if (imgHomeHeroNextBackground == null) {
-            setHomeHeroImage(imgHomeHeroBackground, targetSlide);
-            currentHomeSlideIndex = targetIndex;
-            if (manual) restartHomeHeroAutoPlay();
-            return;
-        }
-
-        homeHeroAnimating = true;
-        setHomeHeroImage(imgHomeHeroNextBackground, targetSlide);
-        imgHomeHeroNextBackground.setOpacity(0);
-
-        FadeTransition fadeOut = new FadeTransition(HOME_HERO_FADE_DURATION, imgHomeHeroBackground);
-        fadeOut.setFromValue(HOME_HERO_IMAGE_OPACITY);
-        fadeOut.setToValue(0);
-
-        FadeTransition fadeIn = new FadeTransition(HOME_HERO_FADE_DURATION, imgHomeHeroNextBackground);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(HOME_HERO_IMAGE_OPACITY);
-
-        ParallelTransition transition = new ParallelTransition(fadeOut, fadeIn);
-        transition.setOnFinished(event -> {
-            imgHomeHeroBackground.setImage(imgHomeHeroNextBackground.getImage());
-            imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
+        setHomeHeroImage(imgHomeHeroBackground, targetSlide);
+        imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
+        if (imgHomeHeroNextBackground != null) {
             imgHomeHeroNextBackground.setOpacity(0);
-            currentHomeSlideIndex = targetIndex;
-            homeHeroAnimating = false;
-            if (manual) restartHomeHeroAutoPlay();
-        });
-        transition.play();
-    }
-
-    private void fadeHomeHeroTextTo(int targetIndex) {
-        if (boxHomeHeroContent == null) {
-            updateHomeHeroText(targetIndex);
-            return;
         }
-
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(260), boxHomeHeroContent);
-        fadeOut.setFromValue(boxHomeHeroContent.getOpacity());
-        fadeOut.setToValue(0.35);
-        fadeOut.setOnFinished(event -> {
-            updateHomeHeroText(targetIndex);
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(420), boxHomeHeroContent);
-            fadeIn.setFromValue(0.35);
-            fadeIn.setToValue(1);
-            fadeIn.play();
-        });
-        fadeOut.play();
+        updateHomeHeroText(targetIndex);
+        updateHomeHeroDots(targetIndex);
+        currentHomeSlideIndex = targetIndex;
+        if (manual) restartHomeHeroAutoPlay();
     }
 
     private void updateStats() {
