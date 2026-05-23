@@ -56,9 +56,9 @@ public class MessagesController {
     @FXML private Button btnSend;
 
     private static final String[] EMOJIS = {
-        "😀","😁","😂","😆","😍","😘","🤗","😎","😲","😜",
-        "🤔","😴","😭","😢","😡","😞","😵","😱","😇","🙄",
-        "👍","👎","👏","🙏","💪","🔥","❤","💯","🎉","✨"
+        "😀", "😁", "😂", "😆", "😍", "😘", "🤗", "😎", "😲", "😜",
+        "🤔", "😴", "😭", "😢", "😡", "😞", "😵", "😱", "😇", "🙄",
+        "👍", "👎", "👏", "🙏", "💪", "🔥", "❤", "💯", "🎉", "✨"
     };
 
     private final ObservableList<ChatMessage.Summary> summaries = FXCollections.observableArrayList();
@@ -88,7 +88,8 @@ public class MessagesController {
             protected void updateItem(ChatMessage.Summary s, boolean empty) {
                 super.updateItem(s, empty);
                 if (empty || s == null) {
-                    setGraphic(null); setText(null);
+                    setGraphic(null);
+                    setText(null);
                     setStyle("-fx-background-color: transparent;");
                 } else {
                     setGraphic(buildConversationRow(s));
@@ -98,7 +99,9 @@ public class MessagesController {
         });
 
         listConversations.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-            if (newV != null) openConversation(newV.partnerId, newV.partnerUsername, newV.partnerAvatarPath);
+            if (newV != null) {
+                openConversation(newV.partnerId, newV.partnerUsername, newV.partnerAvatarPath);
+            }
         });
 
         ChatCenter.init();
@@ -130,7 +133,9 @@ public class MessagesController {
         ChatCenter.removeSummaryListener(summaryListener);
         ChatCenter.removeReadReceiptListener(readReceiptListener);
         ChatCenter.removeRecalledSelfListener(recalledSelfListener);
-        if (friendsPaneController != null) friendsPaneController.detach();
+        if (friendsPaneController != null) {
+            friendsPaneController.detach();
+        }
     }
 
     public void refreshSummaries() {
@@ -149,36 +154,47 @@ public class MessagesController {
         this.currentPartnerAvatarPath = avatarPath;
         messageMap.clear();
         messagesContainer.getChildren().clear();
-        paneEmptyChat.setVisible(false); paneEmptyChat.setManaged(false);
-        paneConversation.setVisible(true); paneConversation.setManaged(true);
+        paneEmptyChat.setVisible(false);
+        paneEmptyChat.setManaged(false);
+        paneConversation.setVisible(true);
+        paneConversation.setManaged(true);
 
         lblPartnerName.setText(partnerName);
         String firstChar = (partnerName == null || partnerName.isEmpty()) ? "?"
                 : partnerName.substring(0, 1).toUpperCase();
         lblPartnerAvatar.setText(firstChar);
+        
         if (avatarPath != null && !avatarPath.isEmpty()) {
             String uri = ImageStorageService.toImageUrl(avatarPath);
             if (uri != null) {
                 imgPartnerAvatar.setImage(new Image(uri));
                 imgPartnerAvatar.setVisible(true);
                 lblPartnerAvatar.setVisible(false);
-                imgPartnerAvatar.setClip(new javafx.scene.shape.Circle(21, 21, 21));
+                javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(48, 48);
+                clip.setArcWidth(24); clip.setArcHeight(24);
+                imgPartnerAvatar.setClip(clip);
             } else {
-                imgPartnerAvatar.setVisible(false); lblPartnerAvatar.setVisible(true);
+                imgPartnerAvatar.setVisible(false);
+                lblPartnerAvatar.setVisible(true);
             }
         } else {
-            imgPartnerAvatar.setVisible(false); lblPartnerAvatar.setVisible(true);
+            imgPartnerAvatar.setVisible(false);
+            lblPartnerAvatar.setVisible(true);
         }
 
         User cu = AppState.getInstance().getCurrentUser();
-        if (cu == null) return;
+        if (cu == null) {
+            return;
+        }
         AppState.getInstance().getClient().send("CHAT_FETCH:" + cu.getUserId() + ":" + partnerId);
         AppState.getInstance().getClient().send("CHAT_MARK_READ:" + cu.getUserId() + ":" + partnerId);
         txtInput.requestFocus();
     }
 
     private void onBundle(ChatMessage.Bundle b) {
-        if (currentPartnerId == null || !currentPartnerId.equals(b.partnerId)) return;
+        if (currentPartnerId == null || !currentPartnerId.equals(b.partnerId)) {
+            return;
+        }
         messageMap.clear();
         for (ChatMessage m : b.items) {
             messageMap.put(m.getMessageId(), m);
@@ -189,7 +205,9 @@ public class MessagesController {
 
     private void onIncomingMessage(ChatMessage m) {
         User cu = AppState.getInstance().getCurrentUser();
-        if (cu == null) return;
+        if (cu == null) {
+            return;
+        }
         String myId = cu.getUserId();
         boolean inOpen = currentPartnerId != null
                 && ((m.getSenderId().equals(currentPartnerId) && m.getReceiverId().equals(myId))
@@ -218,9 +236,13 @@ public class MessagesController {
     private void onReadReceipt(String msg) {
         // "CHAT_READ:<readerId>:<id1,id2,...>"
         String[] parts = msg.split(":", 3);
-        if (parts.length < 3) return;
+        if (parts.length < 3) {
+            return;
+        }
         String readerId = parts[1];
-        if (currentPartnerId == null || !currentPartnerId.equals(readerId)) return;
+        if (currentPartnerId == null || !currentPartnerId.equals(readerId)) {
+            return;
+        }
         for (String id : parts[2].split(",")) {
             ChatMessage existing = messageMap.get(id);
             if (existing != null && existing.getReadAt() == null) {
@@ -233,7 +255,9 @@ public class MessagesController {
     private void onRecalledSelf(String msg) {
         // "CHAT_RECALLED_SELF:<messageId>"
         String[] parts = msg.split(":", 2);
-        if (parts.length < 2) return;
+        if (parts.length < 2) {
+            return;
+        }
         String messageId = parts[1];
         messageMap.remove(messageId);
         rebuildAllBubbles();
@@ -308,23 +332,36 @@ public class MessagesController {
     private Node buildConversationRow(ChatMessage.Summary s) {
         HBox row = new HBox(12);
         row.getStyleClass().add("chat-conv-row");
-        row.setPadding(new javafx.geometry.Insets(10, 16, 10, 16));
+        
+        // Highlight selection
+        if (currentPartnerId != null && currentPartnerId.equals(s.partnerId)) {
+            row.getStyleClass().add("chat-conv-row-selected");
+        }
 
         StackPane avatarPane = new StackPane();
-        avatarPane.setMinSize(40, 40); avatarPane.setMaxSize(40, 40);
-        String color = "#3B82F6";
+        avatarPane.setMinSize(44, 44);
+        avatarPane.setPrefSize(44, 44);
+        avatarPane.setMaxSize(44, 44);
+        avatarPane.getStyleClass().add("sidebar-profile-avatar"); // Background on the Pane
+        
         Label initial = new Label(s.partnerUsername == null || s.partnerUsername.isEmpty()
                 ? "?" : s.partnerUsername.substring(0, 1).toUpperCase());
-        initial.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
-        avatarPane.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 50%;");
+        initial.setStyle("-fx-text-fill: white; -fx-font-weight: 900; -fx-font-size: 16;");
         avatarPane.getChildren().add(initial);
+        
         if (s.partnerAvatarPath != null && !s.partnerAvatarPath.isEmpty()) {
             String uri = ImageStorageService.toImageUrl(s.partnerAvatarPath);
             if (uri != null) {
-                ImageView iv = new ImageView(new Image(uri, 40, 40, true, true));
-                iv.setFitWidth(40); iv.setFitHeight(40);
-                iv.setClip(new javafx.scene.shape.Circle(20, 20, 20));
+                ImageView iv = new ImageView(new Image(uri, 44, 44, true, true));
+                iv.setFitWidth(44);
+                iv.setFitHeight(44);
+                javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(44, 44);
+                clip.setArcWidth(24);
+                clip.setArcHeight(24);
+                iv.setClip(clip);
                 avatarPane.getChildren().add(iv);
+                // When image is present, hide the initials label
+                initial.setVisible(false);
             }
         }
 
@@ -332,6 +369,7 @@ public class MessagesController {
         info.setMaxWidth(180);
         Label name = new Label(s.partnerUsername == null ? s.partnerId : s.partnerUsername);
         name.getStyleClass().add("chat-conv-name");
+        
         String previewText = (s.lastFromMe ? "Bạn: " : "") + (s.lastMessage == null ? "" : s.lastMessage);
         Label preview = new Label(previewText);
         preview.getStyleClass().add("chat-conv-preview");
@@ -342,11 +380,12 @@ public class MessagesController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        VBox right = new VBox(4);
+        VBox right = new VBox(6);
         right.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
         Label time = new Label(formatRelative(s.lastAt));
         time.getStyleClass().add("chat-conv-time");
         right.getChildren().add(time);
+        
         if (s.unreadCount > 0) {
             Label badge = new Label(s.unreadCount > 99 ? "99+" : String.valueOf(s.unreadCount));
             badge.getStyleClass().add("chat-conv-unread");
@@ -362,34 +401,40 @@ public class MessagesController {
         User cu = AppState.getInstance().getCurrentUser();
         boolean isMine = cu != null && cu.getUserId().equals(m.getSenderId());
 
-        // ── Trường hợp đã bị thu hồi với tất cả ──────────────────────────────
+        // ── Case: Recalled message ──────────────────────────────────────────
         if (m.isRecalled()) {
             Label recalled = new Label("Tin nhắn đã bị thu hồi");
             recalled.getStyleClass().add("chat-bubble-recalled");
             HBox row = new HBox();
-            javafx.scene.layout.Region sp = new javafx.scene.layout.Region();
+            Region sp = new Region();
             HBox.setHgrow(sp, javafx.scene.layout.Priority.ALWAYS);
-            return isMine ? new HBox(sp, recalled) : new HBox(recalled, sp);
+            if (isMine) {
+                row.getChildren().addAll(sp, recalled);
+            } else {
+                row.getChildren().addAll(recalled, sp);
+            }
+            return row;
         }
 
-        // Bubble label — wraps at maxWidth, sized to content for short messages
+        // Bubble label
         Label bubble = new Label(m.getContent());
         bubble.setWrapText(true);
-        bubble.setMaxWidth(360);
+        bubble.setMaxWidth(380);
         bubble.getStyleClass().add(isMine ? "chat-bubble-mine" : "chat-bubble-theirs");
 
-        // StackPane allows heart overlay without stretching the bubble
         StackPane bubblePane = new StackPane(bubble);
-        bubblePane.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        bubblePane.setMaxWidth(Region.USE_PREF_SIZE);
+        
         if (m.isLiked()) {
             Label heart = new Label("❤");
             heart.getStyleClass().add("chat-bubble-heart");
             StackPane.setAlignment(heart,
                     isMine ? javafx.geometry.Pos.BOTTOM_LEFT : javafx.geometry.Pos.BOTTOM_RIGHT);
-            heart.setTranslateY(8);
-            heart.setTranslateX(isMine ? -8 : 8);
+            heart.setTranslateY(10);
+            heart.setTranslateX(isMine ? -10 : 10);
             bubblePane.getChildren().add(heart);
         }
+        
         bubblePane.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2 && !isMine) {
                 toggleLike(m);
@@ -397,32 +442,32 @@ public class MessagesController {
         });
         bubblePane.setStyle("-fx-cursor: hand;");
 
-        // ── Context menu (chuột phải) — custom popup ─────────────────────────
+        // Context menu (chuột phải)
         bubblePane.setOnContextMenuRequested(e -> {
             showBubbleMenu(m, isMine, bubblePane, e.getScreenX(), e.getScreenY());
             e.consume();
         });
 
+        // Meta info (Time + Status)
         HBox metaRow = new HBox(5);
         metaRow.setAlignment(isMine ? javafx.geometry.Pos.CENTER_RIGHT : javafx.geometry.Pos.CENTER_LEFT);
         Label time = new Label(m.getSentAt() == null ? "" : formatTime(m.getSentAt()));
         time.getStyleClass().add("chat-bubble-time");
         metaRow.getChildren().add(time);
+        
         if (isMine && showStatus) {
             Label status = new Label(m.getReadAt() != null ? "Đã xem" : "Đã gửi");
             status.getStyleClass().add(m.getReadAt() != null ? "chat-status-read" : "chat-status-sent");
             metaRow.getChildren().add(status);
         }
 
-        // col stays as narrow as its widest child (setFillWidth=false)
         VBox col = new VBox(3);
         col.setFillWidth(false);
         col.setAlignment(isMine ? javafx.geometry.Pos.TOP_RIGHT : javafx.geometry.Pos.TOP_LEFT);
         col.getChildren().addAll(bubblePane, metaRow);
 
-        // Full-width row pushes col to the correct side via spacer
         HBox row = new HBox();
-        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        Region spacer = new Region();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         if (isMine) {
             row.getChildren().addAll(spacer, col);
@@ -450,7 +495,9 @@ public class MessagesController {
      */
     private void showBubbleMenu(ChatMessage m, boolean isMine,
                                 javafx.scene.Node anchor, double sx, double sy) {
-        if (anchor.getScene() == null) return;
+        if (anchor.getScene() == null) {
+            return;
+        }
         Popup popup = new Popup();
         popup.setAutoHide(true);
         popup.setHideOnEscape(true);
@@ -502,11 +549,17 @@ public class MessagesController {
 
     @FXML
     void handleSend() {
-        if (currentPartnerId == null) return;
+        if (currentPartnerId == null) {
+            return;
+        }
         String text = txtInput.getText().trim();
-        if (text.isEmpty()) return;
+        if (text.isEmpty()) {
+            return;
+        }
         User cu = AppState.getInstance().getCurrentUser();
-        if (cu == null) return;
+        if (cu == null) {
+            return;
+        }
         AppState.getInstance().getClient().send("CHAT_SEND:" + cu.getUserId() + ":" + currentPartnerId + ":" + text);
         txtInput.clear();
         txtInput.requestFocus();
@@ -515,12 +568,14 @@ public class MessagesController {
     @FXML
     void handleToggleEmoji() {
         if (emojiPopup != null && emojiPopup.isShowing()) {
-            emojiPopup.hide(); return;
+            emojiPopup.hide();
+            return;
         }
         emojiPopup = new Popup();
         emojiPopup.setAutoHide(true);
         FlowPane grid = new FlowPane();
-        grid.setHgap(4); grid.setVgap(4);
+        grid.setHgap(4);
+        grid.setVgap(4);
         grid.setPadding(new javafx.geometry.Insets(10));
         grid.setPrefWrapLength(280);
         grid.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #E5E7EB;"
@@ -552,16 +607,26 @@ public class MessagesController {
     }
 
     private String formatRelative(LocalDateTime when) {
-        if (when == null) return "";
+        if (when == null) {
+            return "";
+        }
         LocalDateTime now = LocalDateTime.now();
         long sec = ChronoUnit.SECONDS.between(when, now);
-        if (sec < 60) return "vừa xong";
+        if (sec < 60) {
+            return "vừa xong";
+        }
         long min = sec / 60;
-        if (min < 60) return min + "p";
+        if (min < 60) {
+            return min + "p";
+        }
         long hour = min / 60;
-        if (hour < 24) return hour + "h";
+        if (hour < 24) {
+            return hour + "h";
+        }
         long day = hour / 24;
-        if (day < 7) return day + "d";
+        if (day < 7) {
+            return day + "d";
+        }
         return when.format(DateTimeFormatter.ofPattern("dd/MM"));
     }
 

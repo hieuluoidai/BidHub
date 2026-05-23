@@ -1301,6 +1301,9 @@ String hashedNew = utils.PasswordUtils.hash(newPass);
                 .markConversationRead(userId, partnerId);
         if (marked.isEmpty()) return;
 
+        // Đồng bộ: Đánh dấu các thông báo chat tương ứng là đã đọc
+        new database.NotificationDAO().markChatAsRead(userId, partnerId);
+
         // Báo cho sender (partner) biết tin nhắn của họ đã được đọc
         server.sendToUser(partnerId, "CHAT_READ:" + userId + ":" + String.join(",", marked));
         // Báo cho receiver biết unread đã giảm (refresh badge)

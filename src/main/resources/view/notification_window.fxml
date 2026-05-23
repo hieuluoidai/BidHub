@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="controller.NotificationWindowController"
+      prefWidth="500" prefHeight="650"
+      styleClass="notification-window-root"
+      stylesheets="@style.css">
+
+    <!-- HEADER -->
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="notification-window-header">
+        <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+        <VBox spacing="2">
+            <Label text="Thông báo" styleClass="notification-window-title"/>
+            <Label fx:id="lblUnreadInfo" text="Bạn có 0 thông báo mới" styleClass="notification-window-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button onAction="#handleClose" styleClass="notification-window-close-btn" text="✕"/>
+    </HBox>
+
+    <!-- LIST CONTAINER -->
+    <VBox VBox.vgrow="ALWAYS" styleClass="notification-window-list-container">
+        <ListView fx:id="listNotifications" VBox.vgrow="ALWAYS" styleClass="notification-window-list"/>
+    </VBox>
+
+    <!-- FOOTER -->
+    <HBox alignment="CENTER" spacing="16" styleClass="notification-window-footer">
+        <padding><Insets top="16" right="24" bottom="16" left="24"/></padding>
+        <Button fx:id="btnMarkAll" onAction="#handleMarkAllRead" 
+                text="Đánh dấu tất cả là đã đọc" 
+                styleClass="notification-window-btn-primary"/>
+    </HBox>
+</VBox>

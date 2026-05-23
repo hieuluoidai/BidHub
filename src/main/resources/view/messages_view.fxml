@@ -18,32 +18,28 @@
    <VBox prefWidth="320.0" styleClass="chat-conversation-list">
       <children>
          <!-- Tab switcher -->
-         <HBox styleClass="chat-tab-bar" alignment="CENTER" spacing="0">
-            <padding><Insets top="10.0" left="12.0" right="12.0" bottom="10.0" /></padding>
+         <HBox alignment="CENTER" spacing="12.0" styleClass="chat-tab-bar">
+            <padding><Insets bottom="12.0" left="16.0" right="16.0" top="16.0" /></padding>
             <children>
-               <Button fx:id="btnTabMessages" text="Messages" styleClass="chat-tab-btn"
-                       onAction="#handleTabMessages" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-               <Button fx:id="btnTabFriends" text="Bạn bè" styleClass="chat-tab-btn"
-                       onAction="#handleTabFriends" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+               <Button fx:id="btnTabMessages" maxWidth="Infinity" onAction="#handleTabMessages" styleClass="chat-tab-btn, chat-tab-active" text="Messages" HBox.hgrow="ALWAYS" />
+               <Button fx:id="btnTabFriends" maxWidth="Infinity" onAction="#handleTabFriends" styleClass="chat-tab-btn" text="Bạn bè" HBox.hgrow="ALWAYS" />
             </children>
          </HBox>
-         <Separator />
+         
          <ListView fx:id="listConversations" styleClass="chat-conv-list" VBox.vgrow="ALWAYS" />
-         <fx:include fx:id="friendsPane" source="friends_view.fxml" VBox.vgrow="ALWAYS" managed="false" visible="false" />
+         <fx:include fx:id="friendsPane" managed="false" source="friends_view.fxml" visible="false" VBox.vgrow="ALWAYS" />
       </children>
    </VBox>
 
-   <Separator orientation="VERTICAL" />
-
    <!-- RIGHT: ACTIVE CHAT -->
-   <StackPane HBox.hgrow="ALWAYS" styleClass="chat-active-pane">
+   <StackPane styleClass="chat-active-pane" HBox.hgrow="ALWAYS">
       <children>
          <!-- EMPTY STATE -->
-         <VBox fx:id="paneEmptyChat" alignment="CENTER" spacing="14.0" styleClass="chat-empty">
+         <VBox fx:id="paneEmptyChat" alignment="CENTER" spacing="20.0" styleClass="chat-empty">
             <children>
                <Label styleClass="chat-empty-icon" text="💬" />
                <Label styleClass="chat-empty-title" text="Chọn một cuộc trò chuyện" />
-               <Label styleClass="chat-empty-sub" text="Hoặc nhắn tin với chủ phiên từ trang chi tiết phiên đấu giá" />
+               <Label styleClass="chat-empty-sub" text="Hoặc nhắn tin với chủ phiên từ trang chi tiết phiên đấu giá" textAlignment="CENTER" />
             </children>
          </VBox>
 
@@ -51,39 +47,36 @@
          <VBox fx:id="paneConversation" managed="false" visible="false" VBox.vgrow="ALWAYS">
             <children>
                <!-- HEADER -->
-               <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="chat-header">
-                  <padding><Insets top="14.0" right="20.0" bottom="14.0" left="20.0" /></padding>
+               <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="chat-header">
+                  <padding><Insets bottom="16.0" left="24.0" right="24.0" top="16.0" /></padding>
                   <children>
-                     <StackPane prefWidth="42.0" prefHeight="42.0">
-                        <Label fx:id="lblPartnerAvatar" alignment="CENTER" prefWidth="42.0" prefHeight="42.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="?" />
-                        <ImageView fx:id="imgPartnerAvatar" fitWidth="42.0" fitHeight="42.0" visible="false" preserveRatio="false" />
+                     <StackPane prefHeight="48.0" prefWidth="48.0" styleClass="sidebar-profile-avatar">
+                        <Label fx:id="lblPartnerAvatar" alignment="CENTER" text="?" style="-fx-text-fill: white; -fx-font-weight: 900; -fx-font-size: 18;" />
+                        <ImageView fx:id="imgPartnerAvatar" fitHeight="48.0" fitWidth="48.0" preserveRatio="false" visible="false" />
                      </StackPane>
-                     <VBox spacing="2.0">
+                     <VBox spacing="2.0" alignment="CENTER_LEFT">
                         <Label fx:id="lblPartnerName" styleClass="chat-partner-name" text="Người dùng" />
-                        <Label fx:id="lblPartnerStatus" styleClass="chat-partner-status" text="Trò chuyện trực tiếp" />
                      </VBox>
+                     <Region HBox.hgrow="ALWAYS" />
                   </children>
                </HBox>
-               <Separator />
 
                <!-- MESSAGES SCROLL -->
-               <ScrollPane fx:id="scrollMessages" fitToWidth="true" styleClass="chat-scroll" VBox.vgrow="ALWAYS">
+               <ScrollPane fx:id="scrollMessages" fitToWidth="true" hbarPolicy="NEVER" styleClass="chat-scroll" VBox.vgrow="ALWAYS">
                   <content>
-                     <VBox fx:id="messagesContainer" spacing="4.0" styleClass="chat-messages-container">
-                        <padding><Insets top="16.0" right="16.0" bottom="16.0" left="16.0" /></padding>
-                     </VBox>
+                     <VBox fx:id="messagesContainer" spacing="12.0" styleClass="chat-messages-container" />
                   </content>
                </ScrollPane>
 
                <!-- INPUT BAR -->
                <VBox styleClass="chat-input-bar">
-                  <padding><Insets top="10.0" right="14.0" bottom="14.0" left="14.0" /></padding>
+                  <padding><Insets bottom="20.0" left="20.0" right="24.0" top="16.0" /></padding>
                   <children>
-                     <HBox alignment="CENTER" spacing="8.0">
+                     <HBox alignment="CENTER" spacing="12.0">
                         <children>
                            <Button fx:id="btnEmoji" onAction="#handleToggleEmoji" styleClass="chat-emoji-btn" text="😀" />
-                           <TextField fx:id="txtInput" promptText="Nhập tin nhắn..." styleClass="chat-input-field" HBox.hgrow="ALWAYS" onAction="#handleSend" />
-                           <Button fx:id="btnSend" defaultButton="false" onAction="#handleSend" styleClass="chat-send-btn" text="Gửi" />
+                           <TextField fx:id="txtInput" onAction="#handleSend" promptText="Nhập tin nhắn..." styleClass="chat-input-field" HBox.hgrow="ALWAYS" />
+                           <Button fx:id="btnSend" onAction="#handleSend" styleClass="chat-send-btn" text="Gửi" />
                         </children>
                      </HBox>
                   </children>

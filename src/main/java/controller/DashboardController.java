@@ -3,15 +3,17 @@ package controller;
 import java.io.IOException;
 
 import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
-import javafx.animation.PauseTransition;
+import javafx.animation.KeyValue;
+import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Bounds;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -21,7 +23,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.stage.Modality;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import model.auction.Auction;
@@ -88,6 +89,15 @@ public class DashboardController {
     @FXML private Button btnNavWallet;
     @FXML private Button btnNavMessages;
     @FXML private Label lblSidebarChatBadge;
+    @FXML private javafx.scene.layout.VBox paneAuctionsAccordion;
+    @FXML private javafx.scene.shape.SVGPath svgAuctionsArrow;
+
+    // Auction Category Buttons
+    @FXML private Button btnCategoryAll;
+    @FXML private Button btnCategoryArt;
+    @FXML private Button btnCategoryElectronics;
+    @FXML private Button btnCategoryVehicle;
+
     @FXML private javafx.scene.layout.VBox viewHome;
     @FXML private javafx.scene.layout.VBox viewAuctions;
     @FXML private javafx.scene.layout.VBox viewWallet;
@@ -109,9 +119,6 @@ public class DashboardController {
             java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private javafx.beans.value.ChangeListener<Number> chatBadgeListener;
     private String selectedCategoryFilter = "ALL";
-    private Popup auctionFlyout;
-    private javafx.scene.layout.VBox auctionFlyoutBox;
-    private PauseTransition auctionFlyoutHideDelay;
     private static final double HOME_HERO_IMAGE_OPACITY = 0.82;
     private static final Duration HOME_HERO_AUTO_ADVANCE = Duration.seconds(5);
     private final java.util.List<HomeHeroSlide> homeHeroSlides = java.util.List.of(
@@ -241,6 +248,7 @@ public class DashboardController {
         updateAuctionHeader();
         renderAuctions();
         updateStats();
+        updateSubMenuActiveState();
     }
 
     private String getSelectedStatusFilter() {
@@ -261,10 +269,10 @@ public class DashboardController {
 
     private String getCategorySubtitle() {
         return switch (selectedCategoryFilter) {
-            case "ART" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Art";
-            case "ELECTRONICS" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Electronics";
-            case "VEHICLE" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Vehicle";
-            default -> "Khám phá và đặt giá cho các phiên đang diễn ra";
+            case "ART" -> "Danh mục các tác phẩm nghệ thuật, hội họa và đồ sưu tầm giá trị";
+            case "ELECTRONICS" -> "Sàn đấu giá thiết bị công nghệ, đồ dùng điện tử và linh kiện";
+            case "VEHICLE" -> "Khu vực đấu giá ô tô, xe máy và các loại phương tiện giao thông";
+            default -> "Tổng hợp các phiên đấu giá đang diễn ra trên hệ thống BidHub";
         };
     }
 
@@ -377,7 +385,7 @@ public class DashboardController {
     }
 
     private void showHomeSlide(int requestedIndex, boolean manual) {
-        if (homeHeroSlides.isEmpty() || imgHomeHeroBackground == null) return;
+        if (homeHeroSlides.isEmpty() || imgHomeHeroBackground == null || imgHomeHeroNextBackground == null) return;
         int targetIndex = normalizeHomeSlideIndex(requestedIndex);
         if (targetIndex == currentHomeSlideIndex) {
             if (manual) restartHomeHeroAutoPlay();
@@ -386,15 +394,44 @@ public class DashboardController {
 
         if (manual) stopHomeHeroAutoPlay();
         HomeHeroSlide targetSlide = homeHeroSlides.get(targetIndex);
-        setHomeHeroImage(imgHomeHeroBackground, targetSlide);
-        imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
-        if (imgHomeHeroNextBackground != null) {
+
+        // 1. Chuẩn bị ảnh tiếp theo vào ImageView ẩn (imgHomeHeroNextBackground nằm đè lên Background)
+        setHomeHeroImage(imgHomeHeroNextBackground, targetSlide);
+        imgHomeHeroNextBackground.setOpacity(0);
+
+        // 2. Tạo hiệu ứng Fade cho ảnh (Cross-fade)
+        // Lưu ý: imgHomeHeroBackground mờ dần về 0, imgHomeHeroNextBackground hiện dần lên mức OPACITY chuẩn
+        FadeTransition imageFadeOut = new FadeTransition(Duration.millis(800), imgHomeHeroBackground);
+        imageFadeOut.setToValue(0);
+
+        FadeTransition imageFadeIn = new FadeTransition(Duration.millis(800), imgHomeHeroNextBackground);
+        imageFadeIn.setToValue(HOME_HERO_IMAGE_OPACITY);
+
+        // 3. Tạo hiệu ứng cho text (Fade out -> đổi text -> Fade in)
+        FadeTransition textFadeOut = new FadeTransition(Duration.millis(350), boxHomeHeroContent);
+        textFadeOut.setToValue(0);
+        textFadeOut.setOnFinished(e -> {
+            updateHomeHeroText(targetIndex);
+            FadeTransition textFadeIn = new FadeTransition(Duration.millis(400), boxHomeHeroContent);
+            textFadeIn.setToValue(1.0);
+            textFadeIn.play();
+        });
+
+        // Chạy đồng thời hiệu ứng ảnh và hiệu ứng text bắt đầu mờ đi
+        ParallelTransition pt = new ParallelTransition(imageFadeOut, imageFadeIn, textFadeOut);
+        pt.setOnFinished(e -> {
+            // Sau khi xong, cập nhật lại trạng thái gốc:
+            // Đặt ảnh mới cho Background chính và hiện nó lên, reset NextBackground về 0
+            setHomeHeroImage(imgHomeHeroBackground, targetSlide);
+            imgHomeHeroBackground.setOpacity(HOME_HERO_IMAGE_OPACITY);
             imgHomeHeroNextBackground.setOpacity(0);
-        }
-        updateHomeHeroText(targetIndex);
-        updateHomeHeroDots(targetIndex);
-        currentHomeSlideIndex = targetIndex;
-        if (manual) restartHomeHeroAutoPlay();
+
+            currentHomeSlideIndex = targetIndex;
+            updateHomeHeroDots(targetIndex);
+            if (manual) restartHomeHeroAutoPlay();
+        });
+
+        pt.play();
     }
 
     private void updateStats() {
@@ -782,17 +819,85 @@ public class DashboardController {
 
     @FXML
     void handleNavAuctions() {
-        showAuctionFlyout();
+        toggleAuctionsAccordion();
+    }
+
+    private void toggleAuctionsAccordion() {
+        boolean isExpanding = !paneAuctionsAccordion.isManaged();
+        animateAccordion(isExpanding);
+    }
+
+    private void animateAccordion(boolean expand) {
+        if (expand) {
+            paneAuctionsAccordion.setManaged(true);
+            paneAuctionsAccordion.setVisible(true);
+            paneAuctionsAccordion.setOpacity(0);
+            paneAuctionsAccordion.setMaxHeight(0);
+
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.ZERO, 
+                    new KeyValue(paneAuctionsAccordion.maxHeightProperty(), 0),
+                    new KeyValue(paneAuctionsAccordion.opacityProperty(), 0)
+                ),
+                new KeyFrame(Duration.millis(300),
+                    new KeyValue(paneAuctionsAccordion.maxHeightProperty(), 200, Interpolator.EASE_BOTH),
+                    new KeyValue(paneAuctionsAccordion.opacityProperty(), 1, Interpolator.EASE_IN)
+                )
+            );
+            timeline.setOnFinished(e -> {
+                paneAuctionsAccordion.setMaxHeight(Double.MAX_VALUE);
+                svgAuctionsArrow.setRotate(180);
+            });
+            timeline.play();
+            
+            if (!viewAuctions.isVisible()) {
+                openAuctionCategory("ALL");
+            }
+        } else {
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                    new KeyValue(paneAuctionsAccordion.maxHeightProperty(), paneAuctionsAccordion.getHeight()),
+                    new KeyValue(paneAuctionsAccordion.opacityProperty(), 1)
+                ),
+                new KeyFrame(Duration.millis(250),
+                    new KeyValue(paneAuctionsAccordion.maxHeightProperty(), 0, Interpolator.EASE_BOTH),
+                    new KeyValue(paneAuctionsAccordion.opacityProperty(), 0, Interpolator.EASE_OUT)
+                )
+            );
+            timeline.setOnFinished(e -> {
+                paneAuctionsAccordion.setManaged(false);
+                paneAuctionsAccordion.setVisible(false);
+                svgAuctionsArrow.setRotate(0);
+            });
+            timeline.play();
+        }
     }
 
     @FXML
-    void handleAuctionsMouseEntered() {
-        showAuctionFlyout();
+    void handleCategoryAll() {
+        openAuctionCategory("ALL");
     }
 
     @FXML
-    void handleAuctionsMouseExited() {
-        scheduleAuctionFlyoutHide();
+    void handleCategoryArt() {
+        openAuctionCategory("ART");
+    }
+
+    @FXML
+    void handleCategoryElectronics() {
+        openAuctionCategory("ELECTRONICS");
+    }
+
+    @FXML
+    void handleCategoryVehicle() {
+        openAuctionCategory("VEHICLE");
+    }
+
+    @FXML
+    void handleBellClicked() {
+        // NotificationCenter is already attached, but we can trigger it manually if needed
+        // or just let the mouse click bubble up. Since we set onMouseClicked in FXML, 
+        // we should ensure it doesn't conflict with NotificationCenter.attach.
     }
 
     @FXML
@@ -846,90 +951,35 @@ public class DashboardController {
     }
 
     private void openAuctionCategory(String category) {
-        hideAuctionFlyout();
         selectedCategoryFilter = category == null ? "ALL" : category;
         switchView("auctions");
         updateAuctionHeader();
         updatePredicate();
         renderAuctions();
         updateStats();
-    }
-
-    private void showAuctionFlyout() {
-        if (btnNavAuctions == null || btnNavAuctions.getScene() == null) return;
-        cancelAuctionFlyoutHide();
-        ensureAuctionFlyout();
-        refreshAuctionFlyoutButtons();
-
-        Bounds bounds = btnNavAuctions.localToScreen(btnNavAuctions.getBoundsInLocal());
-        if (bounds == null) return;
-        double x = bounds.getMaxX() + 8;
-        double y = bounds.getMinY();
-        if (!auctionFlyout.isShowing()) {
-            auctionFlyout.show(btnNavAuctions, x, y);
-        } else {
-            auctionFlyout.setX(x);
-            auctionFlyout.setY(y);
+        updateSubMenuActiveState();
+        
+        // Ensure accordion is open and showing the right active state if we're in auctions
+        if (!paneAuctionsAccordion.isManaged()) {
+            paneAuctionsAccordion.setManaged(true);
+            paneAuctionsAccordion.setVisible(true);
+            svgAuctionsArrow.setRotate(180);
         }
     }
 
-    private void ensureAuctionFlyout() {
-        if (auctionFlyout != null) return;
+    private void updateSubMenuActiveState() {
+        if (btnCategoryAll == null) return;
+        
+        btnCategoryAll.getStyleClass().remove("sidebar-sub-item-active");
+        btnCategoryArt.getStyleClass().remove("sidebar-sub-item-active");
+        btnCategoryElectronics.getStyleClass().remove("sidebar-sub-item-active");
+        btnCategoryVehicle.getStyleClass().remove("sidebar-sub-item-active");
 
-        auctionFlyoutBox = new javafx.scene.layout.VBox(4);
-        auctionFlyoutBox.getStyleClass().add("auction-flyout-menu");
-        String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
-        auctionFlyoutBox.getStylesheets().add(cssUrl);
-        auctionFlyoutBox.setOnMouseEntered(e -> cancelAuctionFlyoutHide());
-        auctionFlyoutBox.setOnMouseExited(e -> scheduleAuctionFlyoutHide());
-
-        auctionFlyout = new Popup();
-        auctionFlyout.setAutoHide(true);
-        auctionFlyout.setHideOnEscape(true);
-        auctionFlyout.getContent().add(auctionFlyoutBox);
-
-        auctionFlyoutHideDelay = new PauseTransition(Duration.millis(220));
-        auctionFlyoutHideDelay.setOnFinished(e -> hideAuctionFlyout());
-    }
-
-    private void refreshAuctionFlyoutButtons() {
-        if (auctionFlyoutBox == null) return;
-        auctionFlyoutBox.getChildren().setAll(
-                createAuctionFlyoutButton("All", "ALL"),
-                createAuctionFlyoutButton("Art", "ART"),
-                createAuctionFlyoutButton("Electronics", "ELECTRONICS"),
-                createAuctionFlyoutButton("Vehicle", "VEHICLE")
-        );
-    }
-
-    private Button createAuctionFlyoutButton(String label, String category) {
-        Button button = new Button(label);
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setMnemonicParsing(false);
-        button.getStyleClass().add("auction-flyout-item");
-        if (category.equals(selectedCategoryFilter)) {
-            button.getStyleClass().add("auction-flyout-item-active");
-        }
-        button.setOnAction(e -> openAuctionCategory(category));
-        return button;
-    }
-
-    private void scheduleAuctionFlyoutHide() {
-        if (auctionFlyoutHideDelay != null) {
-            auctionFlyoutHideDelay.playFromStart();
-        }
-    }
-
-    private void cancelAuctionFlyoutHide() {
-        if (auctionFlyoutHideDelay != null) {
-            auctionFlyoutHideDelay.stop();
-        }
-    }
-
-    private void hideAuctionFlyout() {
-        cancelAuctionFlyoutHide();
-        if (auctionFlyout != null) {
-            auctionFlyout.hide();
+        switch (selectedCategoryFilter) {
+            case "ALL" -> btnCategoryAll.getStyleClass().add("sidebar-sub-item-active");
+            case "ART" -> btnCategoryArt.getStyleClass().add("sidebar-sub-item-active");
+            case "ELECTRONICS" -> btnCategoryElectronics.getStyleClass().add("sidebar-sub-item-active");
+            case "VEHICLE" -> btnCategoryVehicle.getStyleClass().add("sidebar-sub-item-active");
         }
     }
 
@@ -949,7 +999,7 @@ public class DashboardController {
         boolean a = "auctions".equals(which);
         boolean w = "wallet".equals(which);
         boolean m = "messages".equals(which);
-        if (!a) hideAuctionFlyout();
+        
         if (viewHome != null) {
             viewHome.setVisible(h);
             viewHome.setManaged(h);
@@ -960,14 +1010,24 @@ public class DashboardController {
             viewMessages.setVisible(m);
             viewMessages.setManaged(m);
         }
+        
+        // Reset all active states
         if (btnNavHome != null) btnNavHome.getStyleClass().removeAll("sidebar-item-active");
         btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
         btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
         if (btnNavMessages != null) btnNavMessages.getStyleClass().removeAll("sidebar-item-active");
-        if (h && btnNavHome != null) btnNavHome.getStyleClass().add("sidebar-item-active");
-        else if (a) btnNavAuctions.getStyleClass().add("sidebar-item-active");
-        else if (w) btnNavWallet.getStyleClass().add("sidebar-item-active");
-        else if (m && btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
+        
+        // Apply active state
+        if (h) {
+            if (btnNavHome != null) btnNavHome.getStyleClass().add("sidebar-item-active");
+            // Auto collapse auctions if leaving it? Optional. Let's keep it for now.
+        } else if (a) {
+            btnNavAuctions.getStyleClass().add("sidebar-item-active");
+        } else if (w) {
+            btnNavWallet.getStyleClass().add("sidebar-item-active");
+        } else if (m) {
+            if (btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
+        }
     }
 
     private void updateChatBadge(int unread) {

@@ -83,7 +83,8 @@ public class NotificationDAO {
             stmt.setInt(2, limit);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    list.add(map(rs));
+                    Notification n = map(rs);
+                    if (n != null) list.add(n);
                 }
             }
         } catch (SQLException e) {
@@ -131,14 +132,31 @@ public class NotificationDAO {
         }
     }
 
+    public void markChatAsRead(String userId, String senderId) {
+        String sql = "UPDATE notifications SET is_read = 1 "
+                   + "WHERE user_id = ? AND type = 'CHAT_NEW_MESSAGE' AND source_id = ? AND is_read = 0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            stmt.setString(2, senderId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Lỗi mark chat read: " + e.getMessage());
+        }
+    }
+
     private Notification map(ResultSet rs) throws SQLException {
+        String typeStr = rs.getString("type");
+        if (typeStr == null) return null;
+        
         Notification n = new Notification();
         n.setNotificationId(rs.getString("notification_id"));
         n.setUserId(rs.getString("user_id"));
         try {
-            n.setType(Notification.Type.valueOf(rs.getString("type")));
-        } catch (IllegalArgumentException ex) {
-            // Type không nằm trong enum hiện tại (vd schema cũ) — bỏ qua
+            // Trim và UpperCase để tránh lỗi mismatch do định dạng chuỗi trong DB
+            n.setType(Notification.Type.valueOf(typeStr.trim().toUpperCase()));
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            System.err.println("Unknown notification type: " + typeStr);
             return null;
         }
         n.setTitle(rs.getString("title"));

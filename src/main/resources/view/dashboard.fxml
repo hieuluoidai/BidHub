@@ -46,53 +46,93 @@
 
             <Label styleClass="sidebar-section" text="MENU" />
 
-            <Button fx:id="btnNavHome" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavHome" styleClass="sidebar-item, sidebar-item-active" text="Home" />
-            <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item" text="Wallet" />
+            <!-- HOME -->
+            <Button fx:id="btnNavHome" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavHome" styleClass="sidebar-item, sidebar-item-active">
+               <graphic>
+                  <HBox alignment="CENTER_LEFT" spacing="12">
+                     <StackPane prefWidth="20"><SVGPath content="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="WHITE" opacity="0.7"/></StackPane>
+                     <Label text="Home" style="-fx-text-fill: inherit; -fx-font-size: inherit; -fx-font-weight: inherit;"/>
+                  </HBox>
+               </graphic>
+            </Button>
+
+            <!-- AUCTIONS (ACCORDION) -->
+            <VBox spacing="4">
+               <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" styleClass="sidebar-item">
+                  <graphic>
+                     <HBox alignment="CENTER_LEFT" spacing="12">
+                        <StackPane prefWidth="20"><SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.82v-1.91l-1.41-1.41-1.42 1.42L6.34 16.68l1.41-1.41-1.41-1.41H4.43v-2.82h1.91l1.41 1.41 1.42-1.42-1.42-1.42V6.34h2.82v1.91l1.41 1.41 1.41-1.41h1.91v2.82h-1.91l-1.41-1.41-1.42 1.42 1.42 1.42v3.31l1.41 1.41 1.41-1.41h1.91v2.82h-1.91l-1.41-1.41-1.41 1.41z" fill="WHITE" opacity="0.7"/></StackPane>
+                        <Label text="Auctions" style="-fx-text-fill: inherit; -fx-font-size: inherit; -fx-font-weight: inherit;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <SVGPath fx:id="svgAuctionsArrow" content="M7 10l5 5 5-5z" fill="WHITE" opacity="0.5"/>
+                     </HBox>
+                  </graphic>
+               </Button>
+               <VBox fx:id="paneAuctionsAccordion" managed="false" visible="false" spacing="2" styleClass="sidebar-sub-menu">
+                  <padding><Insets left="32"/></padding>
+                  <Button fx:id="btnCategoryAll" onAction="#handleCategoryAll" maxWidth="Infinity" styleClass="sidebar-sub-item" text="All Categories"/>
+                  <Button fx:id="btnCategoryArt" onAction="#handleCategoryArt" maxWidth="Infinity" styleClass="sidebar-sub-item" text="Art"/>
+                  <Button fx:id="btnCategoryElectronics" onAction="#handleCategoryElectronics" maxWidth="Infinity" styleClass="sidebar-sub-item" text="Electronics"/>
+                  <Button fx:id="btnCategoryVehicle" onAction="#handleCategoryVehicle" maxWidth="Infinity" styleClass="sidebar-sub-item" text="Vehicle"/>
+               </VBox>
+            </VBox>
+
+            <!-- WALLET -->
+            <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item">
+               <graphic>
+                  <HBox alignment="CENTER_LEFT" spacing="12">
+                     <StackPane prefWidth="20"><SVGPath content="M21 7.28V5c0-1.1-.9-2-2-2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.98 1-1.72V9c0-.74-.41-1.37-1-1.72zM20 9v6h-7V9h7zM5 19V5h14v2h-6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h6v2H5z" fill="WHITE" opacity="0.7"/></StackPane>
+                     <Label text="Wallet" style="-fx-text-fill: inherit; -fx-font-size: inherit; -fx-font-weight: inherit;"/>
+                  </HBox>
+               </graphic>
+            </Button>
+
+            <!-- MESSAGES -->
             <StackPane>
                <children>
-                  <Button fx:id="btnNavMessages" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item" text="Messages" />
+                  <Button fx:id="btnNavMessages" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item">
+                     <graphic>
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                           <StackPane prefWidth="20"><SVGPath content="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="WHITE" opacity="0.7"/></StackPane>
+                           <Label text="Messages" style="-fx-text-fill: inherit; -fx-font-size: inherit; -fx-font-weight: inherit;"/>
+                        </HBox>
+                     </graphic>
+                  </Button>
                   <Label fx:id="lblSidebarChatBadge" managed="false" visible="false" styleClass="sidebar-chat-badge" StackPane.alignment="CENTER_RIGHT">
                      <StackPane.margin><Insets right="14.0" /></StackPane.margin>
                   </Label>
                </children>
             </StackPane>
-            <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" onMouseEntered="#handleAuctionsMouseEntered" onMouseExited="#handleAuctionsMouseExited" styleClass="sidebar-item" text="Auctions" />
 
             <Region VBox.vgrow="ALWAYS" />
 
-            <!-- Profile + Notification Bell -->
-            <HBox alignment="CENTER" spacing="8.0">
-               <VBox.margin><Insets bottom="10.0" /></VBox.margin>
+            <!-- Profile + Notification Bell Unified -->
+            <VBox fx:id="paneUserProfile" onMouseClicked="#handleViewProfile" styleClass="sidebar-profile-card">
                <children>
-                  <VBox fx:id="paneUserProfile" alignment="CENTER_LEFT" onMouseClicked="#handleViewProfile" pickOnBounds="true" spacing="10.0" HBox.hgrow="ALWAYS" style="-fx-cursor: hand; -fx-padding: 15; -fx-background-radius: 12; -fx-background-color: rgba(255,255,255,0.08); -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 12; -fx-border-width: 1;">
+                  <HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
-                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <StackPane prefWidth="40" prefHeight="40">
+                           <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" styleClass="sidebar-profile-avatar" text="U" />
+                           <ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                        </StackPane>
+                        <VBox spacing="1.0" HBox.hgrow="ALWAYS">
                            <children>
-                              <StackPane prefWidth="40" prefHeight="40">
-                                 <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="U" />
-                                 <ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
-                              </StackPane>
-                              <VBox spacing="1.0">
-                                 <children>
-                                    <Label fx:id="lblSidebarUsername" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;" text="Username" />
-                                    <Label fx:id="lblSidebarRole" style="-fx-text-fill: #94A3B8; -fx-font-size: 11;" text="BIDDER" />
-                                 </children>
-                              </VBox>
+                              <Label fx:id="lblSidebarUsername" styleClass="sidebar-profile-name" text="Username" />
+                              <Label fx:id="lblSidebarRole" styleClass="sidebar-profile-role" text="BIDDER" />
                            </children>
-                        </HBox>
+                        </VBox>
+                        <StackPane fx:id="bellNotif" styleClass="sidebar-bell-wrap">
+                           <children>
+                              <SVGPath content="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="WHITE" opacity="0.6" scaleX="0.8" scaleY="0.8"/>
+                              <Label fx:id="lblNotifBadge" styleClass="notif-badge" managed="false" visible="false" StackPane.alignment="TOP_RIGHT">
+                                 <StackPane.margin><Insets top="-2.0" right="-2.0" /></StackPane.margin>
+                              </Label>
+                           </children>
+                        </StackPane>
                      </children>
-                  </VBox>
-
-                  <StackPane fx:id="bellNotif">
-                     <children>
-                        <Label text="🔔" styleClass="notif-bell" />
-                        <Label fx:id="lblNotifBadge" styleClass="notif-badge" managed="false" visible="false" StackPane.alignment="TOP_RIGHT">
-                           <StackPane.margin><Insets top="4.0" right="4.0" /></StackPane.margin>
-                        </Label>
-                     </children>
-                  </StackPane>
+                  </HBox>
                </children>
-            </HBox>
+            </VBox>
 
             <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#handleLogout" styleClass="sidebar-logout" text="Đăng xuất" />
          </children>
