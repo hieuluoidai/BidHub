@@ -60,7 +60,7 @@
                                         </HBox>
 
                                         <VBox spacing="8.0">
-                                            <Label styleClass="form-label" text="Hãng sản xuất / Tác giả" />
+                                            <Label fx:id="labelExtraInfo" styleClass="form-label" text="Hãng sản xuất / Tác giả" />
                                             <TextField fx:id="textExtraInfo" prefHeight="45.0" promptText="VD: Apple, Leonardo da Vinci..." styleClass="form-input" />
                                         </VBox>
 

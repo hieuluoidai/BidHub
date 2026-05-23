@@ -74,7 +74,7 @@
                         <children>
                            <StackPane prefWidth="40" prefHeight="40">
                               <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="A" />
-                              <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                              <ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
                            </StackPane>
                            <VBox spacing="1.0">
                               <children>

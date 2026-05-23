@@ -1,5 +1,7 @@
-import database.UserDAO;
+package utils;
+
 import database.DatabaseConnection;
+import database.UserDAO;
 
 public class FixBidder {
     public static void main(String[] args) {

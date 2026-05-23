@@ -9,6 +9,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.effect.GaussianBlur?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -44,16 +45,17 @@
 
             <Label styleClass="sidebar-section" text="MENU" />
 
-            <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" styleClass="sidebar-item, sidebar-item-active" text="Bảng điều khiển" />
-            <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item" text="Ví &amp; Giao dịch" />
+            <Button fx:id="btnNavHome" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavHome" styleClass="sidebar-item, sidebar-item-active" text="Home" />
+            <Button fx:id="btnNavWallet" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavWallet" styleClass="sidebar-item" text="Wallet" />
             <StackPane>
                <children>
-                  <Button fx:id="btnNavMessages" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item" text="Tin nhắn" />
+                  <Button fx:id="btnNavMessages" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavMessages" styleClass="sidebar-item" text="Messages" />
                   <Label fx:id="lblSidebarChatBadge" managed="false" visible="false" styleClass="sidebar-chat-badge" StackPane.alignment="CENTER_RIGHT">
                      <StackPane.margin><Insets right="14.0" /></StackPane.margin>
                   </Label>
                </children>
             </StackPane>
+            <Button fx:id="btnNavAuctions" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleNavAuctions" onMouseEntered="#handleAuctionsMouseEntered" onMouseExited="#handleAuctionsMouseExited" styleClass="sidebar-item" text="Auctions" />
 
             <Region VBox.vgrow="ALWAYS" />
 
@@ -67,7 +69,7 @@
                            <children>
                               <StackPane prefWidth="40" prefHeight="40">
                                  <Label fx:id="lblSidebarAvatar" alignment="CENTER" minWidth="40.0" prefHeight="40.0" prefWidth="40.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="U" />
-                                 <javafx.scene.image.ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
+                                 <ImageView fx:id="imgSidebarAvatar" fitWidth="40" fitHeight="40" visible="false" preserveRatio="false" />
                               </StackPane>
                               <VBox spacing="1.0">
                                  <children>
@@ -100,8 +102,102 @@
    <center>
       <StackPane BorderPane.alignment="CENTER">
          <children>
-            <!-- VIEW 1: AUCTIONS -->
-            <VBox fx:id="viewAuctions" spacing="16.0" styleClass="main-content">
+            <!-- VIEW 1: HOME -->
+            <VBox fx:id="viewHome" spacing="28.0" styleClass="main-content">
+               <padding>
+                  <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
+               </padding>
+               <children>
+                  <StackPane fx:id="paneHomeHero" maxHeight="465.0" minHeight="465.0" prefHeight="465.0" styleClass="home-hero">
+                     <children>
+                        <ImageView fx:id="imgHomeHeroBackground" fitHeight="465.0" fitWidth="1100.0" managed="false" mouseTransparent="true" opacity="0.22" preserveRatio="false">
+                           <image>
+                              <Image url="@../Images/bid-hub-logo.png" />
+                           </image>
+                           <effect>
+                              <GaussianBlur radius="18.0" />
+                           </effect>
+                        </ImageView>
+                        <Region styleClass="home-hero-tint" />
+                        <VBox alignment="CENTER" spacing="22.0">
+                           <children>
+                              <Label styleClass="home-hero-badge" text="☆ BidHub Auction System" />
+                              <Label fx:id="lblHomeWelcome" alignment="CENTER" styleClass="home-welcome-title" text="Welcome, bidder" textAlignment="CENTER" wrapText="true" />
+                              <Label alignment="CENTER" styleClass="home-welcome-subtitle" text="Khám phá các phiên đấu giá đang diễn ra và chọn danh mục bạn quan tâm" textAlignment="CENTER" wrapText="true" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </StackPane>
+
+                  <HBox spacing="30.0">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleHomeAll" prefHeight="135.0" spacing="18.0" styleClass="home-stat-card, home-stat-blue" HBox.hgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label styleClass="home-stat-label" text="Tất cả phiên" />
+                                    <Label styleClass="home-stat-value" text="All" />
+                                 </children>
+                              </VBox>
+                              <StackPane styleClass="home-stat-icon-wrap, home-stat-icon-blue">
+                                 <children>
+                                    <Label styleClass="home-stat-icon" text="◎" />
+                                 </children>
+                              </StackPane>
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleHomeArt" prefHeight="135.0" spacing="18.0" styleClass="home-stat-card, home-stat-purple" HBox.hgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label styleClass="home-stat-label" text="Bộ sưu tập" />
+                                    <Label styleClass="home-stat-value" text="Art" />
+                                 </children>
+                              </VBox>
+                              <StackPane styleClass="home-stat-icon-wrap, home-stat-icon-purple">
+                                 <children>
+                                    <Label styleClass="home-stat-icon" text="🎨" />
+                                 </children>
+                              </StackPane>
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleHomeElectronics" prefHeight="135.0" spacing="18.0" styleClass="home-stat-card, home-stat-teal" HBox.hgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label styleClass="home-stat-label" text="Thiết bị công nghệ" />
+                                    <Label styleClass="home-stat-value" text="Electronics" />
+                                 </children>
+                              </VBox>
+                              <StackPane styleClass="home-stat-icon-wrap, home-stat-icon-teal">
+                                 <children>
+                                    <Label styleClass="home-stat-icon" text="💻" />
+                                 </children>
+                              </StackPane>
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleHomeVehicle" prefHeight="135.0" spacing="18.0" styleClass="home-stat-card, home-stat-green" HBox.hgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label styleClass="home-stat-label" text="Phương tiện" />
+                                    <Label styleClass="home-stat-value" text="Vehicle" />
+                                 </children>
+                              </VBox>
+                              <StackPane styleClass="home-stat-icon-wrap, home-stat-icon-green">
+                                 <children>
+                                    <Label styleClass="home-stat-icon" text="🚗" />
+                                 </children>
+                              </StackPane>
+                           </children>
+                        </HBox>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+
+            <!-- VIEW 2: AUCTIONS -->
+            <VBox fx:id="viewAuctions" managed="false" spacing="16.0" styleClass="main-content" visible="false">
                <padding>
                   <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
                </padding>
@@ -110,8 +206,8 @@
                   <HBox alignment="CENTER_LEFT" spacing="14.0">
                      <children>
                         <VBox spacing="2.0">
-                           <Label fx:id="titleLabel" styleClass="page-title" text="Bảng điều khiển" />
-                           <Label styleClass="page-subtitle" text="Khám phá và đặt giá cho các phiên đang diễn ra" />
+                           <Label fx:id="titleLabel" styleClass="page-title" text="All Auctions" />
+                           <Label fx:id="auctionSubtitleLabel" styleClass="page-subtitle" text="Khám phá và đặt giá cho các phiên đang diễn ra" />
                         </VBox>
                         <Region HBox.hgrow="ALWAYS" />
                         <Button fx:id="createSessionButton" mnemonicParsing="false" onAction="#handleCreateNewSession" prefHeight="42.0" prefWidth="180.0" styleClass="button-primary" text="+ Tạo phiên mới" />
@@ -213,7 +309,7 @@
                </children>
             </VBox>
 
-            <!-- VIEW 2: WALLET & TRANSACTIONS -->
+            <!-- VIEW 3: WALLET & TRANSACTIONS -->
             <VBox fx:id="viewWallet" spacing="20.0" styleClass="main-content" visible="false" managed="false">
                <padding>
                   <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
@@ -222,7 +318,7 @@
                   <HBox alignment="CENTER_LEFT" spacing="14.0">
                      <children>
                         <VBox spacing="2.0">
-                           <Label styleClass="page-title" text="Ví &amp; Giao dịch" />
+                           <Label styleClass="page-title" text="Wallet" />
                            <Label styleClass="page-subtitle" text="Quản lý tài chính và xem lại lịch sử hoạt động" />
                         </VBox>
                         <Region HBox.hgrow="ALWAYS" />
@@ -287,7 +383,7 @@
                </children>
             </VBox>
 
-            <!-- VIEW 3: MESSAGES -->
+            <!-- VIEW 4: MESSAGES -->
             <VBox fx:id="viewMessages" managed="false" visible="false" styleClass="main-content" VBox.vgrow="ALWAYS">
                <padding>
                   <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />

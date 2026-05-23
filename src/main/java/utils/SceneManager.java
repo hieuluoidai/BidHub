@@ -43,7 +43,7 @@ public class SceneManager {
     }
 
     public void showDashboard() {
-        switchScene("/view/dashboard.fxml", "BidHub - Bảng điều khiển");
+        switchScene("/view/dashboard.fxml", "BidHub - Home");
     }
     
     public void showAdminDashboard() {

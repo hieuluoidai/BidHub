@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -20,7 +21,7 @@
          <HBox styleClass="chat-tab-bar" alignment="CENTER" spacing="0">
             <padding><Insets top="10.0" left="12.0" right="12.0" bottom="10.0" /></padding>
             <children>
-               <Button fx:id="btnTabMessages" text="Tin nhắn" styleClass="chat-tab-btn"
+               <Button fx:id="btnTabMessages" text="Messages" styleClass="chat-tab-btn"
                        onAction="#handleTabMessages" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
                <Button fx:id="btnTabFriends" text="Bạn bè" styleClass="chat-tab-btn"
                        onAction="#handleTabFriends" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
@@ -55,7 +56,7 @@
                   <children>
                      <StackPane prefWidth="42.0" prefHeight="42.0">
                         <Label fx:id="lblPartnerAvatar" alignment="CENTER" prefWidth="42.0" prefHeight="42.0" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 50%;" text="?" />
-                        <javafx.scene.image.ImageView fx:id="imgPartnerAvatar" fitWidth="42.0" fitHeight="42.0" visible="false" preserveRatio="false" />
+                        <ImageView fx:id="imgPartnerAvatar" fitWidth="42.0" fitHeight="42.0" visible="false" preserveRatio="false" />
                      </StackPane>
                      <VBox spacing="2.0">
                         <Label fx:id="lblPartnerName" styleClass="chat-partner-name" text="Người dùng" />

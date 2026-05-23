@@ -39,10 +39,6 @@ public class CreateSessionController {
     @FXML private Label labelError;
     @FXML private ComboBox<String> cbItemType;
     @FXML private Label labelExtraInfo;
-    @FXML private Label labelDescription;
-    @FXML private Label labelStartingPrice;
-    @FXML private Label labelItemType;
-    @FXML private Label labelItemName;
 
     // Các control để chọn ngày + giờ kết thúc
     @FXML private DatePicker datePickerEndDate;
@@ -58,6 +54,7 @@ public class CreateSessionController {
 
     /** File ảnh user đã chọn (chưa copy vào uploads). Null nếu chưa chọn. */
     private File selectedImageFile;
+    private String lockedItemType;
 
     /**
      * Đổ dữ liệu vào ComboBox và thiết lập tính năng thay đổi Label.
@@ -73,19 +70,19 @@ public class CreateSessionController {
 
             switch (newVal) {
                 case "Electronics":
-                    labelExtraInfo.setText("Hãng sản xuất (Brand)");
+                    if (labelExtraInfo != null) labelExtraInfo.setText("Hãng sản xuất (Brand)");
                     textExtraInfo.setPromptText("Ví dụ: Apple, Samsung...");
                     break;
                 case "Art":
-                    labelExtraInfo.setText("Tác giả (Author)");
+                    if (labelExtraInfo != null) labelExtraInfo.setText("Tác giả (Author)");
                     textExtraInfo.setPromptText("Ví dụ: Picasso, Van Gogh...");
                     break;
                 case "Vehicle":
-                    labelExtraInfo.setText("Hãng xe (Manufacturer)");
+                    if (labelExtraInfo != null) labelExtraInfo.setText("Hãng xe (Manufacturer)");
                     textExtraInfo.setPromptText("Ví dụ: Toyota, Honda...");
                     break;
                 default:
-                    labelExtraInfo.setText("Thông tin thêm");
+                    if (labelExtraInfo != null) labelExtraInfo.setText("Thông tin thêm");
             }
         });
 
@@ -101,6 +98,27 @@ public class CreateSessionController {
         datePickerEndDate.setValue(LocalDate.now().plusDays(7));
         cbEndHour.setValue("23");
         cbEndMinute.setValue("55");
+        applyLockedItemType();
+    }
+
+    public void lockItemType(String itemType) {
+        if (itemType == null || itemType.isBlank()) return;
+        lockedItemType = itemType;
+        applyLockedItemType();
+    }
+
+    private void applyLockedItemType() {
+        if (lockedItemType == null || cbItemType == null) return;
+        if (!cbItemType.getItems().contains(lockedItemType)) {
+            cbItemType.getItems().add(lockedItemType);
+        }
+        cbItemType.setValue(lockedItemType);
+        cbItemType.setDisable(true);
+        cbItemType.setOpacity(1.0);
+        cbItemType.setFocusTraversable(false);
+        if (!cbItemType.getStyleClass().contains("locked-choice")) {
+            cbItemType.getStyleClass().add("locked-choice");
+        }
     }
 
     /**
@@ -110,7 +128,7 @@ public class CreateSessionController {
     void handleSave() {
         try {
             // 1. Thu thập dữ liệu
-            String type = cbItemType.getValue();
+            String type = lockedItemType != null ? lockedItemType : cbItemType.getValue();
             String name = textItemName.getText();
             String priceStr = textStartingPrice.getText();
             String desc = textDescription.getText();

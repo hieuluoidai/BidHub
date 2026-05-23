@@ -267,8 +267,8 @@ public class MessagesController {
 
     private void updateUnreadPill(int total) {
         btnTabMessages.setText(total > 0
-                ? "Tin nhắn (" + (total > 99 ? "99+" : String.valueOf(total)) + ")"
-                : "Tin nhắn");
+                ? "Messages (" + (total > 99 ? "99+" : String.valueOf(total)) + ")"
+                : "Messages");
     }
 
     private void updateFriendBadge(int n) {

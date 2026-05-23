@@ -2,11 +2,13 @@ package controller;
 
 import java.io.IOException;
 
+import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -14,7 +16,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import model.auction.Auction;
 import model.manager.AppState;
 import model.user.Admin;
@@ -28,6 +32,8 @@ import model.user.User;
 public class DashboardController {
 
     @FXML private Label titleLabel;
+    @FXML private Label auctionSubtitleLabel;
+    @FXML private Label lblHomeWelcome;
     @FXML private Label lblBalance;        // hiển thị số dư hiện tại
     @FXML private Label lblLockedBalance;  // hiển thị số dư bị khóa
     @FXML private TextField textSearch;
@@ -61,12 +67,16 @@ public class DashboardController {
     @FXML private javafx.scene.layout.VBox paneUserProfile;
     @FXML private javafx.scene.layout.StackPane bellNotif;
     @FXML private Label lblNotifBadge;
+    @FXML private javafx.scene.layout.StackPane paneHomeHero;
+    @FXML private javafx.scene.image.ImageView imgHomeHeroBackground;
 
     // View Navigation
+    @FXML private Button btnNavHome;
     @FXML private Button btnNavAuctions;
     @FXML private Button btnNavWallet;
     @FXML private Button btnNavMessages;
     @FXML private Label lblSidebarChatBadge;
+    @FXML private javafx.scene.layout.VBox viewHome;
     @FXML private javafx.scene.layout.VBox viewAuctions;
     @FXML private javafx.scene.layout.VBox viewWallet;
     @FXML private javafx.scene.layout.VBox viewMessages;
@@ -86,11 +96,17 @@ public class DashboardController {
     private final java.time.format.DateTimeFormatter dateTimeFormatter =
             java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private javafx.beans.value.ChangeListener<Number> chatBadgeListener;
+    private String selectedCategoryFilter = "ALL";
+    private Popup auctionFlyout;
+    private javafx.scene.layout.VBox auctionFlyoutBox;
+    private PauseTransition auctionFlyoutHideDelay;
 
     /**
      * Khởi tạo bộ lọc và thiết lập các bộ lắng nghe sự kiện (Listeners).
      */
     public void initialize() {
+        setupHomeHero();
+
         // Setup personal transaction list
         setupTransactionList();
 
@@ -194,6 +210,7 @@ public class DashboardController {
         });
 
         // Render lần đầu
+        updateAuctionHeader();
         renderAuctions();
         updateStats();
     }
@@ -205,11 +222,57 @@ public class DashboardController {
         return "TẤT CẢ";
     }
 
+    private String getCategoryTitle() {
+        return switch (selectedCategoryFilter) {
+            case "ART" -> "Art Auctions";
+            case "ELECTRONICS" -> "Electronics Auctions";
+            case "VEHICLE" -> "Vehicle Auctions";
+            default -> "All Auctions";
+        };
+    }
+
+    private String getCategorySubtitle() {
+        return switch (selectedCategoryFilter) {
+            case "ART" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Art";
+            case "ELECTRONICS" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Electronics";
+            case "VEHICLE" -> "Chỉ hiển thị các phiên đấu giá thuộc danh mục Vehicle";
+            default -> "Khám phá và đặt giá cho các phiên đang diễn ra";
+        };
+    }
+
+    private boolean matchesCategory(Auction auction) {
+        if ("ALL".equals(selectedCategoryFilter)) return true;
+        if (auction == null || auction.getItem() == null || auction.getItem().getItemType() == null) return false;
+        return auction.getItem().getItemType().trim().equalsIgnoreCase(selectedCategoryFilter);
+    }
+
+    private void updateAuctionHeader() {
+        if (titleLabel != null) titleLabel.setText(getCategoryTitle());
+        if (auctionSubtitleLabel != null) auctionSubtitleLabel.setText(getCategorySubtitle());
+    }
+
+    private void setupHomeHero() {
+        if (paneHomeHero == null) return;
+
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+        clip.setArcWidth(48);
+        clip.setArcHeight(48);
+        clip.widthProperty().bind(paneHomeHero.widthProperty());
+        clip.heightProperty().bind(paneHomeHero.heightProperty());
+        paneHomeHero.setClip(clip);
+
+        if (imgHomeHeroBackground != null) {
+            imgHomeHeroBackground.fitWidthProperty().bind(paneHomeHero.widthProperty());
+            imgHomeHeroBackground.fitHeightProperty().bind(paneHomeHero.heightProperty());
+        }
+    }
+
     private void updateStats() {
         ObservableList<Auction> auctions = AppState.getInstance().getAuctionList();
-        long running = auctions.stream().filter(a -> "RUNNING".equals(a.getStatus())).count();
-        long ended = auctions.stream().filter(this::isAuctionEnded).count();
-        if (lblStatTotal != null) lblStatTotal.setText(String.valueOf(auctions.size()));
+        long total = auctions.stream().filter(this::matchesCategory).count();
+        long running = auctions.stream().filter(this::matchesCategory).filter(a -> "RUNNING".equals(a.getStatus())).count();
+        long ended = auctions.stream().filter(this::matchesCategory).filter(this::isAuctionEnded).count();
+        if (lblStatTotal != null) lblStatTotal.setText(String.valueOf(total));
         if (lblStatRunning != null) lblStatRunning.setText(String.valueOf(running));
         if (lblStatEnded != null) lblStatEnded.setText(String.valueOf(ended));
     }
@@ -335,7 +398,8 @@ public class DashboardController {
     private void updatePredicate() {
         filteredData.setPredicate(auction -> {
             if (auction == null || auction.getItem() == null) return false;
-            String search = textSearch.getText().toLowerCase().trim();
+            if (!matchesCategory(auction)) return false;
+            String search = textSearch.getText() == null ? "" : textSearch.getText().toLowerCase().trim();
             boolean matchesName = auction.getItem().getItemName().toLowerCase().contains(search);
             if (!matchesName) return false;
             String status = getSelectedStatusFilter();
@@ -359,7 +423,7 @@ public class DashboardController {
     private void setupPermissions() {
         User user = AppState.getInstance().getCurrentUser();
         if (user != null) {
-            titleLabel.setText("Welcome, " + user.getUsername());
+            if (lblHomeWelcome != null) lblHomeWelcome.setText("Welcome, " + user.getUsername());
             if (lblSidebarUsername != null) lblSidebarUsername.setText(user.getUsername());
             if (lblSidebarRole != null) lblSidebarRole.setText(user.getClass().getSimpleName().toUpperCase());
             if (lblSidebarAvatar != null) {
@@ -448,8 +512,28 @@ public class DashboardController {
 
     @FXML
     void handleCreateNewSession() {
-        openPopup("/view/create_session.fxml", "Create New Auction Session");
-        loadAuctionData();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/create_session.fxml"));
+            Parent root = loader.load();
+            CreateSessionController controller = loader.getController();
+            String lockedType = getCreateSessionLockedType();
+            if (lockedType != null) {
+                controller.lockItemType(lockedType);
+            }
+            showStage(root, "Create New Auction Session");
+            loadAuctionData();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getCreateSessionLockedType() {
+        return switch (selectedCategoryFilter) {
+            case "ART" -> "Art";
+            case "ELECTRONICS" -> "Electronics";
+            case "VEHICLE" -> "Vehicle";
+            default -> null;
+        };
     }
 
     private void handleQuickBidOf(Auction auction) {
@@ -561,8 +645,131 @@ public class DashboardController {
     }
 
     @FXML
+    void handleNavHome() {
+        switchView("home");
+    }
+
+    @FXML
     void handleNavAuctions() {
+        showAuctionFlyout();
+    }
+
+    @FXML
+    void handleAuctionsMouseEntered() {
+        showAuctionFlyout();
+    }
+
+    @FXML
+    void handleAuctionsMouseExited() {
+        scheduleAuctionFlyoutHide();
+    }
+
+    @FXML
+    void handleHomeAll() {
+        openAuctionCategory("ALL");
+    }
+
+    @FXML
+    void handleHomeArt() {
+        openAuctionCategory("ART");
+    }
+
+    @FXML
+    void handleHomeElectronics() {
+        openAuctionCategory("ELECTRONICS");
+    }
+
+    @FXML
+    void handleHomeVehicle() {
+        openAuctionCategory("VEHICLE");
+    }
+
+    private void openAuctionCategory(String category) {
+        hideAuctionFlyout();
+        selectedCategoryFilter = category == null ? "ALL" : category;
         switchView("auctions");
+        updateAuctionHeader();
+        updatePredicate();
+        renderAuctions();
+        updateStats();
+    }
+
+    private void showAuctionFlyout() {
+        if (btnNavAuctions == null || btnNavAuctions.getScene() == null) return;
+        cancelAuctionFlyoutHide();
+        ensureAuctionFlyout();
+        refreshAuctionFlyoutButtons();
+
+        Bounds bounds = btnNavAuctions.localToScreen(btnNavAuctions.getBoundsInLocal());
+        if (bounds == null) return;
+        double x = bounds.getMaxX() + 8;
+        double y = bounds.getMinY();
+        if (!auctionFlyout.isShowing()) {
+            auctionFlyout.show(btnNavAuctions, x, y);
+        } else {
+            auctionFlyout.setX(x);
+            auctionFlyout.setY(y);
+        }
+    }
+
+    private void ensureAuctionFlyout() {
+        if (auctionFlyout != null) return;
+
+        auctionFlyoutBox = new javafx.scene.layout.VBox(4);
+        auctionFlyoutBox.getStyleClass().add("auction-flyout-menu");
+        String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
+        auctionFlyoutBox.getStylesheets().add(cssUrl);
+        auctionFlyoutBox.setOnMouseEntered(e -> cancelAuctionFlyoutHide());
+        auctionFlyoutBox.setOnMouseExited(e -> scheduleAuctionFlyoutHide());
+
+        auctionFlyout = new Popup();
+        auctionFlyout.setAutoHide(true);
+        auctionFlyout.setHideOnEscape(true);
+        auctionFlyout.getContent().add(auctionFlyoutBox);
+
+        auctionFlyoutHideDelay = new PauseTransition(Duration.millis(220));
+        auctionFlyoutHideDelay.setOnFinished(e -> hideAuctionFlyout());
+    }
+
+    private void refreshAuctionFlyoutButtons() {
+        if (auctionFlyoutBox == null) return;
+        auctionFlyoutBox.getChildren().setAll(
+                createAuctionFlyoutButton("All", "ALL"),
+                createAuctionFlyoutButton("Art", "ART"),
+                createAuctionFlyoutButton("Electronics", "ELECTRONICS"),
+                createAuctionFlyoutButton("Vehicle", "VEHICLE")
+        );
+    }
+
+    private Button createAuctionFlyoutButton(String label, String category) {
+        Button button = new Button(label);
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setMnemonicParsing(false);
+        button.getStyleClass().add("auction-flyout-item");
+        if (category.equals(selectedCategoryFilter)) {
+            button.getStyleClass().add("auction-flyout-item-active");
+        }
+        button.setOnAction(e -> openAuctionCategory(category));
+        return button;
+    }
+
+    private void scheduleAuctionFlyoutHide() {
+        if (auctionFlyoutHideDelay != null) {
+            auctionFlyoutHideDelay.playFromStart();
+        }
+    }
+
+    private void cancelAuctionFlyoutHide() {
+        if (auctionFlyoutHideDelay != null) {
+            auctionFlyoutHideDelay.stop();
+        }
+    }
+
+    private void hideAuctionFlyout() {
+        cancelAuctionFlyoutHide();
+        if (auctionFlyout != null) {
+            auctionFlyout.hide();
+        }
     }
 
     @FXML
@@ -577,19 +784,27 @@ public class DashboardController {
     }
 
     private void switchView(String which) {
+        boolean h = "home".equals(which);
         boolean a = "auctions".equals(which);
         boolean w = "wallet".equals(which);
         boolean m = "messages".equals(which);
+        if (!a) hideAuctionFlyout();
+        if (viewHome != null) {
+            viewHome.setVisible(h);
+            viewHome.setManaged(h);
+        }
         viewAuctions.setVisible(a); viewAuctions.setManaged(a);
         viewWallet.setVisible(w); viewWallet.setManaged(w);
         if (viewMessages != null) {
             viewMessages.setVisible(m);
             viewMessages.setManaged(m);
         }
+        if (btnNavHome != null) btnNavHome.getStyleClass().removeAll("sidebar-item-active");
         btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
         btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
         if (btnNavMessages != null) btnNavMessages.getStyleClass().removeAll("sidebar-item-active");
-        if (a) btnNavAuctions.getStyleClass().add("sidebar-item-active");
+        if (h && btnNavHome != null) btnNavHome.getStyleClass().add("sidebar-item-active");
+        else if (a) btnNavAuctions.getStyleClass().add("sidebar-item-active");
         else if (w) btnNavWallet.getStyleClass().add("sidebar-item-active");
         else if (m && btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
     }
