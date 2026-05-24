@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<VBox fx:id="viewAuctions" spacing="12.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.AdminAuctionsController">
+   <padding><Insets top="6.0" /></padding>
+
+   <HBox alignment="CENTER_LEFT" spacing="20.0">
+      <children>
+         <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-blue" HBox.hgrow="ALWAYS">
+            <children>
+               <Label styleClass="admin-stat-label" text="TỔNG PHIÊN" />
+               <Label fx:id="labelTotalAuctions" styleClass="admin-stat-value" text="--" />
+            </children>
+         </VBox>
+         <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-green" HBox.hgrow="ALWAYS">
+            <children>
+               <Label styleClass="admin-stat-label" text="ĐANG DIỄN RA" />
+               <Label fx:id="labelRunningAuctions" styleClass="admin-stat-value" text="--" />
+            </children>
+         </VBox>
+         <VBox prefHeight="85.0" styleClass="admin-stat-card, stat-card-purple" HBox.hgrow="ALWAYS">
+            <children>
+               <Label styleClass="admin-stat-label" text="ĐÃ KẾT THÚC" />
+               <Label fx:id="labelFinishedAuctions" styleClass="admin-stat-value" text="--" />
+            </children>
+         </VBox>
+         <Button onAction="#handleRefresh" prefHeight="85.0" prefWidth="120.0" styleClass="button-secondary" text="↻ Làm mới" />
+      </children>
+   </HBox>
+
+   <!-- AUCTION FILTER BAR -->
+   <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="admin-table-actions">
+      <children>
+         <HBox alignment="CENTER_LEFT" maxWidth="350.0" prefHeight="42.0" styleClass="search-box" HBox.hgrow="ALWAYS">
+            <children>
+               <Label style="-fx-text-fill: #94A3B8; -fx-padding: 0 0 0 12;" text="🔍" />
+               <TextField fx:id="txtAuctionSearch" promptText="Tìm tên sản phẩm..." styleClass="search-field" HBox.hgrow="ALWAYS" />
+            </children>
+         </HBox>
+         <Region HBox.hgrow="ALWAYS" />
+         <HBox alignment="CENTER" styleClass="segmented-control" prefHeight="42.0">
+            <fx:define>
+               <ToggleGroup fx:id="auctionStatusGroup" />
+            </fx:define>
+            <children>
+               <ToggleButton fx:id="tglAllAuctions" minWidth="90.0" selected="true" styleClass="segment-button, segment-left" text="TẤT CẢ" toggleGroup="$auctionStatusGroup" />
+               <ToggleButton fx:id="tglOpenAuctions" minWidth="120.0" styleClass="segment-button" text="SẮP DIỄN RA" toggleGroup="$auctionStatusGroup" />
+               <ToggleButton fx:id="tglRunningAuctions" minWidth="130.0" styleClass="segment-button" text="ĐANG DIỄN RA" toggleGroup="$auctionStatusGroup" />
+               <ToggleButton fx:id="tglEndedAuctions" minWidth="120.0" styleClass="segment-button, segment-right" text="ĐÃ KẾT THÚC" toggleGroup="$auctionStatusGroup" />
+            </children>
+         </HBox>
+      </children>
+   </HBox>
+
+   <StackPane VBox.vgrow="ALWAYS">
+      <children>
+         <ScrollPane fitToWidth="true" styleClass="auction-scroll-pane">
+            <content>
+               <VBox spacing="10.0">
+                  <children>
+                     <FlowPane fx:id="flowPaneAuctions" hgap="20.0" vgap="25.0" styleClass="cards-flow-pane" />
+                     
+                     <VBox fx:id="paneEndedSection" managed="false" spacing="20.0" styleClass="ended-section-header" visible="false">
+                        <children>
+                           <HBox alignment="CENTER" spacing="15.0">
+                              <children>
+                                 <Separator HBox.hgrow="ALWAYS" />
+                                 <Label styleClass="ended-section-title" text="PHIÊN ĐÃ KẾT THÚC" />
+                                 <Separator HBox.hgrow="ALWAYS" />
+                              </children>
+                              <padding>
+                                 <Insets left="10.0" right="10.0" />
+                              </padding>
+                           </HBox>
+                           <FlowPane fx:id="flowPaneEnded" hgap="20.0" vgap="25.0" styleClass="cards-flow-pane" />
+                        </children>
+                     </VBox>
+                  </children>
+               </VBox>
+            </content>
+         </ScrollPane>
+         
+         <!-- EMPTY STATE AUCTIONS -->
+         <VBox fx:id="paneEmptyAuctions" alignment="CENTER" managed="false" spacing="20.0" styleClass="empty-state-pane" visible="false">
+            <children>
+               <StackPane prefHeight="100.0">
+                  <children>
+                     <SVGPath content="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" fill="TRANSPARENT" scaleX="3.5" scaleY="3.5" stroke="#CBD5E1" strokeWidth="1.5" />
+                  </children>
+               </StackPane>
+               <Label styleClass="empty-state-title" text="Không tìm thấy phiên đấu giá nào" />
+               <Label styleClass="empty-state-subtitle" text="Thử thay đổi từ khóa hoặc bộ lọc của bạn" />
+            </children>
+         </VBox>
+      </children>
+   </StackPane>
+</VBox>

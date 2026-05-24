@@ -465,6 +465,18 @@
                   <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />
                </padding>
                <children>
+                  <!-- HEADER (Matching Admin style) -->
+                  <HBox alignment="CENTER_LEFT" spacing="14.0">
+                     <padding>
+                        <Insets bottom="22.0" left="26.0" right="26.0" top="22.0" />
+                     </padding>
+                     <children>
+                        <VBox spacing="2.0">
+                           <Label styleClass="page-title" text="Tin nhắn &amp; Bạn bè" />
+                           <Label styleClass="page-subtitle" text="Nhắn tin &amp; Kết bạn" />
+                        </VBox>
+                     </children>
+                  </HBox>
                   <fx:include source="messages_view.fxml" fx:id="messagesView" />
                </children>
             </VBox>

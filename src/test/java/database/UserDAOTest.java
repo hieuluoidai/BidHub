@@ -62,6 +62,46 @@ class UserDAOTest extends BaseDAOTest {
     }
 
     @Test
+    void testUpdateAndSearch() {
+        User user = new Bidder("u-upd", "upd", "upd@ex.com", "p");
+        userDAO.save(user);
+
+        // Test updateProfile
+        assertTrue(userDAO.updateProfile("u-upd", "new@ex.com", "123456", "2000-01-01"));
+
+        User found = userDAO.findById("u-upd");
+        assertEquals("new@ex.com", found.getEmail());
+        assertEquals("123456", found.getPhoneNumber());
+
+        // Test searchByUsername
+        List<User> search = userDAO.searchByUsername("upd", null);
+        assertFalse(search.isEmpty());
+        assertEquals("u-upd", search.get(0).getUserId());
+    }
+
+    @Test
+    void testRecalculateLocked() {
+        String uid = "u-recalc";
+        userDAO.save(new Bidder(uid, "recalc", "recalc@ex.com", "p"));
+        userDAO.setBalance(uid, 1000.0);
+        userDAO.setLockedBalance(uid, 500.0);
+        
+        // totalNeeded will be 0, balance should become 1500, locked 0
+        assertTrue(userDAO.recalculateLockedBalance(uid));
+        assertEquals(0.0, userDAO.getLockedBalance(uid));
+        assertEquals(1500.0, userDAO.getBalance(uid));
+    }
+
+    @Test
+    void testSellerFields() {
+        model.user.Seller s = new model.user.Seller("s-2", "sell2", "s2@ex.com", "p");
+        userDAO.save(s);
+
+        User found = userDAO.findById("s-2");
+        assertTrue(found instanceof model.user.Seller);
+    }
+
+    @Test
     void testTransferAtomic() {
         User u1 = new Bidder("u-004", "user1", "u1@ex.com", "p");
         User u2 = new Bidder("u-005", "user2", "u2@ex.com", "p");

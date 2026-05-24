@@ -133,12 +133,19 @@ public class NotificationCenter {
 
             Stage stage = new Stage();
             stage.initOwner(anchor.getScene().getWindow());
-            stage.initModality(Modality.APPLICATION_MODAL); // Chế độ Modal: khóa cửa sổ chính
+            stage.initModality(Modality.NONE); // Không dùng Modal để có thể click ra ngoài
             stage.initStyle(StageStyle.TRANSPARENT);
             Scene scene = new Scene(root);
             scene.setFill(Color.TRANSPARENT);
             stage.setScene(scene);
             stage.setTitle("Thông báo");
+            
+            // Tự động đóng khi mất focus (click ra ngoài)
+            stage.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                if (!isNowFocused) {
+                    stage.close();
+                }
+            });
             
             // Cho phép kéo cửa sổ
             final double[] xOffset = new double[1];
@@ -160,6 +167,21 @@ public class NotificationCenter {
             stage.show();
             stage.centerOnScreen();
             currentStage = stage;
+
+            // Hoạt ảnh xuất hiện (Fade-in & Slide-down)
+            root.setOpacity(0);
+            root.setTranslateY(-20);
+            javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(300), root);
+            ft.setFromValue(0); 
+            ft.setToValue(1);
+            
+            javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
+                    javafx.util.Duration.millis(300), root);
+            tt.setFromY(-20); 
+            tt.setToY(0);
+            
+            new javafx.animation.ParallelTransition(ft, tt).play();
 
         } catch (Exception ex) {
             ex.printStackTrace();

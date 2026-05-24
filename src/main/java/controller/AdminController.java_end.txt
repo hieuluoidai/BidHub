@@ -1,0 +1,25 @@
+    private void performInstantSwitch(String which) {
+        if (viewAuctions != null) {
+            viewAuctions.setVisible("auctions".equals(which));
+            viewAuctions.setManaged("auctions".equals(which));
+        }
+        if (viewUsers != null) {
+            viewUsers.setVisible("users".equals(which));
+            viewUsers.setManaged("users".equals(which));
+        }
+        if (viewDeposits != null) {
+            viewDeposits.setVisible("deposits".equals(which));
+            viewDeposits.setManaged("deposits".equals(which));
+        }
+        if (viewMessages != null) {
+            viewMessages.setVisible("messages".equals(which));
+            viewMessages.setManaged("messages".equals(which));
+        }
+    }
+
+    @FXML
+    void handleRefreshDeposits() {
+        loadDepositData();
+        loadUserData();
+    }
+}

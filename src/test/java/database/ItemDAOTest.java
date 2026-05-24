@@ -73,4 +73,21 @@ class ItemDAOTest extends BaseDAOTest {
         List<Item> all = itemDAO.findAll();
         assertTrue(all.size() >= 2);
     }
+
+    @Test
+    void testArtAndVehicle() {
+        model.item.Art art = new model.item.Art("art1", "Mona Lisa", "Painting", 1000000.0, "Da Vinci");
+        assertTrue(itemDAO.save(art, "s-001"));
+        
+        Item artFound = itemDAO.findById("art1");
+        assertTrue(artFound instanceof model.item.Art);
+        assertEquals("Da Vinci", ((model.item.Art) artFound).getArtist());
+
+        model.item.Vehicle v = new model.item.Vehicle("v1", "Tesla", "Car", 50000.0, "Tesla");
+        assertTrue(itemDAO.save(v, "s-001"));
+        
+        Item vFound = itemDAO.findById("v1");
+        assertTrue(vFound instanceof model.item.Vehicle);
+        assertEquals("Tesla", ((model.item.Vehicle) vFound).getBrand());
+    }
 }

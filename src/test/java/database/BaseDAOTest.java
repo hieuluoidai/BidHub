@@ -164,7 +164,10 @@ public abstract class BaseDAOTest {
                     "content TEXT NOT NULL, " +
                     "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "read_at TIMESTAMP NULL, " +
-                    "liked TINYINT(1) DEFAULT 0" +
+                    "liked TINYINT(1) DEFAULT 0, " +
+                    "recalled TINYINT(1) DEFAULT 0, " +
+                    "hidden_by_sender TINYINT(1) DEFAULT 0, " +
+                    "hidden_by_receiver TINYINT(1) DEFAULT 0" +
                     ")");
 
             stmt.execute("CREATE TABLE IF NOT EXISTS friendships (" +

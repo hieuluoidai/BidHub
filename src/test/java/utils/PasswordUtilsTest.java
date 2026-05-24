@@ -3,25 +3,37 @@ package utils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PasswordUtilsTest {
+public class PasswordUtilsTest {
 
     @Test
-    void testHashAndCheck() {
-        String password = "mySecurePassword";
-        String hashed = PasswordUtils.hash(password);
+    public void testHashAndVerify() {
+        String pass = "mySecurePassword123";
+        String hash = PasswordUtils.hash(pass);
         
-        assertNotNull(hashed);
-        assertNotEquals(password, hashed);
-        assertTrue(PasswordUtils.isBCryptHash(hashed));
+        assertNotNull(hash);
+        assertNotEquals(pass, hash);
+        assertTrue(PasswordUtils.isBCryptHash(hash));
         
-        assertTrue(PasswordUtils.verify(password, hashed));
-        assertFalse(PasswordUtils.verify("wrongPassword", hashed));
+        assertTrue(PasswordUtils.verify(pass, hash));
+        assertFalse(PasswordUtils.verify("wrongPassword", hash));
+        assertFalse(PasswordUtils.verify(null, hash));
+        assertFalse(PasswordUtils.verify(pass, null));
     }
 
     @Test
-    void testIsBCryptHash() {
-        assertTrue(PasswordUtils.isBCryptHash("$2a$12$R9h/lSu6yokiTuBWix.ULuQ8reG7XTp85p/hU4h.4.4.4.4.4.4.4"));
-        assertFalse(PasswordUtils.isBCryptHash("plainText"));
+    public void testIsBCryptHash() {
+        // Valid BCrypt hash (example format)
+        assertTrue(PasswordUtils.isBCryptHash("$2a$12$R9h/lIPzHZfvBpyMvEBYue.p0G/P3UaZ8P0VpD95fW.tXp.9B1yHi"));
+        
+        // Invalid hashes
+        assertFalse(PasswordUtils.isBCryptHash("too-short"));
         assertFalse(PasswordUtils.isBCryptHash(null));
+        assertFalse(PasswordUtils.isBCryptHash("plain-text-password-that-is-long-enough-but-does-not-start-right"));
+    }
+
+    @Test
+    public void testHashEmptyPassword() {
+        assertThrows(IllegalArgumentException.class, () -> PasswordUtils.hash(""));
+        assertThrows(IllegalArgumentException.class, () -> PasswordUtils.hash(null));
     }
 }

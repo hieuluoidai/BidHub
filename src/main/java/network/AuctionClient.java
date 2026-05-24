@@ -235,6 +235,12 @@ public class AuctionClient {
             // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {
                 System.out.println(">>> [CLIENT] Server message: " + msg);
+
+                if (msg.startsWith("AUCTION_REMOVED:")) {
+                    String id = msg.substring("AUCTION_REMOVED:".length());
+                    model.manager.AppState.getInstance().getAuctionList().removeIf(a -> a.getAuctionId().equals(id));
+                }
+
                 for (Consumer<String> listener : stringMessageListeners) {
                     listener.accept(msg);
                 }

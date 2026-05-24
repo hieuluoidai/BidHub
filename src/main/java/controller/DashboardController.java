@@ -9,6 +9,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -151,14 +152,18 @@ public class DashboardController {
 
         // Thêm ListChangeListener để cập nhật giao diện thông minh
         masterData.addListener((javafx.collections.ListChangeListener<Auction>) c -> {
+            boolean structuralChange = false;
             while (c.next()) {
-                if (c.wasUpdated() || c.wasReplaced()) {
+                if (c.wasAdded() || c.wasRemoved()) {
+                    structuralChange = true;
+                } else if (c.wasUpdated() || c.wasReplaced()) {
                     for (int i = c.getFrom(); i < c.getTo(); i++) {
                         updateSpecificCard(masterData.get(i));
                     }
-                } else {
-                    renderAuctions();
                 }
+            }
+            if (structuralChange) {
+                renderAuctions();
             }
             updateStats();
             updateOpenDetailWindow();
@@ -764,6 +769,17 @@ public class DashboardController {
             stage.setTitle("Thông tin cá nhân");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            
+            // Hoạt ảnh xuất hiện (Fade-in & Slide-down)
+            root.setOpacity(0);
+            root.setTranslateY(-20);
+            FadeTransition ft = new FadeTransition(Duration.millis(350), root);
+            ft.setFromValue(0); ft.setToValue(1);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(350), root);
+            tt.setFromY(-20); tt.setToY(0);
+            ParallelTransition anim = new ParallelTransition(ft, tt);
+            
+            stage.setOnShown(e -> anim.play());
             stage.show();
             stage.sizeToScene();
         } catch (Exception e) {
@@ -775,11 +791,21 @@ public class DashboardController {
         if (currentDetailController != null && currentDetailStage != null && currentDetailStage.isShowing()) {
             Auction current = currentDetailController.getAuction();
             if (current != null) {
+                boolean found = false;
                 for (Auction a : AppState.getInstance().getAuctionList()) {
                     if (a.getAuctionId().equals(current.getAuctionId())) {
                         javafx.application.Platform.runLater(() -> currentDetailController.setItemData(a));
+                        found = true;
                         break;
                     }
+                }
+                if (!found) {
+                    // Phiên đã bị xóa hoặc biến mất khỏi danh sách master
+                    javafx.application.Platform.runLater(() -> {
+                        currentDetailStage.close();
+                        utils.AlertHelper.show(utils.AlertHelper.Type.WARNING, 
+                                "Phiên đấu giá này không còn tồn tại trên hệ thống.");
+                    });
                 }
             }
         }
@@ -951,19 +977,21 @@ public class DashboardController {
     }
 
     private void openAuctionCategory(String category) {
-        selectedCategoryFilter = category == null ? "ALL" : category;
+        selectedCategoryFilter = (category == null) ? "ALL" : category;
+        
+        // Chuyển view sang auctions
         switchView("auctions");
+        
+        // Cập nhật dữ liệu hiển thị
         updateAuctionHeader();
         updatePredicate();
         renderAuctions();
         updateStats();
         updateSubMenuActiveState();
         
-        // Ensure accordion is open and showing the right active state if we're in auctions
+        // Đảm bảo menu con (accordion) được mở ra nếu đang đóng
         if (!paneAuctionsAccordion.isManaged()) {
-            paneAuctionsAccordion.setManaged(true);
-            paneAuctionsAccordion.setVisible(true);
-            svgAuctionsArrow.setRotate(180);
+            animateAccordion(true);
         }
     }
 
@@ -994,12 +1022,86 @@ public class DashboardController {
         if (messagesViewController != null) messagesViewController.refreshSummaries();
     }
 
+    private String currentViewName = "home";
+
     private void switchView(String which) {
+        if (which.equals(currentViewName)) return;
+
+        javafx.scene.Node oldView = getViewByName(currentViewName);
+        javafx.scene.Node nextView = getViewByName(which);
+
+        // Update sidebar state immediately for responsiveness
+        updateSidebarActiveState(which);
+
+        if (oldView == null || nextView == null) {
+            performInstantSwitch(which);
+            currentViewName = which;
+            return;
+        }
+
+        // Prepare next view
+        nextView.setOpacity(0);
+        nextView.setTranslateY(10); // Subtle slide up effect
+        nextView.setVisible(true);
+        nextView.setManaged(true);
+
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(120), oldView);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(200), nextView);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+
+        TranslateTransition slideIn = new TranslateTransition(Duration.millis(250), nextView);
+        slideIn.setFromY(10);
+        slideIn.setToY(0);
+        slideIn.setInterpolator(Interpolator.EASE_OUT);
+
+        fadeOut.setOnFinished(e -> {
+            oldView.setVisible(false);
+            oldView.setManaged(false);
+            oldView.setOpacity(1.0);
+            oldView.setTranslateY(0);
+        });
+
+        new ParallelTransition(fadeOut, fadeIn, slideIn).play();
+        currentViewName = which;
+    }
+
+    private javafx.scene.Node getViewByName(String name) {
+        return switch (name) {
+            case "home" -> viewHome;
+            case "auctions" -> viewAuctions;
+            case "wallet" -> viewWallet;
+            case "messages" -> viewMessages;
+            default -> null;
+        };
+    }
+
+    private void updateSidebarActiveState(String which) {
         boolean h = "home".equals(which);
         boolean a = "auctions".equals(which);
         boolean w = "wallet".equals(which);
         boolean m = "messages".equals(which);
-        
+
+        if (btnNavHome != null) btnNavHome.getStyleClass().remove("sidebar-item-active");
+        btnNavAuctions.getStyleClass().remove("sidebar-item-active");
+        btnNavWallet.getStyleClass().remove("sidebar-item-active");
+        if (btnNavMessages != null) btnNavMessages.getStyleClass().remove("sidebar-item-active");
+
+        if (h && btnNavHome != null) btnNavHome.getStyleClass().add("sidebar-item-active");
+        else if (a) btnNavAuctions.getStyleClass().add("sidebar-item-active");
+        else if (w) btnNavWallet.getStyleClass().add("sidebar-item-active");
+        else if (m && btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
+    }
+
+    private void performInstantSwitch(String which) {
+        boolean h = "home".equals(which);
+        boolean a = "auctions".equals(which);
+        boolean w = "wallet".equals(which);
+        boolean m = "messages".equals(which);
+
         if (viewHome != null) {
             viewHome.setVisible(h);
             viewHome.setManaged(h);
@@ -1009,24 +1111,6 @@ public class DashboardController {
         if (viewMessages != null) {
             viewMessages.setVisible(m);
             viewMessages.setManaged(m);
-        }
-        
-        // Reset all active states
-        if (btnNavHome != null) btnNavHome.getStyleClass().removeAll("sidebar-item-active");
-        btnNavAuctions.getStyleClass().removeAll("sidebar-item-active");
-        btnNavWallet.getStyleClass().removeAll("sidebar-item-active");
-        if (btnNavMessages != null) btnNavMessages.getStyleClass().removeAll("sidebar-item-active");
-        
-        // Apply active state
-        if (h) {
-            if (btnNavHome != null) btnNavHome.getStyleClass().add("sidebar-item-active");
-            // Auto collapse auctions if leaving it? Optional. Let's keep it for now.
-        } else if (a) {
-            btnNavAuctions.getStyleClass().add("sidebar-item-active");
-        } else if (w) {
-            btnNavWallet.getStyleClass().add("sidebar-item-active");
-        } else if (m) {
-            if (btnNavMessages != null) btnNavMessages.getStyleClass().add("sidebar-item-active");
         }
     }
 

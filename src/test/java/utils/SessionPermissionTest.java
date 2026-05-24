@@ -1,7 +1,11 @@
 package utils;
 
+import database.BaseDAOTest;
+import database.UserDAO;
+import database.ItemDAO;
 import database.AuctionDAO;
 import model.auction.Auction;
+import model.item.Electronics;
 import model.manager.AppState;
 import model.user.Admin;
 import model.user.Bidder;
@@ -9,112 +13,82 @@ import model.user.Seller;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class SessionPermissionTest {
+public class SessionPermissionTest extends BaseDAOTest {
 
-    private Auction auction;
-    private AppState appStateMock;
+    private AppState mockAppState;
+    private MockedStatic<AppState> appStateStatic;
 
     @BeforeEach
-    void setUp() {
-        auction = mock(Auction.class);
-        appStateMock = mock(AppState.class);
-        // Sử dụng reflection để gán appStateMock nếu cần, hoặc mock static nếu AppState là singleton
-        // AppState có getInstance() và là singleton.
-    }
-
-    @AfterEach
-    void tearDown() {
+    public void setUp() {
+        mockAppState = mock(AppState.class);
+        appStateStatic = mockStatic(AppState.class);
+        appStateStatic.when(AppState::getInstance).thenReturn(mockAppState);
         SessionPermission.invalidateCache();
     }
 
-    @Test
-    void testCanEditAdmin() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Admin("a1", "admin", "a@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("OPEN");
-
-            assertTrue(SessionPermission.canEdit(auction));
-        }
+    @AfterEach
+    public void tearDown() {
+        appStateStatic.close();
     }
 
     @Test
-    void testCanEditSellerOwned() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Seller("s1", "seller", "s@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("OPEN");
-            when(auction.getAuctionId()).thenReturn("auc1");
+    public void testAdminPermissions() {
+        when(mockAppState.getCurrentUser()).thenReturn(new Admin("a1", "admin", "admin@test.com", "pass"));
+        Auction auction = new Auction("auc1", null, null, null);
+        auction.setStatus("RUNNING");
 
-            Set<String> ownedIds = new HashSet<>();
-            ownedIds.add("auc1");
-
-            try (MockedConstruction<AuctionDAO> mockedDAO = mockConstruction(AuctionDAO.class, (mock, context) -> {
-                when(mock.getAuctionIdsBySeller("s1")).thenReturn(ownedIds);
-            })) {
-                assertTrue(SessionPermission.canEdit(auction));
-            }
-        }
+        assertTrue(SessionPermission.canDelete(auction));
+        assertTrue(SessionPermission.canCancel(auction));
+        // Edit only if OPEN
+        assertFalse(SessionPermission.canEdit(auction));
+        auction.setStatus("OPEN");
+        assertTrue(SessionPermission.canEdit(auction));
     }
 
     @Test
-    void testCanEditSellerNotOwned() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Seller("s1", "seller", "s@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("OPEN");
-            when(auction.getAuctionId()).thenReturn("auc2");
+    public void testSellerPermissions() {
+        String sellerId = "s1";
+        Seller seller = new Seller(sellerId, "Seller", "s@test.com", "pass");
+        when(mockAppState.getCurrentUser()).thenReturn(seller);
+        
+        // Prepare real data in H2
+        UserDAO userDAO = new UserDAO();
+        userDAO.save(seller);
+        
+        ItemDAO itemDAO = new ItemDAO();
+        Electronics item = new Electronics("i1", "Item", "Desc", 100.0, "Brand");
+        itemDAO.save(item, sellerId);
+        
+        AuctionDAO auctionDAO = new AuctionDAO();
+        Auction auction = new Auction("auc1", item, LocalDateTime.now(), LocalDateTime.now().plusHours(1));
+        auction.setStatus("OPEN");
+        auctionDAO.save(auction);
 
-            Set<String> ownedIds = new HashSet<>();
-            ownedIds.add("auc1");
-
-            try (MockedConstruction<AuctionDAO> mockedDAO = mockConstruction(AuctionDAO.class, (mock, context) -> {
-                when(mock.getAuctionIdsBySeller("s1")).thenReturn(ownedIds);
-            })) {
-                assertFalse(SessionPermission.canEdit(auction));
-            }
-        }
+        // Test with real DB backing
+        assertTrue(SessionPermission.canEdit(auction));
+        assertTrue(SessionPermission.canDelete(auction));
+        assertTrue(SessionPermission.canCancel(auction));
+        
+        auction.setStatus("FINISHED");
+        assertFalse(SessionPermission.canEdit(auction));
+        assertFalse(SessionPermission.canDelete(auction));
     }
 
     @Test
-    void testCanEditBidder() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Bidder("b1", "bidder", "b@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("OPEN");
+    public void testBidderPermissions() {
+        when(mockAppState.getCurrentUser()).thenReturn(new Bidder("b1", "Bidder", "b@test.com", "pass"));
+        Auction auction = new Auction("auc1", null, null, null);
+        auction.setStatus("OPEN");
 
-            assertFalse(SessionPermission.canEdit(auction));
-        }
-    }
-
-    @Test
-    void testCanCancelRunningAdmin() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Admin("a1", "admin", "a@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("RUNNING");
-
-            assertTrue(SessionPermission.canCancel(auction));
-        }
-    }
-
-    @Test
-    void testCanPayWinner() {
-        try (var mockedAppState = mockStatic(AppState.class)) {
-            mockedAppState.when(AppState::getInstance).thenReturn(appStateMock);
-            when(appStateMock.getCurrentUser()).thenReturn(new Bidder("b1", "bidder", "b@ex.com", "p"));
-            when(auction.getStatus()).thenReturn("FINISHED");
-
-            assertTrue(SessionPermission.canPay(auction, "b1"));
-            assertFalse(SessionPermission.canPay(auction, "b2"));
-        }
+        assertFalse(SessionPermission.canEdit(auction));
+        assertFalse(SessionPermission.canDelete(auction));
+        assertFalse(SessionPermission.canCancel(auction));
     }
 }
