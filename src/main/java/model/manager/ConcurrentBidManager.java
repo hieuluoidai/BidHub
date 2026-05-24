@@ -131,6 +131,7 @@ public class ConcurrentBidManager {
             }
 
             database.UserDAO userDao = new database.UserDAO();
+            database.AutoBidDAO autoBidDao = new database.AutoBidDAO();
             boolean lockAcquired = false;
             double amountToUnlockOnFailure = 0;
 
@@ -139,7 +140,7 @@ public class ConcurrentBidManager {
                 String prevBidderId = (prevBid != null) ? prevBid.getBidder().getUserId() : null;
                 double prevAmount   = (prevBid != null) ? prevBid.getBidAmount() : 0;
 
-                model.auction.AutoBid currentAB = new database.AutoBidDAO().findByUserAndAuction(bidder.getUserId(), auctionId);
+                model.auction.AutoBid currentAB = autoBidDao.findByUserAndAuction(bidder.getUserId(), auctionId);
 
                 // TỰ ĐỘNG HỦY AUTO-BID nếu đặt giá thủ công cao hơn maxBid hiện tại
                 if (currentAB != null && amount > currentAB.getMaxBid()) {
@@ -161,7 +162,7 @@ public class ConcurrentBidManager {
                 if (bidder.getUserId().equals(prevBidderId)) {
                     double baseLocked = (currentAB != null) ? currentAB.getMaxBid() : prevAmount;
                     if (amount > baseLocked) {
-                        double diff = amount - baseLocked;
+                        double diff = Math.round((amount - baseLocked) * 100.0) / 100.0;
                         if (!userDao.lockBalance(bidder.getUserId(), diff)) {
                             failureCount.incrementAndGet();
                             return BidResult.failure(auctionId, amount, ErrorCode.INSUFFICIENT_BALANCE,
@@ -173,7 +174,7 @@ public class ConcurrentBidManager {
                 } else {
                     double baseLocked = (currentAB != null) ? currentAB.getMaxBid() : 0;
                     if (amount > baseLocked) {
-                        double diff = amount - baseLocked;
+                        double diff = Math.round((amount - baseLocked) * 100.0) / 100.0;
                         if (!userDao.lockBalance(bidder.getUserId(), diff)) {
                             failureCount.incrementAndGet();
                             return BidResult.failure(auctionId, amount, ErrorCode.INSUFFICIENT_BALANCE,
@@ -184,15 +185,14 @@ public class ConcurrentBidManager {
                     }
 
                     if (prevBidderId != null) {
-                        // GIẢI PHÓNG TOÀN BỘ tiền của người cũ (cả manual và auto-bid nếu có)
-                        model.auction.AutoBid prevAB = new database.AutoBidDAO()
-                                .findByUserAndAuction(prevBidderId, auctionId);
-                        double amountToUnlock = prevAmount;
-                        if (prevAB != null) {
-                            // Nếu có Auto-Bid, số tiền đang bị khóa thực tế là MAX(giá đang dẫn đầu, giá max của auto-bid)
-                            amountToUnlock = Math.max(prevAmount, prevAB.getMaxBid());
+                        // FIX: Chỉ giải phóng tiền nếu người bị outbid KHÔNG có Auto-Bid.
+                        // Nếu họ có Auto-Bid, chúng ta giữ nguyên trạng thái khóa tiền để AutoBidManager 
+                        // có thể thực hiện so kè ngay sau đây. Nếu Auto-Bid của họ hết hạn, 
+                        // AutoBidManager sẽ tự động dọn dẹp và hoàn tiền.
+                        model.auction.AutoBid prevAB = autoBidDao.findByUserAndAuction(prevBidderId, auctionId);
+                        if (prevAB == null) {
+                            userDao.unlockBalance(prevBidderId, prevAmount);
                         }
-                        userDao.unlockBalance(prevBidderId, amountToUnlock);
                     }
                 }
             }

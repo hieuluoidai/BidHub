@@ -44,7 +44,14 @@ public class AuctionHandler implements RequestHandler {
             handleGetMyAutoBid(context, msg);
         } else if (msg.startsWith("RELOAD_AUCTION:")) {
             handleReloadAuction(context, msg);
+        } else if (msg.equals("REFRESH_DATA")) {
+            handleRefreshData(context);
         }
+    }
+
+    private void handleRefreshData(ClientHandler context) {
+        context.send(AuctionManager.getInstance().getAllAuctions());
+        System.out.println(">>> [SERVER] Sent all auctions to client: " + context.getUserId());
     }
 
     private void handleConcurrentBid(ClientHandler context, String msg) {
@@ -66,10 +73,7 @@ public class AuctionHandler implements RequestHandler {
         }
         
         String bidderId = parts[3];
-        boolean isAnonymous = false;
-        if (parts.length >= 5) {
-            isAnonymous = Boolean.parseBoolean(parts[4]);
-        }
+        boolean isAnonymous = parts.length >= 5 && Boolean.parseBoolean(parts[4]);
 
         User bidder = new UserDAO().findById(bidderId);
         if (bidder == null) {
@@ -89,38 +93,10 @@ public class AuctionHandler implements RequestHandler {
         context.send(result);
 
         if (result.isSuccess()) {
-            UserDAO userDao = new UserDAO();
             Auction updated = AuctionManager.getInstance().getAuctionById(auctionId);
-            String itemName = (updated != null && updated.getItem() != null) 
-                                ? updated.getItem().getItemName() : auctionId;
-            
-            double availCurrent = userDao.getBalance(bidderId);
-            double lockedCurrent = userDao.getLockedBalance(bidderId);
-            context.send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availCurrent, lockedCurrent));
-
-            if (prevBidderId != null && !prevBidderId.equals(bidderId)) {
-                double availPrev = userDao.getBalance(prevBidderId);
-                double lockedPrev = userDao.getLockedBalance(prevBidderId);
-                String balanceMsg = String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", availPrev, lockedPrev);
-                context.getServer().sendToUser(prevBidderId, balanceMsg);
-
-                NotificationService.notifyUser(context.getServer(), prevBidderId,
-                    Notification.Type.AUCTION_OUTBID,
-                    "Bạn đã bị vượt giá!",
-                    String.format("Có người đã đặt giá %,.0f ₫ cho \"%s\". Hãy đặt giá cao hơn để dẫn đầu!",
-                        amount, itemName));
-            }
-
-            if (updated != null && updated.getSellerId() != null && !updated.getSellerId().equals(bidderId)) {
-                String displayBidder = isAnonymous ? "Một người dùng ẩn danh" : bidder.getUsername();
-                NotificationService.notifyUser(context.getServer(), updated.getSellerId(),
-                    Notification.Type.AUCTION_NEW_BID,
-                    "Có lượt đặt giá mới",
-                    String.format("%s đã đặt giá %,.0f ₫ cho \"%s\" của bạn.",
-                        displayBidder, amount, itemName));
-            }
-
-            if (updated != null) context.getServer().broadcast(updated);
+            network.service.AuctionBroadcastService.broadcastBidSuccess(
+                context.getServer(), context, updated, bidderId, prevBidderId, amount, isAnonymous
+            );
         }
     }
 
@@ -182,10 +158,8 @@ public class AuctionHandler implements RequestHandler {
 
             AuctionManager.getInstance().removeAuction(auctionId);
             context.send("DELETE_OK:" + auctionId);
-            // Thông báo cho tất cả client xóa phiên này khỏi bộ nhớ local ngay lập tức
-            context.getServer().broadcast("AUCTION_REMOVED:" + auctionId);
-            // Đồng thời gửi list mới để đảm bảo tính nhất quán (fallback)
-            context.getServer().broadcast(AuctionManager.getInstance().getAllAuctions());
+            
+            network.service.AuctionBroadcastService.broadcastAuctionRemoval(context.getServer(), auction, "DELETED");
         } else {
             context.send("DELETE_FAILED: Lỗi cơ sở dữ liệu");
         }
@@ -239,7 +213,8 @@ public class AuctionHandler implements RequestHandler {
 
                 model.manager.ConcurrentBidManager.getInstance().releaseLock(auctionId);
                 context.send("CANCEL_OK:" + auctionId);
-                context.getServer().broadcast(AuctionManager.getInstance().getAllAuctions());
+                
+                network.service.AuctionBroadcastService.broadcastAuctionRemoval(context.getServer(), auction, "CANCELED");
             }
             case 0  -> context.send("CANCEL_FAILED: Bạn không có quyền hủy phiên này");
             case -1 -> context.send("CANCEL_FAILED: Trạng thái phiên không cho phép hủy "
@@ -339,15 +314,9 @@ public class AuctionHandler implements RequestHandler {
         double newBalance = userDao.getBalance(winnerId);
         context.send("PAY_OK:" + auctionId + ":" + newBalance);
         
-        double locked = userDao.getLockedBalance(winnerId);
-        context.send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", newBalance, locked));
-        
-        double sellerAvail = userDao.getBalance(sellerId);
-        double sellerLocked = userDao.getLockedBalance(sellerId);
-        context.getServer().sendToUser(sellerId, String.format(java.util.Locale.US,
-                "BALANCE_UPDATE:%.2f:%.2f", sellerAvail, sellerLocked));
-
-        context.getServer().broadcast(AuctionManager.getInstance().getAllAuctions());
+        network.service.AuctionBroadcastService.broadcastAuctionPaySuccess(
+            context.getServer(), auction, winnerId, sellerId, finalPrice
+        );
     }
 
     private void handleReloadAuction(ClientHandler context, String msg) {
@@ -384,12 +353,10 @@ public class AuctionHandler implements RequestHandler {
                 .registerAutoBid(userId, auctionId, maxBid, increment, isAnon);
         
         if ("SUCCESS".equals(result)) {
-            context.send("AUTOBID_OK:" + auctionId + ":" + (new UserDAO().getBalance(userId)));
-            
             UserDAO userDao = new UserDAO();
-            double avail = userDao.getBalance(userId);
-            double locked = userDao.getLockedBalance(userId);
-            context.send(String.format(java.util.Locale.US, "BALANCE_UPDATE:%.2f:%.2f", avail, locked));
+            context.send("AUTOBID_OK:" + auctionId + ":" + (userDao.getBalance(userId)));
+            
+            network.service.AuctionBroadcastService.pushBalanceUpdate(context.getServer(), userId);
 
             BidTransactionDAO bidDao = new BidTransactionDAO();
             model.manager.AutoBidManager.getInstance().executeAutoBids(auctionId, bidDao);

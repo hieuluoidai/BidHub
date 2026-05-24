@@ -404,7 +404,7 @@ public class UserDAO {
                     }
                 }
 
-                if (fromBalance < amount) {
+                if (fromBalance < (amount - 0.01)) {
                     conn.rollback();
                     System.err.println(">>> [TRANSFER] " + fromUserId + " không đủ số dư: "
                             + fromBalance + " < " + amount);
@@ -470,7 +470,7 @@ public class UserDAO {
                     }
                 }
 
-                if (fromLocked < amount) {
+                if (fromLocked < (amount - 0.01)) {
                     conn.rollback();
                     System.err.println(">>> [TRANSFER_LOCKED] " + fromUserId + " không đủ tiền bị khóa: "
                             + fromLocked + " < " + amount);

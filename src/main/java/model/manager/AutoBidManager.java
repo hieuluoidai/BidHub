@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Lớp quản lý các thiết lập đặt giá tự động (Auto-Bid).
@@ -24,6 +25,7 @@ public class AutoBidManager {
     private final UserDAO userDAO = new UserDAO();
 
     // Map auctionId -> List các Auto-Bid đang hoạt động trong bộ nhớ.
+    // Dùng CopyOnWriteArrayList để an toàn khi vừa lặp vừa xóa/thêm trong cuộc đua bid.
     private final Map<String, List<AutoBid>> auctionAutoBids = new ConcurrentHashMap<>();
 
     private AutoBidManager() {
@@ -43,7 +45,7 @@ public class AutoBidManager {
     private void loadAllAutoBids() {
         List<AutoBid> all = autoBidDAO.findAll();
         for (AutoBid ab : all) {
-            auctionAutoBids.computeIfAbsent(ab.getAuctionId(), id -> new ArrayList<>()).add(ab);
+            auctionAutoBids.computeIfAbsent(ab.getAuctionId(), id -> new CopyOnWriteArrayList<>()).add(ab);
         }
         System.out.println(">>> [AutoBid] Loaded " + all.size() + " auto-bids from DB.");
     }
@@ -63,7 +65,7 @@ public class AutoBidManager {
         Auction auction = AuctionManager.getInstance().getAuctionById(auctionId);
         AutoBid existing = autoBidDAO.findByUserAndAuction(userId, auctionId);
         
-        // GIẢI PHÓNG TIỀN CŨ (bao gồm cả manual bid và auto-bid cũ nếu có)
+        // GIẢI PHÓNG TIỀN CŨ
         double amountToUnlock = 0;
         if (existing != null) {
             amountToUnlock = existing.getMaxBid();
@@ -90,9 +92,12 @@ public class AutoBidManager {
             return "LOCK_FAILED";
         }
 
-        AutoBid newAutoBid = new AutoBid(UUID.randomUUID().toString(), auctionId, userId, maxBid, increment, isAnonymous);
+        // QUAN TRỌNG: Nếu update, phải giữ nguyên ID cũ để xóa đúng dòng trong DB sau này
+        String bidId = (existing != null) ? existing.getAutoBidId() : UUID.randomUUID().toString();
+        AutoBid newAutoBid = new AutoBid(bidId, auctionId, userId, maxBid, increment, isAnonymous);
+        
         if (autoBidDAO.save(newAutoBid)) {
-            auctionAutoBids.computeIfAbsent(auctionId, id -> new ArrayList<>()).add(newAutoBid);
+            auctionAutoBids.computeIfAbsent(auctionId, id -> new CopyOnWriteArrayList<>()).add(newAutoBid);
             return "SUCCESS";
         } else {
             userDAO.unlockBalance(userId, maxBid);
@@ -109,14 +114,12 @@ public class AutoBidManager {
                              && auction.getHighestBid().getBidder().getUserId().equals(userId));
         
         if (isLeading) {
-            // Nếu đang dẫn đầu, chỉ giải phóng phần chênh lệch giữa maxBid và giá đang bid (nếu có)
             double currentBid = auction.getHighestBid().getBidAmount();
             double diff = existing.getMaxBid() - currentBid;
             if (diff > 0) {
                 userDAO.unlockBalance(userId, diff);
             }
         } else {
-            // Nếu không dẫn đầu, giải phóng toàn bộ maxBid
             userDAO.unlockBalance(userId, existing.getMaxBid());
         }
 
@@ -131,7 +134,7 @@ public class AutoBidManager {
         java.util.Set<String> bidderIds = new java.util.HashSet<>();
         List<AutoBid> bids = auctionAutoBids.get(auctionId);
         if (bids != null) {
-            for (AutoBid ab : new ArrayList<>(bids)) {
+            for (AutoBid ab : bids) {
                 userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
                 autoBidDAO.delete(ab.getAutoBidId());
                 bidderIds.add(ab.getUserId());
@@ -139,6 +142,30 @@ public class AutoBidManager {
             auctionAutoBids.remove(auctionId);
         }
         return bidderIds;
+    }
+
+    /**
+     * Dọn dẹp Auto-Bid khi phiên kết thúc BÌNH THƯỜNG.
+     * Giải phóng tiền của người thua, và giải phóng phần dư của người thắng.
+     */
+    public synchronized void cleanupForFinish(String auctionId, String winnerId, double finalPrice) {
+        List<AutoBid> bids = auctionAutoBids.get(auctionId);
+        if (bids != null) {
+            for (AutoBid ab : bids) {
+                if (ab.getUserId().equals(winnerId)) {
+                    // Người thắng: Chỉ hoàn lại phần dư (maxBid - giá thắng)
+                    double excess = ab.getMaxBid() - finalPrice;
+                    if (excess > 0) {
+                        userDAO.unlockBalance(ab.getUserId(), excess);
+                    }
+                } else {
+                    // Người thua: Hoàn lại toàn bộ maxBid
+                    userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
+                }
+                autoBidDAO.delete(ab.getAutoBidId());
+            }
+            auctionAutoBids.remove(auctionId);
+        }
     }
 
     private void removeAutoBidFromMemory(AutoBid ab) {
@@ -149,7 +176,7 @@ public class AutoBidManager {
     }
 
     /**
-     * Thực thi cuộc đua Auto-Bid.
+     * Thực thi cuộc đua Auto-Bid (Dueling logic).
      */
     public void executeAutoBids(String auctionId, BidTransactionDAO bidDAO) {
         List<AutoBid> autoBids = auctionAutoBids.get(auctionId);
@@ -159,7 +186,6 @@ public class AutoBidManager {
         if (auction == null || !"RUNNING".equals(auction.getStatus())) return;
 
         double currentPrice = auction.getCurrentPrice();
-        
         List<AutoBid> validAutoBids = new ArrayList<>();
         List<AutoBid> exhaustedAutoBids = new ArrayList<>();
 
@@ -171,15 +197,15 @@ public class AutoBidManager {
             }
         }
 
+        // Dọn dẹp các AutoBid đã đạt đỉnh
         for (AutoBid ab : exhaustedAutoBids) {
-            if (auction.getHighestBid() != null && auction.getHighestBid().getBidder().getUserId().equals(ab.getUserId())) {
-                // Đang dẫn đầu thì giữ lại lock
-            } else {
+            boolean isWinner = (auction.getHighestBid() != null && 
+                                auction.getHighestBid().getBidder().getUserId().equals(ab.getUserId()));
+            if (!isWinner) {
                 userDAO.unlockBalance(ab.getUserId(), ab.getMaxBid());
                 autoBidDAO.delete(ab.getAutoBidId());
                 removeAutoBidFromMemory(ab);
                 
-                // THÔNG BÁO CHO CLIENT để cập nhật UI
                 network.AuctionServer server = AuctionManager.getInstance().getServer();
                 if (server != null) {
                     String msg = "CANCEL_AUTOBID_OK:" + auctionId + ":" + userDAO.getBalance(ab.getUserId());
@@ -190,6 +216,7 @@ public class AutoBidManager {
 
         if (validAutoBids.isEmpty()) return;
 
+        // Tìm người có maxBid cao nhất
         AutoBid best = null;
         for (AutoBid ab : validAutoBids) {
             if (best == null || ab.getMaxBid() > best.getMaxBid()) {
@@ -202,33 +229,41 @@ public class AutoBidManager {
         }
 
         if (best == null) return;
-        if (auction.getHighestBid() != null && auction.getHighestBid().getBidder().getUserId().equals(best.getUserId())) {
-            return;
-        }
 
+        // Xác định giá cần đặt để duy trì vị thế dẫn đầu
         double neededPrice = currentPrice + best.getIncrement();
-        if (validAutoBids.size() > 1) {
-            AutoBid secondBest = null;
-            for (AutoBid ab : validAutoBids) {
-                if (ab == best) continue;
-                if (secondBest == null || ab.getMaxBid() > secondBest.getMaxBid()) {
-                    secondBest = ab;
-                }
-            }
-            if (secondBest != null) {
-                neededPrice = Math.max(neededPrice, secondBest.getMaxBid() + best.getIncrement());
+        
+        // Nếu có đối thủ Auto-Bid khác, giá phải vượt qua maxBid của đối thủ đó
+        AutoBid secondBest = null;
+        for (AutoBid ab : validAutoBids) {
+            if (ab == best) continue;
+            if (secondBest == null || ab.getMaxBid() > secondBest.getMaxBid()) {
+                secondBest = ab;
             }
         }
+        
+        if (secondBest != null) {
+            neededPrice = Math.max(neededPrice, secondBest.getMaxBid() + best.getIncrement());
+        }
 
+        // Không bao giờ bid quá giới hạn của bản thân
         if (neededPrice > best.getMaxBid()) {
             neededPrice = best.getMaxBid();
         }
 
+        // Kiểm tra xem có thực sự cần đặt bid mới không
+        boolean isAlreadyWinner = (auction.getHighestBid() != null && 
+                                   auction.getHighestBid().getBidder().getUserId().equals(best.getUserId()));
+        
+        // Nếu đã thắng rồi NHƯNG giá hiện tại vẫn thấp hơn giá cần thiết (do secondBest đẩy lên), vẫn phải bid tiếp
+        if (isAlreadyWinner && currentPrice >= neededPrice) {
+            return;
+        }
+
         if (neededPrice > currentPrice) {
-            System.out.printf(">>> [AutoBid Exec] Applying bid for %s on %s. Amount: %.2f, Anon: %b%n",
-                    best.getUserId(), auctionId, neededPrice, best.isAnonymous());
+            System.out.printf(">>> [AutoBid Exec] Applying bid for %s. Amount: %.2f%n", best.getUserId(), neededPrice);
             applyAutoBid(auction, best, neededPrice, bidDAO);
-            executeAutoBids(auctionId, bidDAO); 
+            executeAutoBids(auctionId, bidDAO); // Đệ quy cho đến khi ngã ngũ
         }
     }
 

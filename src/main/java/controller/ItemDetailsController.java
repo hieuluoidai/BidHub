@@ -122,8 +122,8 @@ public class ItemDetailsController {
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private Auction auction;
     private String autoBidCheckedAuctionId;
-    private javafx.animation.Timeline countdownTimeline;
-    private javafx.animation.ScaleTransition pulseAnimation;
+    private utils.AuctionTimer auctionTimer;
+    private utils.AuctionChartManager chartManager;
     private double lastDisplayedPrice = -1.0;
     private java.util.function.Consumer<String> antiSnipeListener;
     private java.util.function.Consumer<String> autoBidCancelListener;
@@ -133,7 +133,8 @@ public class ItemDetailsController {
     @FXML
     private void initialize() {
         setupBidHistoryList();
-        setupBidChart();
+        this.chartManager = new utils.AuctionChartManager(bidChart, bidXAxis, bidYAxis);
+        this.auctionTimer = new utils.AuctionTimer(lblCountdown, progressTimeBar);
         setupSegmentedControl();
     }
 
@@ -190,7 +191,10 @@ public class ItemDetailsController {
         setupPermissions();
         loadSellerInfo(auction.getSellerId());
         scrollToTop();
-        startCountdown();
+        
+        if (auctionTimer != null) {
+            auctionTimer.start(auction);
+        }
 
         if (auction != null && !auction.getAuctionId().equals(autoBidCheckedAuctionId)) {
             autoBidCheckedAuctionId = auction.getAuctionId();

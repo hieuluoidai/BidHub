@@ -346,6 +346,12 @@ public class AdminController {
             stage.setTitle("Tạo phiên đấu giá mới");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            
+            // Giới hạn kích thước
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(900, bounds.getWidth() * 0.95));
+            stage.setHeight(Math.min(850, bounds.getHeight() * 0.95));
+            
             stage.showAndWait();
             if (auctionsViewController != null) {
                 auctionsViewController.updateAuctionStats();
@@ -393,8 +399,13 @@ public class AdminController {
                 stage.setTitle("Thông tin người dùng: " + user.getUsername());
                 stage.setScene(new Scene(root));
                 stage.initModality(Modality.APPLICATION_MODAL);
+                
+                // Giới hạn kích thước theo màn hình
+                javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+                stage.setWidth(Math.min(950, bounds.getWidth() * 0.9));
+                stage.setHeight(Math.min(850, bounds.getHeight() * 0.9));
+                
                 stage.show();
-                stage.sizeToScene();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -412,6 +423,12 @@ public class AdminController {
             stage.setTitle("Chi tiết phiên: " + auction.getAuctionId());
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            
+            // Giới hạn kích thước theo màn hình để tránh tràn cửa sổ (Fix lỗi nộp bài)
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(1120, bounds.getWidth() * 0.96));
+            stage.setHeight(Math.min(880, bounds.getHeight() * 0.96));
+            
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -428,6 +445,12 @@ public class AdminController {
             stage.setTitle("Admin Place Bid");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            
+            // Giới hạn kích thước
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(600, bounds.getWidth() * 0.9));
+            stage.setHeight(Math.min(500, bounds.getHeight() * 0.9));
+            
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();

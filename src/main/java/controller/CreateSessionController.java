@@ -193,8 +193,6 @@ public class CreateSessionController {
     }
 
     private void finishCreation(Item item, Auction auction, String sellerId) {
-        new database.ItemDAO().save(item, sellerId);
-        new database.AuctionDAO().save(auction);
         AppState.getInstance().getClient().send(auction);
         utils.SessionPermission.invalidateCache();
         System.out.println(">>> Đã tạo phiên: " + auction.getAuctionId()
