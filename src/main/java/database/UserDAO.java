@@ -180,10 +180,12 @@ public class UserDAO {
      * Đặt lại số dư (dùng cho admin / migration / nạp tiền sau này).
      */
     public boolean setBalance(String userId, double newBalance) {
+        // Làm tròn 2 chữ số thập phân trước khi lưu
+        double rounded = Math.round(newBalance * 100.0) / 100.0;
         String sql = "UPDATE users SET balance = ? WHERE user_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setDouble(1, newBalance);
+            stmt.setDouble(1, rounded);
             stmt.setString(2, userId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -196,10 +198,12 @@ public class UserDAO {
      * Cập nhật số dư bị khóa.
      */
     public boolean setLockedBalance(String userId, double lockedBalance) {
+        // Làm tròn 2 chữ số thập phân trước khi lưu
+        double rounded = Math.round(lockedBalance * 100.0) / 100.0;
         String sql = "UPDATE users SET locked_balance = ? WHERE user_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setDouble(1, lockedBalance);
+            stmt.setDouble(1, rounded);
             stmt.setString(2, userId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -253,8 +257,9 @@ public class UserDAO {
      */
     public boolean lockBalance(String userId, double amount) {
         if (amount <= 0) return false;
+        // Sử dụng một epsilon nhỏ (0.01) để tránh lỗi làm tròn với kiểu DOUBLE trong MySQL
         String sql = "UPDATE users SET balance = balance - ?, locked_balance = locked_balance + ? " +
-                     "WHERE user_id = ? AND balance >= ?";
+                     "WHERE user_id = ? AND balance >= (? - 0.01)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDouble(1, amount);

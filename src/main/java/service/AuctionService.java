@@ -119,8 +119,19 @@ public class AuctionService {
             throw new ValidationException("user", "Bạn không thể đặt giá cho sản phẩm của chính mình!");
         }
         
-        if (currentUser.getBalance() < amount) {
-             throw new ValidationException("balance", "Số dư tài khoản không đủ để thực hiện đặt giá!");
+        // KIỂM TRA SỐ DƯ TẠI CLIENT
+        double currentBidOfUser = 0;
+        if (auction.getHighestBid() != null && 
+            auction.getHighestBid().getBidder().getUserId().equals(currentUser.getUserId())) {
+            currentBidOfUser = auction.getHighestBid().getBidAmount();
+        }
+        
+        double neededExtra = amount - currentBidOfUser;
+        // Sử dụng một epsilon nhỏ (0.01) để an toàn với kiểu DOUBLE
+        if (currentUser.getBalance() < (neededExtra - 0.01)) {
+             throw new ValidationException("balance", String.format(
+                     "Số dư khả dụng không đủ (Cần thêm %,.0f ₫)!", 
+                     neededExtra - currentUser.getBalance()));
         }
     }
 
@@ -132,6 +143,6 @@ public class AuctionService {
     }
 
     public String buildBidCommand(String auctionId, double amount, String userId, boolean isAnonymous) {
-        return String.format("BID:%s:%.2f:%s:%b", auctionId, amount, userId, isAnonymous);
+        return String.format(java.util.Locale.US, "BID:%s:%.2f:%s:%b", auctionId, amount, userId, isAnonymous);
     }
 }
