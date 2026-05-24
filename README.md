@@ -1,120 +1,89 @@
-# BidHub — Hệ thống đấu giá trực tuyến
+# Báo cáo Bài tập lớn: Hệ thống Đấu giá trực tuyến (BidHub)
 
-Dự án môn Lập trình Hướng đối tượng Nâng cao (LTNC), UET-VNU, Nhóm 6.
+Dự án môn **Lập trình nâng cao** - Nhóm 6. Hệ thống mô phỏng nền tảng đấu giá trực tuyến với kiến trúc Client-Server, xử lý đa luồng và cập nhật dữ liệu thời gian thực.
 
-## Yêu cầu hệ thống
+## 1. Công nghệ sử dụng và Môi trường
+* **Ngôn ngữ:** Java 21 (LTS)
+* **Giao diện:** JavaFX 21
+* **Cơ sở dữ liệu:** MySQL 8.0
+* **Quản lý dự án:** Maven
+* **Đóng gói:** Launch4j
+* **Triển khai:** Server chạy 24/7 trên VPS Digital Ocean
 
-- **Java 21+** (khuyến nghị JDK 21 LTS)
-- **MySQL 8.0+**
-- Hệ điều hành: Windows 10/11
+## 2. Giao diện ứng dụng
+![BidHub Dashboard](docs/screenshots/dashboard.png)
+*(Hình ảnh minh họa giao diện chính của hệ thống)*
 
-## Cài đặt Database
+## 3. Cấu trúc module chính
 
-Chạy file tổng hợp:
+| Thư mục | Chức năng chính |
+| :--- | :--- |
+| `application` | Khởi chạy Client và quản lý Scene |
+| `controller` | Xử lý logic giao diện (Admin, User, Chat, Wallet) |
+| `database` | Tầng truy xuất dữ liệu (DAO Pattern) |
+| `model` | Định nghĩa các thực thể (User, Item, Auction, Notification) |
+| `network` | Giao tiếp Socket TCP và đa luồng |
+| `utils` | Các dịch vụ hỗ trợ (Animation, Image service, bảo mật) |
 
+## 4. Danh sách chức năng đã hoàn thành
+
+### 4.1. Chức năng bắt buộc
+* **Quản lý người dùng:** Đăng ký, đăng nhập và phân quyền 3 vai trò (Bidder, Seller, Admin).
+* **Quản lý sản phẩm:** Thêm, sửa, xóa thông tin sản phẩm (Điện tử, Nghệ thuật, Phương tiện).
+* **Tham gia đấu giá:** Đặt giá hợp lệ, kiểm tra bước giá và cập nhật người dẫn đầu.
+* **Kết thúc phiên:** Tự động đóng phiên theo thời gian thực, xác định người thắng cuộc.
+* **Xử lý ngoại lệ:** Bắt lỗi kết nối từ xa, ngăn chặn đặt giá khi phiên đã kết thúc hoặc giá không hợp lệ.
+
+### 4.2. Chức năng nâng cao
+* **Auto-Bidding (Đấu giá tự động):** Hệ thống tự động trả giá thay người dùng dựa trên giá tối đa và bước giá thiết lập.
+* **Xử lý đồng thời (Concurrent Bidding):** Sử dụng `ReentrantLock` đảm bảo an toàn dữ liệu khi có nhiều người cùng đặt giá tại một thời điểm.
+* **Anti-sniping Algorithm:** Tự động gia hạn thêm thời gian nếu có lượt đặt giá mới xuất hiện ở những giây cuối của phiên.
+* **Realtime Update:** Cập nhật thông tin tức thì cho toàn bộ Client thông qua giao thức Socket (Observer Pattern).
+* **Biểu đồ giá:** Vẽ đồ thị đường (Line Chart) mô phỏng biến động giá theo thời gian thực.
+
+### 4.3. Tính năng sáng tạo nổi bật
+* **Live Deployment:** Server và Database được cấu hình và duy trì 24/7 trên VPS Digital Ocean.
+* **Native Packaging:** Sử dụng Launch4j đóng gói Client thành file `.exe`, giúp khởi chạy trên Windows.
+* **Hệ thống Ví & Giao dịch:** Quản lý số dư, nạp tiền, tự động khóa tiền tạm thời khi tham gia đấu giá để đảm bảo khả năng thanh toán.
+* **Thông báo đẩy (Push Notifications):** Cảnh báo thời gian thực về trạng thái đấu giá, tài chính và tương tác xã hội.
+* **Tính năng cộng đồng:** Hỗ trợ kết bạn và nhắn tin trực tiếp (Realtime Chat) giữa các người dùng.
+* **Admin Dashboard:** Giao diện quản trị tập trung để phê duyệt người bán, quản lý phiên đấu giá và dòng tiền.
+
+## 5. Hướng dẫn chạy chương trình
+
+### 5.1. Vị trí file thực thi
+Sau khi build, các file nằm tại thư mục `target/`:
+* File JAR: `target/bidhub-client.jar`
+* File thực thi Windows: `target/BidHub.exe`
+
+### 5.2. Cách khởi chạy Client
+Hệ thống Server hiện đang chạy 24/7 trên VPS, người dùng cần chạy Client để kết nối:
+
+**Cách 1: Chạy từ file .exe (Khuyến nghị)**
+Để tạo file .exe từ mã nguồn, sử dụng lệnh:
 ```bash
-mysql -u root -p auction_db < sql/all_in_one.sql
+mvn clean verify -Ppackage-client
 ```
+Sau đó chạy file `target/BidHub.exe`.
 
-Hoặc chạy từng file trong `sql/` theo thứ tự: `schema.sql` → các file `migration_*.sql`.
-
-Mặc định kết nối: `root / password` tại `localhost:3306`.
-Thay đổi trong `src/main/java/database/DatabaseConnection.java` nếu cần.
-
-## Cấu hình địa chỉ Server
-
-Chỉnh file `src/main/resources/server.properties`:
-
-```properties
-server.host=localhost   # Thay bằng IP server nếu chạy từ xa
-server.port=1234
-```
-
-## Build từ source
-
+**Cách 2: Chạy trực tiếp từ mã nguồn**
 ```bash
-mvn clean package -DskipTests
-```
-
-Sau khi build, 2 file JAR xuất hiện trong `target/`:
-
-| File | Mô tả |
-|------|-------|
-| `bidhub-server.jar` | Server — không cần JavaFX, chạy trên mọi OS |
-| `bidhub-client.jar` | Client — đã đóng gói JavaFX native Windows |
-
-## Chạy ứng dụng
-
-### Bước 1 — Khởi động Server
-
-```bash
-java -jar bidhub-server.jar
-```
-
-Server lắng nghe tại port **1234**. Giữ cửa sổ này mở trong suốt phiên làm việc.
-
-### Bước 2 — Khởi động Client
-
-```bash
-java -jar bidhub-client.jar
-```
-
-Có thể mở nhiều cửa sổ client để test đấu giá đồng thời.
-
-## Chạy từ source (dành cho phát triển)
-
-```bash
-# Terminal 1 — Server
-mvn exec:java -Dexec.mainClass="network.AuctionServer"
-
-# Terminal 2 — Client
 mvn javafx:run
 ```
 
-## Tính năng chính
-
-| Tính năng | Mô tả |
-|-----------|-------|
-| Đăng ký / Đăng nhập | 3 vai trò: Bidder, Seller, Admin |
-| Quản lý sản phẩm | Electronics, Art, Vehicle; CRUD đầy đủ |
-| Đấu giá realtime | Cập nhật giá tức thì qua Socket + Observer Pattern |
-| Concurrent Bidding | ReentrantLock per-auction, tránh lost update & race condition |
-| Anti-Sniping | Bid trong 10s cuối → tự động gia hạn thêm 60s |
-| Auto-Bidding | Đặt maxBid + increment, hệ thống tự đấu thay người dùng |
-| Hệ thống ví | Nạp tiền, khóa số dư, thanh toán atomic |
-| Trung tâm thông báo | Push realtime, badge, đánh dấu đã đọc |
-
-## Kiến trúc hệ thống
-
-```
-Client (JavaFX + FXML)          Server (Java)
-──────────────────────          ─────────────────────
-Controller Layer    ──Socket──▶ ClientHandler (per thread)
-  LoginController               AuctionManager (Singleton)
-  DashboardController           ConcurrentBidManager
-  BidController                 AutoBidManager
-  AdminController               AuctionServer :1234
-                                     │
-                                MySQL :3306
+**Cách 3: Chạy từ file JAR**
+```bash
+java -jar target/bidhub-client.jar
 ```
 
-## Design Patterns sử dụng
+## 6. Tài liệu và Demo
+* **Báo cáo chi tiết (PDF):** [Đang cập nhật]
+* **Video Demo hệ thống:** [Đang cập nhật]
 
-- **Singleton**: AuctionManager, ConcurrentBidManager, AutoBidManager, AppState
-- **Factory Method**: ItemFactory (tạo Electronics / Art / Vehicle)
-- **Observer**: Auction → AuctionClient, cập nhật realtime không polling
-- **DAO Pattern**: UserDAO, AuctionDAO, ItemDAO, BidTransactionDAO, ...
-
----
-
-## Thành viên nhóm
-
-| STT | Họ và Tên | Vai trò & Nhiệm vụ |
-| :---: | :--- | :--- |
-| **1** | **Nguyễn Trung Hiếu** | ** Logic nghiệp vụ & OOP Design**<br>• Thiết kế cây kế thừa (User, Item, Entity)<br>• Triển khai Design Patterns (Singleton, Factory, Observer)<br>• Logic đấu giá, xử lý bid, xử lý đồng thời<br>• Viết Unit Test (JUnit) |
-| **2** | **Đinh Hoàng Bách** | ** Network – Client & Server**<br>• Xây dựng AuctionServer, AuctionClient, ClientHandler<br>• Giao thức giao tiếp qua Socket + ObjectStream<br>• Xử lý đa luồng server (multi-client)<br>• Realtime broadcast & update giữa các client |
-| **3** | **Trần Mạnh Dũng** | ** JavaFX UI & Controllers**<br>• Thiết kế FXML (Login, Dashboard, Admin, Bid Dialog)<br>• CSS styling cho ứng dụng<br>• Viết Controller cho từng màn hình<br>• SceneManager & AlertHelper |
-| **4** | **Nguyễn Văn Khánh Duy** | ** Database & SQL**<br>• Thiết kế schema MySQL (users, items, auctions, bid_transactions)<br>• Viết các lớp DAO (UserDAO, AuctionDAO, ItemDAO, BidTransactionDAO)<br>• Quản lý kết nối database (DatabaseConnection Singleton)<br>• Truy vấn phức tạp (tìm người thắng, đếm bid, thống kê) |
-
-<br>
-<div align="center">Made with ❤️ by Nhóm 6 — UET VNU — 2026</div>
+## 7. Thiết kế OOP và Design Patterns
+* **OOP:** Áp dụng triệt để Kế thừa (User, Item), Đóng gói và Đa hình.
+* **Design Patterns:**
+  * **Singleton:** Quản lý cấu hình, kết nối Database.
+  * **Factory Method:** Khởi tạo các loại sản phẩm khác nhau.
+  * **Observer:** Đồng bộ dữ liệu Realtime qua Socket.
+  * **DAO Pattern:** Tách biệt logic truy xuất dữ liệu.
