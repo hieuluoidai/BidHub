@@ -14,3 +14,13 @@ HelloFx/
 
 # AI Assistants
 .claude/
+
+# Release Artifacts
+*.zip
+BidHub-Release*/
+/uploads/
+/online-auction-system/target/
+/online-auction-system/bin/
+/online-auction-system/.settings/
+/online-auction-system/.project
+/online-auction-system/.classpath
