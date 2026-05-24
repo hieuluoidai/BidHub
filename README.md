@@ -53,7 +53,7 @@ Dự án bài tập lớn môn **Lập trình nâng cao** - Nhóm 6. Hệ thốn
 
 Hệ thống Server và CSDL hiện đang hoạt động 24/7 trên VPS, người dùng cần tải Client về để kết nối và sử dụng.
 
-**Cách 1: Sử dụng bản cài đặt đóng gói sẵn **
+**Cách 1: Sử dụng bản cài đặt đóng gói sẵn**
 1. Truy cập mục **Releases** trên GitHub của dự án (hoặc tải trực tiếp file zip đính kèm).
 2. Giải nén thư mục `BidHub-Release`.
 3. Chạy file `BidHub.exe` (Yêu cầu máy tính có cài sẵn Java 17 trở lên).
