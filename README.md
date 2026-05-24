@@ -1,6 +1,6 @@
-# Báo cáo Bài tập lớn: Hệ thống Đấu giá trực tuyến (BidHub)
+# Hệ thống Đấu giá trực tuyến: BidHub
 
-Dự án môn **Lập trình nâng cao** - Nhóm 6. Hệ thống mô phỏng nền tảng đấu giá trực tuyến với kiến trúc Client-Server, xử lý đa luồng và cập nhật dữ liệu thời gian thực.
+Dự án bài tập lớn môn **Lập trình nâng cao** - Nhóm 6. Hệ thống mô phỏng nền tảng đấu giá trực tuyến với kiến trúc Client-Server, xử lý đa luồng và cập nhật dữ liệu thời gian thực.
 
 ## 1. Công nghệ sử dụng và Môi trường
 * **Ngôn ngữ:** Java 21 (LTS)
