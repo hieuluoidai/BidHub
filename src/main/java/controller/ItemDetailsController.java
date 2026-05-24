@@ -202,107 +202,6 @@ public class ItemDetailsController {
         }
     }
 
-    private void startCountdown() {
-        if (countdownTimeline != null) {
-            countdownTimeline.stop();
-        }
-        stopPulseAnimation();
-        if (auction == null || lblCountdown == null) return;
-
-        countdownTimeline = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), event -> updateCountdownLabel())
-        );
-        countdownTimeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
-        countdownTimeline.play();
-        updateCountdownLabel(); // Cập nhật ngay lần đầu
-    }
-
-    private void updateCountdownLabel() {
-        if (auction == null || lblCountdown == null) return;
-
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        java.time.LocalDateTime start = auction.getStartTime();
-        java.time.LocalDateTime end = auction.getEndTime();
-        String status = auction.getStatus();
-
-        if (status.equals("FINISHED") || status.equals("PAID") || status.equals("CANCELED") || now.isAfter(end)) {
-            lblCountdown.setText("Đã kết thúc");
-            lblCountdown.getStyleClass().remove("countdown-urgent");
-            stopPulseAnimation();
-            setProgressBar(0.0, false);
-            if (countdownTimeline != null) countdownTimeline.stop();
-            return;
-        }
-
-        if (status.equals("OPEN") && now.isBefore(start)) {
-            java.time.Duration duration = java.time.Duration.between(now, start);
-            lblCountdown.setText(String.format("%02d:%02d:%02d",
-                    duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
-            stopPulseAnimation();
-            setProgressBar(1.0, false);
-            return;
-        }
-
-        java.time.Duration duration = java.time.Duration.between(now, end);
-        lblCountdown.setText(String.format("%02d:%02d:%02d",
-                duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
-
-        // FOMO effect khi còn dưới 5 phút
-        if (duration.toMinutes() < 5) {
-            if (!lblCountdown.getStyleClass().contains("countdown-urgent")) {
-                lblCountdown.getStyleClass().add("countdown-urgent");
-            }
-        } else {
-            lblCountdown.getStyleClass().remove("countdown-urgent");
-        }
-
-        // Pulse animation khi còn dưới 30 giây
-        if (duration.toSeconds() >= 0 && duration.toSeconds() < 30) {
-            if (pulseAnimation == null) {
-                pulseAnimation = new javafx.animation.ScaleTransition(
-                        javafx.util.Duration.millis(500), lblCountdown);
-                pulseAnimation.setFromX(1.0);
-                pulseAnimation.setToX(1.1);
-                pulseAnimation.setFromY(1.0);
-                pulseAnimation.setToY(1.1);
-                pulseAnimation.setAutoReverse(true);
-                pulseAnimation.setCycleCount(javafx.animation.Animation.INDEFINITE);
-                pulseAnimation.play();
-            }
-        } else {
-            stopPulseAnimation();
-        }
-
-        // Progress bar: tỉ lệ thời gian còn lại / tổng thời gian
-        if (start != null && end != null) {
-            long totalSeconds = java.time.Duration.between(start, end).toSeconds();
-            double progress = totalSeconds > 0
-                    ? Math.max(0.0, (double) duration.toSeconds() / totalSeconds)
-                    : 0.0;
-            setProgressBar(progress, progress < 0.1);
-        }
-    }
-
-    private void stopPulseAnimation() {
-        if (pulseAnimation != null) {
-            pulseAnimation.stop();
-            pulseAnimation = null;
-        }
-        if (lblCountdown != null) {
-            lblCountdown.setScaleX(1.0);
-            lblCountdown.setScaleY(1.0);
-        }
-    }
-
-    private void setProgressBar(double progress, boolean urgent) {
-        if (progressTimeBar == null) return;
-        progressTimeBar.setProgress(progress);
-        progressTimeBar.getStyleClass().remove("time-progress-urgent");
-        if (urgent) {
-            progressTimeBar.getStyleClass().add("time-progress-urgent");
-        }
-    }
-
     private void flashPriceLabel() {
         if (lblCurrentPrice == null) return;
         javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(
@@ -1396,7 +1295,9 @@ public class ItemDetailsController {
             AppState.getInstance().getClient().removeStringMessageListener(friendStatusListener);
             friendStatusListener = null;
         }
-        stopPulseAnimation();
+        if (auctionTimer != null) {
+            auctionTimer.stop();
+        }
         if (lblItemName != null && lblItemName.getScene() != null) {
             Stage stage = (Stage) lblItemName.getScene().getWindow();
             stage.close();

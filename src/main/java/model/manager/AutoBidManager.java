@@ -255,9 +255,13 @@ public class AutoBidManager {
         boolean isAlreadyWinner = (auction.getHighestBid() != null && 
                                    auction.getHighestBid().getBidder().getUserId().equals(best.getUserId()));
         
-        // Nếu đã thắng rồi NHƯNG giá hiện tại vẫn thấp hơn giá cần thiết (do secondBest đẩy lên), vẫn phải bid tiếp
-        if (isAlreadyWinner && currentPrice >= neededPrice) {
-            return;
+        // Nếu đã thắng rồi:
+        // - Nếu KHÔNG có đối thủ (secondBest == null), ta dừng lại ngay.
+        // - Nếu CÓ đối thủ, ta chỉ bid tiếp nếu giá hiện tại vẫn chưa đủ để đè bẹp maxBid của đối thủ đó.
+        if (isAlreadyWinner) {
+            if (secondBest == null || currentPrice >= neededPrice) {
+                return;
+            }
         }
 
         if (neededPrice > currentPrice) {

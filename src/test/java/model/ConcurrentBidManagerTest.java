@@ -332,7 +332,8 @@ class ConcurrentBidManagerTest {
             assertEquals(BidResult.Status.SUCCESS, result.getStatus());
             UserDAO mockedUserDAO = userDAOConstruction.constructed().get(0);
             
-            verify(mockedUserDAO).unlockBalance("U_BOB", 1000.0);
+            // Theo logic mới: KHÔNG được gọi unlock tại đây
+            verify(mockedUserDAO, never()).unlockBalance(eq("U_BOB"), anyDouble());
         }
     }
 }
