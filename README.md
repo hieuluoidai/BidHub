@@ -49,34 +49,35 @@ Dự án bài tập lớn môn **Lập trình nâng cao** - Nhóm 6. Hệ thốn
 * **Tính năng cộng đồng:** Hỗ trợ kết bạn và nhắn tin trực tiếp (Realtime Chat) giữa các người dùng.
 * **Admin Dashboard:** Giao diện quản trị tập trung để phê duyệt người bán, quản lý phiên đấu giá và dòng tiền.
 
-## 5. Hướng dẫn chạy chương trình
+## 5. Hướng dẫn chạy chương trình (Dành cho người dùng)
 
-### 5.1. Vị trí file thực thi
-Sau khi build, các file nằm tại thư mục `target/`:
-* File JAR: `target/bidhub-client.jar`
-* File thực thi Windows: `target/BidHub.exe`
+Hệ thống Server và CSDL hiện đang hoạt động 24/7 trên VPS, người dùng cần tải Client về để kết nối và sử dụng.
 
-### 5.2. Cách khởi chạy Client
-Hệ thống Server hiện đang chạy 24/7 trên VPS, người dùng cần chạy Client để kết nối:
+**Cách 1: Sử dụng bản cài đặt đóng gói sẵn **
+1. Truy cập mục **Releases** trên GitHub của dự án (hoặc tải trực tiếp file zip đính kèm).
+2. Giải nén thư mục `BidHub-Release`.
+3. Chạy file `BidHub.exe` (Yêu cầu máy tính có cài sẵn Java 17 trở lên).
 
-**Cách 1: Chạy từ file .exe (Khuyến nghị)**
-Để tạo file .exe từ mã nguồn, sử dụng lệnh:
-```bash
-mvn clean verify -Ppackage-client
-```
-Sau đó chạy file `target/BidHub.exe`.
-
-**Cách 2: Chạy trực tiếp từ mã nguồn**
-```bash
-mvn javafx:run
-```
+**Cách 2: Build và chạy từ mã nguồn**
+* Chạy trực tiếp qua plugin:
+  ```bash
+  mvn javafx:run
+  ```
+* Hoặc tự đóng gói thành file `.exe`:
+  ```bash
+  mvn clean verify -Ppackage-client
+  ```
+  Sau đó chạy file `BidHub.exe` nằm trong thư mục `target/`.
 
 **Cách 3: Chạy từ file JAR**
+Bạn cũng có thể chạy file JAR (đã bao gồm đầy đủ thư viện):
 ```bash
 java -jar target/bidhub-client.jar
 ```
+*(Lưu ý: File JAR này được tạo ra sau khi chạy lệnh build ở Cách 2).*
 
 ## 6. Tài liệu và Demo
+* **Tải bản Release (.exe):** [Link tới mục Release trên Github của bạn]
 * **Báo cáo chi tiết (PDF):** [Đang cập nhật]
 * **Video Demo hệ thống:** [Đang cập nhật]
 
