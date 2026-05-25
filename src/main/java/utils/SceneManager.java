@@ -5,8 +5,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
-import javafx.stage.Screen;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -16,6 +14,7 @@ import java.util.function.Consumer;
  */
 public class SceneManager {
     private final Stage stage;
+    private double currentScale = 1.0;
 
     public SceneManager(Stage stage) {
         this.stage = stage;
@@ -103,6 +102,7 @@ public class SceneManager {
                 if (scale > 0 && scale < 10) {
                     group.setScaleX(scale);
                     group.setScaleY(scale);
+                    currentScale = scale;
                 }
             };
             
@@ -123,6 +123,7 @@ public class SceneManager {
                     double scale = Math.min(scaleX, scaleY);
                     group.setScaleX(scale);
                     group.setScaleY(scale);
+                    currentScale = scale;
                 }
                 stage.centerOnScreen();
             });
@@ -150,23 +151,51 @@ public class SceneManager {
             setAppIcon(modalStage);
             modalStage.setTitle(title);
             modalStage.initModality(Modality.APPLICATION_MODAL);
+            modalStage.initOwner(this.stage); // Kế thừa từ cửa sổ chính
             
-            Scene scene = new Scene(root);
+            // Lấy kích thước thiết kế ban đầu của Modal
+            double targetWidth = root.prefWidth(-1);
+            double targetHeight = root.prefHeight(-1);
+            if (targetWidth <= 0) targetWidth = 1120.0;
+            if (targetHeight <= 0) targetHeight = 850.0;
+            
+            // Ép buộc kích thước của giao diện bên trong
+            if (root instanceof javafx.scene.layout.Region region) {
+                region.setPrefSize(targetWidth, targetHeight);
+                region.setMinSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+                region.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+            }
+
+            // Tạo Group để chứa layout gốc
+            javafx.scene.Group group = new javafx.scene.Group(root);
+            
+            // Áp dụng tỷ lệ của cửa sổ chính cho Modal
+            group.setScaleX(currentScale);
+            group.setScaleY(currentScale);
+            
+            // StackPane làm Viewport
+            javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane(group);
+            wrapper.setStyle("-fx-background-color: transparent;");
+
+            // Kích thước Scene bằng kích thước đã scale
+            Scene scene = new Scene(wrapper, targetWidth * currentScale, targetHeight * currentScale);
             String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
             scene.getStylesheets().add(cssUrl);
             modalStage.setScene(scene);
 
-            // Tự động điều chỉnh kích thước ban đầu để không vượt quá màn hình
-            // nhưng vẫn cho phép user Maximize cửa sổ nếu muốn.
-            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-            double initialWidth = Math.min(1120, screenBounds.getWidth() * 0.95);
-            double initialHeight = Math.min(850, screenBounds.getHeight() * 0.95);
-            
-            modalStage.setWidth(initialWidth);
-            modalStage.setHeight(initialHeight);
-
             modalStage.show();
-            modalStage.centerOnScreen();
+            
+            // Căn giữa Modal so với cửa sổ chính
+            double mainX = this.stage.getX();
+            double mainY = this.stage.getY();
+            double mainWidth = this.stage.getWidth();
+            double mainHeight = this.stage.getHeight();
+
+            double modalWidth = modalStage.getWidth();
+            double modalHeight = modalStage.getHeight();
+
+            modalStage.setX(mainX + (mainWidth - modalWidth) / 2);
+            modalStage.setY(mainY + (mainHeight - modalHeight) / 2);
 
         } catch (IOException e) {
             System.err.println("Lỗi mở Modal: " + fxmlPath);
