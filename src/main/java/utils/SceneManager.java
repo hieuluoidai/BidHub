@@ -135,6 +135,63 @@ public class SceneManager {
     }
 
     /**
+     * Thu nhỏ/phóng to một Pop-up đang mở (đã setScene) để đồng bộ với tỷ lệ cửa sổ chính.
+     * Cần được gọi TRƯỚC KHI popupStage.show().
+     */
+    public void applyPopupScaling(Stage popupStage) {
+        if (popupStage.getScene() == null) return;
+        Parent root = popupStage.getScene().getRoot();
+
+        // Lấy kích thước thiết kế gốc của popup
+        double targetWidth = root.prefWidth(-1) > 0 ? root.prefWidth(-1) : 1120.0;
+        double targetHeight = root.prefHeight(-1) > 0 ? root.prefHeight(-1) : 850.0;
+
+        if (root instanceof javafx.scene.layout.Region region) {
+            region.setPrefSize(targetWidth, targetHeight);
+            region.setMinSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+            region.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+        }
+
+        // Bọc vào Group để thay đổi scale
+        javafx.scene.Group group = new javafx.scene.Group(root);
+        group.setScaleX(currentScale);
+        group.setScaleY(currentScale);
+
+        // Đặt Group vào StackPane
+        javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane(group);
+        wrapper.setStyle("-fx-background-color: transparent;");
+
+        popupStage.getScene().setRoot(wrapper);
+
+        if (popupStage.getOwner() == null) {
+            popupStage.initOwner(this.stage);
+        }
+
+        double scaledWidth = targetWidth * currentScale;
+        double scaledHeight = targetHeight * currentScale;
+
+        // Force kích thước của Stage để cửa sổ tự thu nhỏ theo giao diện
+        // Chúng ta gọi sizeToScene() để khung viền tự tính toán dựa trên nội dung bên trong
+        popupStage.sizeToScene();
+
+        // Căn giữa dựa trên cửa sổ gốc
+        popupStage.setOnShowing(e -> {
+            double mainX = this.stage.getX();
+            double mainY = this.stage.getY();
+            double mainW = this.stage.getWidth();
+            double mainH = this.stage.getHeight();
+
+            double popW = popupStage.getWidth();
+            double popH = popupStage.getHeight();
+
+            if (!Double.isNaN(mainW) && mainW > 0) {
+                popupStage.setX(mainX + (mainW - popW) / 2);
+                popupStage.setY(mainY + (mainH - popH) / 2);
+            }
+        });
+    }
+
+    /**
      * Mở một cửa sổ Pop-up (Modal) mới.
      * Tự động giới hạn kích thước theo màn hình để tránh tràn UI (Overflow).
      */

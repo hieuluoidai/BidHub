@@ -745,9 +745,10 @@ public class DashboardController {
             currentDetailStage.setTitle("Item Details");
             currentDetailStage.setScene(new Scene(root));
             currentDetailStage.initModality(Modality.APPLICATION_MODAL);
-            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
-            currentDetailStage.setWidth(Math.min(1120, screenBounds.getWidth() * 0.96));
-            currentDetailStage.setHeight(Math.min(880, screenBounds.getHeight() * 0.96));
+            
+            // Áp dụng tính năng Global Scaling an toàn
+            model.manager.AppState.getInstance().getSceneManager().applyPopupScaling(currentDetailStage);
+            
             currentDetailStage.setOnHidden(e -> {
                 currentDetailController = null;
                 currentDetailStage = null;
