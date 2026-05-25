@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="feat: redesign home hero carousel and category navigation">
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/controller/DashboardController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/view/dashboard.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UML.md" beforeDir="false" afterPath="$PROJECT_DIR$/UML.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,7 +14,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="213" />
+    <option name="cachedIndexableFilesCount" value="263" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -27,7 +26,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="dev" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -38,35 +37,35 @@
     &quot;assignee&quot;: &quot;kduy221107&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/hieuluoidai/online-auction-system.git&quot;,
-    &quot;accountId&quot;: &quot;ba34a41c-4e90-4219-8cf6-4c66738df629&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/hieuluoidai/online-auction-system.git",
+    "accountId": "db91f0b1-36cc-4cbc-8867-b2659f4175fb"
   }
-}</component>
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.7680832230853276" />
-      <entry key="MS500" value="5.5469600172370255" />
-      <entry key="S2" value="15.506444104527011" />
-      <entry key="S5" value="24.373804832631034" />
-      <entry key="S10" value="29.335264272812474" />
-      <entry key="S30" value="33.70998588560628" />
-      <entry key="S60" value="37.94579400272948" />
-      <entry key="M2" value="55.64066101170153" />
-      <entry key="M5" value="154.3786751351169" />
-      <entry key="M10" value="356.2921711873355" />
-      <entry key="M15" value="540.1218879642191" />
-      <entry key="M30" value="965.8627468006199" />
-      <entry key="H1" value="1551.500000607934" />
-      <entry key="H2" value="2223.948037832349" />
-      <entry key="H4" value="2814.151506273872" />
-      <entry key="D1" value="3561.3831050554886" />
-      <entry key="W1" value="3723.7448518771803" />
+      <entry key="MS100" value="1.7261723434575011" />
+      <entry key="MS500" value="5.48660441147555" />
+      <entry key="S2" value="15.32990616794944" />
+      <entry key="S5" value="25.267413466897306" />
+      <entry key="S10" value="35.879228946622554" />
+      <entry key="S30" value="74.51255014708055" />
+      <entry key="S60" value="107.16854092164719" />
+      <entry key="M2" value="133.5972551932084" />
+      <entry key="M5" value="182.54783382652158" />
+      <entry key="M10" value="325.07059783832625" />
+      <entry key="M15" value="481.619718000497" />
+      <entry key="M30" value="863.7355820945398" />
+      <entry key="H1" value="1295.3635248780276" />
+      <entry key="H2" value="1649.9240338771515" />
+      <entry key="H4" value="1883.2782239928308" />
+      <entry key="D1" value="2115.6938445765104" />
+      <entry key="W1" value="2159.564429058436" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -88,27 +87,24 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.6338010913624403" />
-      <entry key="MS500" value="5.459655855424122" />
-      <entry key="S2" value="15.449642675583547" />
-      <entry key="S5" value="24.3386927791352" />
-      <entry key="S10" value="29.314210895240816" />
-      <entry key="S30" value="33.70192712697522" />
-      <entry key="S60" value="37.9412038060002" />
-      <entry key="M2" value="55.63725325683645" />
-      <entry key="M5" value="154.37507690257277" />
-      <entry key="M10" value="356.2881315928734" />
-      <entry key="M15" value="540.1178080582521" />
-      <entry key="M30" value="965.8590571492188" />
-      <entry key="H1" value="1551.496970159423" />
-      <entry key="H2" value="2223.9458023850084" />
-      <entry key="H4" value="2814.150057981071" />
-      <entry key="D1" value="3561.3827915228353" />
-      <entry key="W1" value="3723.744804807014" />
+      <entry key="MS100" value="1.6389213934119102" />
+      <entry key="MS500" value="5.426836328655318" />
+      <entry key="S2" value="15.28861731126072" />
+      <entry key="S5" value="25.240371565746234" />
+      <entry key="S10" value="35.85982141444937" />
+      <entry key="S30" value="74.49814211338798" />
+      <entry key="S60" value="107.15786794070313" />
+      <entry key="M2" value="133.59050386381762" />
+      <entry key="M5" value="182.54401992213252" />
+      <entry key="M10" value="325.06692949076665" />
+      <entry key="M15" value="481.6159138016628" />
+      <entry key="M30" value="863.7319420951835" />
+      <entry key="H1" value="1295.3606846233913" />
+      <entry key="H2" value="1649.9221854285263" />
+      <entry key="H4" value="1883.2771571860492" />
+      <entry key="D1" value="2115.6936429346424" />
+      <entry key="W1" value="2159.564399607122" />
     </decayedShown>
-  </component>
-  <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -131,17 +127,12 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "dev",
-    "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "ml.llm.LLMThirdPartyAiProvidersConfigurable",
-    "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -160,77 +151,11 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1776517627508</updated>
-      <workItem from="1779295850022" duration="1568000" />
-      <workItem from="1779297669986" duration="636000" />
+      <workItem from="1779720610540" duration="4928000" />
     </task>
-    <task id="LOCAL-00001" summary="feat: bộ lọc trạng thái dashboard, thẻ đếm phiên, badge phiên của bạn và thống kê real-time&#10;&#10;- Thêm bộ lọc trạng thái (TẤT CẢ / SẮP DIỄN RA / ĐANG DIỄN RA / ĐÃ KẾT THÚC) trên dashboard người dùng&#10;- Thêm 3 thẻ đếm số: Tổng phiên / Đang diễn ra / Đã kết thúc&#10;- Bỏ nút &quot;+ Nạp tiền&quot; và pill số dư khỏi header dashboard (đã có trong Ví &amp; Giao dịch)&#10;- Fix admin không đăng nhập được: thêm import Separator còn thiếu trong admin_dashboard.fxml&#10;- Thêm badge &quot;PHIÊN CỦA BẠN&quot; trên item card khi user là người tạo phiên&#10;- Tính thống kê thực (Phiên đã tạo / Lượt bid / Phiên thắng) thay cho hardcode 0 trong UserDetails&#10;- Stats và số dư trong UserDetails tự cập nhật real-time qua ListChangeListener">
-      <option name="closed" value="true" />
-      <created>1779216128868</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1779216128868</updated>
-    </task>
-    <task id="LOCAL-00002" summary="refactor(exception): optimize exception handling logic in auction controller">
-      <option name="closed" value="true" />
-      <created>1779291028694</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1779291028694</updated>
-    </task>
-    <task id="LOCAL-00003" summary="feat: redesign home and add category-based auctions navigation">
-      <option name="closed" value="true" />
-      <created>1779550291970</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1779550291971</updated>
-    </task>
-    <task id="LOCAL-00004" summary="fix: redesign frame">
-      <option name="closed" value="true" />
-      <created>1779550742828</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1779550742828</updated>
-    </task>
-    <task id="LOCAL-00005" summary="feat: redesign home hero carousel and category navigation">
-      <option name="closed" value="true" />
-      <created>1779555444198</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1779555444198</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat: bộ lọc trạng thái dashboard, thẻ đếm phiên, badge phiên của bạn và thống kê real-time&#10;&#10;- Thêm bộ lọc trạng thái (TẤT CẢ / SẮP DIỄN RA / ĐANG DIỄN RA / ĐÃ KẾT THÚC) trên dashboard người dùng&#10;- Thêm 3 thẻ đếm số: Tổng phiên / Đang diễn ra / Đã kết thúc&#10;- Bỏ nút &quot;+ Nạp tiền&quot; và pill số dư khỏi header dashboard (đã có trong Ví &amp; Giao dịch)&#10;- Fix admin không đăng nhập được: thêm import Separator còn thiếu trong admin_dashboard.fxml&#10;- Thêm badge &quot;PHIÊN CỦA BẠN&quot; trên item card khi user là người tạo phiên&#10;- Tính thống kê thực (Phiên đã tạo / Lượt bid / Phiên thắng) thay cho hardcode 0 trong UserDetails&#10;- Stats và số dư trong UserDetails tự cập nhật real-time qua ListChangeListener" />
-    <MESSAGE value="refactor(exception): optimize exception handling logic in auction controller" />
-    <MESSAGE value="feat: redesign bidder home and add category-based auctions navigation" />
-    <MESSAGE value="feat: redesign home and add category-based auctions navigation" />
-    <MESSAGE value="fix: redesign frame" />
-    <MESSAGE value="feat: redesign home hero carousel and category navigation" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: redesign home hero carousel and category navigation" />
-  </component>
-  <component name="XSLT-Support.FileAssociations.UIState">
-    <expand />
-    <select />
   </component>
 </project>
