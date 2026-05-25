@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="">
+    <list default="true" id="dc64e87e-66a4-46f4-8b06-eecf1fc69d95" name="Changes" comment="fix: redesign UML Class Diagram">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UML.md" beforeDir="false" afterPath="$PROJECT_DIR$/UML.md" afterDir="false" />
     </list>
@@ -14,7 +14,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="263" />
+    <option name="cachedIndexableFilesCount" value="262" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -49,23 +49,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.7261723434575011" />
-      <entry key="MS500" value="5.48660441147555" />
-      <entry key="S2" value="15.32990616794944" />
-      <entry key="S5" value="25.267413466897306" />
-      <entry key="S10" value="35.879228946622554" />
-      <entry key="S30" value="74.51255014708055" />
-      <entry key="S60" value="107.16854092164719" />
-      <entry key="M2" value="133.5972551932084" />
-      <entry key="M5" value="182.54783382652158" />
-      <entry key="M10" value="325.07059783832625" />
-      <entry key="M15" value="481.619718000497" />
-      <entry key="M30" value="863.7355820945398" />
-      <entry key="H1" value="1295.3635248780276" />
-      <entry key="H2" value="1649.9240338771515" />
-      <entry key="H4" value="1883.2782239928308" />
-      <entry key="D1" value="2115.6938445765104" />
-      <entry key="W1" value="2159.564429058436" />
+      <entry key="MS100" value="2.052587223228281" />
+      <entry key="MS500" value="6.260878572596417" />
+      <entry key="S2" value="15.00255128760077" />
+      <entry key="S5" value="25.19226511525122" />
+      <entry key="S10" value="32.71763809254768" />
+      <entry key="S30" value="40.195942984789426" />
+      <entry key="S60" value="42.5052258523465" />
+      <entry key="M2" value="45.22300633846414" />
+      <entry key="M5" value="77.94895494051204" />
+      <entry key="M10" value="147.12800976955387" />
+      <entry key="M15" value="215.61946916332113" />
+      <entry key="M30" value="467.5098108110312" />
+      <entry key="H1" value="942.6248077140112" />
+      <entry key="H2" value="1482.6943323520554" />
+      <entry key="H4" value="1907.9235953678892" />
+      <entry key="D1" value="2384.023768697202" />
+      <entry key="W1" value="2479.619900022839" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -87,23 +87,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.6389213934119102" />
-      <entry key="MS500" value="5.426836328655318" />
-      <entry key="S2" value="15.28861731126072" />
-      <entry key="S5" value="25.240371565746234" />
-      <entry key="S10" value="35.85982141444937" />
-      <entry key="S30" value="74.49814211338798" />
-      <entry key="S60" value="107.15786794070313" />
-      <entry key="M2" value="133.59050386381762" />
-      <entry key="M5" value="182.54401992213252" />
-      <entry key="M10" value="325.06692949076665" />
-      <entry key="M15" value="481.6159138016628" />
-      <entry key="M30" value="863.7319420951835" />
-      <entry key="H1" value="1295.3606846233913" />
-      <entry key="H2" value="1649.9221854285263" />
-      <entry key="H4" value="1883.2771571860492" />
-      <entry key="D1" value="2115.6936429346424" />
-      <entry key="W1" value="2159.564399607122" />
+      <entry key="MS100" value="1.9702492233718667" />
+      <entry key="MS500" value="6.2102878429500645" />
+      <entry key="S2" value="14.969651946629247" />
+      <entry key="S5" value="25.16888218575197" />
+      <entry key="S10" value="32.70207290014764" />
+      <entry key="S30" value="40.18945727041664" />
+      <entry key="S60" value="42.50178155133863" />
+      <entry key="M2" value="45.22115574770199" />
+      <entry key="M5" value="77.94754585077303" />
+      <entry key="M10" value="147.12658341465303" />
+      <entry key="M15" value="215.61801504882465" />
+      <entry key="M30" value="467.5080575491434" />
+      <entry key="H1" value="942.6228877097656" />
+      <entry key="H2" value="1482.6927569921745" />
+      <entry key="H4" value="1907.922560947053" />
+      <entry key="D1" value="2384.023549724805" />
+      <entry key="W1" value="2479.619867397552" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -151,11 +151,24 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1776517627508</updated>
-      <workItem from="1779720610540" duration="4928000" />
+      <workItem from="1779720610540" duration="5969000" />
     </task>
+    <task id="LOCAL-00001" summary="fix: redesign UML Class Diagram">
+      <option name="closed" value="true" />
+      <created>1779726003860</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779726003860</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="fix: redesign UML Class Diagram" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: redesign UML Class Diagram" />
   </component>
 </project>
