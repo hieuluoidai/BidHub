@@ -44,10 +44,12 @@ public class SceneManager {
 
     public void showDashboard() {
         switchScene("/view/dashboard.fxml", "BidHub - Home");
+        stage.setMaximized(true);
     }
     
     public void showAdminDashboard() {
         switchScene("/view/admin_dashboard.fxml", "BidHub - Admin Dashboard");
+        stage.setMaximized(true);
     }
 
     /**
