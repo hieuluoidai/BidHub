@@ -660,10 +660,11 @@ public class DashboardController {
             controller.TopUpController controller = loader.getController();
             controller.setOnTopUpSuccess(this::refreshBalanceLabel);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Nạp tiền vào ví");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setResizable(false);
-            
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Nạp tiền vào ví");
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -718,9 +719,10 @@ public class DashboardController {
             Parent root = loader.load();
             ((BidController)loader.getController()).setAuctionData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Place Your Bid");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
-            
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Place Your Bid");
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();

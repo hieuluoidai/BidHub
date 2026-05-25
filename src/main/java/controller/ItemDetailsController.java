@@ -593,10 +593,12 @@ public class ItemDetailsController {
                     controller.setUserData(targetUser, false, isAnonymous);
 
                     Stage stage = new Stage();
+                    utils.SceneManager.setAppIcon(stage);
+                    stage.setTitle("Thông tin người dùng: " + targetUser.getUsername());
+                    stage.setScene(new Scene(root));
                     stage.initModality(Modality.APPLICATION_MODAL);
-                    AppState.getInstance().getSceneManager().setupModalStage(stage, root,
-                            "Thông tin người dùng: " + targetUser.getUsername());
                     stage.show();
+                    stage.sizeToScene(); // Đảm bảo cửa sổ thu nhỏ vừa vặn nội dung
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -977,8 +979,10 @@ public class ItemDetailsController {
             controller.setAuctionData(this.auction);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Đặt giá cho " + auction.getItemName());
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Đặt giá cho " + auction.getItemName());
             stage.showAndWait();
 
         } catch (IOException e) {
@@ -997,8 +1001,10 @@ public class ItemDetailsController {
             controller.setOnSavedCallback(this::closeWindow);
 
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Sửa phiên: " + auction.getItemName());
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Sửa phiên: " + auction.getItemName());
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();

@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -341,9 +342,15 @@ public class AdminController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/create_session.fxml"));
             Parent root = loader.load();
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Tạo phiên đấu giá mới");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Tạo phiên đấu giá mới");
+            // Giới hạn kích thước
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(900, bounds.getWidth() * 0.95));
+            stage.setHeight(Math.min(850, bounds.getHeight() * 0.95));
             
             stage.showAndWait();
             if (auctionsViewController != null) {
@@ -388,10 +395,15 @@ public class AdminController {
             if (controller != null) {
                 controller.setUserData(user, autoApprove);
                 Stage stage = new Stage();
+                utils.SceneManager.setAppIcon(stage);
+                stage.setTitle("Thông tin người dùng: " + user.getUsername());
+                stage.setScene(new Scene(root));
                 stage.initModality(Modality.APPLICATION_MODAL);
                 
-                AppState.getInstance().getSceneManager().setupModalStage(stage, root,
-                        "Thông tin người dùng: " + user.getUsername());
+                // Giới hạn kích thước theo màn hình
+                javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+                stage.setWidth(Math.min(950, bounds.getWidth() * 0.9));
+                stage.setHeight(Math.min(850, bounds.getHeight() * 0.9));
                 
                 stage.show();
             }
@@ -407,9 +419,15 @@ public class AdminController {
             ItemDetailsController controller = loader.getController();
             controller.setItemData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Chi tiết phiên: " + auction.getAuctionId());
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Chi tiết phiên: " + auction.getAuctionId());
+            // Giới hạn kích thước theo màn hình để tránh tràn cửa sổ (Fix lỗi nộp bài)
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(1120, bounds.getWidth() * 0.96));
+            stage.setHeight(Math.min(880, bounds.getHeight() * 0.96));
             
             stage.show();
         } catch (IOException e) {
@@ -423,9 +441,15 @@ public class AdminController {
             Parent root = loader.load();
             ((BidController) loader.getController()).setAuctionData(auction);
             Stage stage = new Stage();
+            utils.SceneManager.setAppIcon(stage);
+            stage.setTitle("Admin Place Bid");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             
-            AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Admin Place Bid");
+            // Giới hạn kích thước
+            javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(600, bounds.getWidth() * 0.9));
+            stage.setHeight(Math.min(500, bounds.getHeight() * 0.9));
             
             stage.showAndWait();
         } catch (IOException e) {

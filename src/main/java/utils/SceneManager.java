@@ -5,6 +5,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -14,7 +16,6 @@ import java.util.function.Consumer;
  */
 public class SceneManager {
     private final Stage stage;
-    private double currentScale = 1.0;
 
     public SceneManager(Stage stage) {
         this.stage = stage;
@@ -96,20 +97,14 @@ public class SceneManager {
             final double baseHeight = targetHeight;
             
             javafx.beans.value.ChangeListener<Number> sizeListener = (obs, oldVal, newVal) -> {
-                double w = wrapper.getWidth();
-                double h = wrapper.getHeight();
+                double scaleX = wrapper.getWidth() / baseWidth;
+                double scaleY = wrapper.getHeight() / baseHeight;
+                double scale = Math.min(scaleX, scaleY);
                 
-                // Chỉ tính toán khi wrapper đã có kích thước thực tế (tránh bị tiny scale khi đang resize/maximize)
-                if (w > 100 && h > 100) {
-                    double scaleX = w / baseWidth;
-                    double scaleY = h / baseHeight;
-                    double scale = Math.min(scaleX, scaleY);
-                    
-                    if (scale > 0.1 && scale < 10) {
-                        group.setScaleX(scale);
-                        group.setScaleY(scale);
-                        currentScale = scale;
-                    }
+                // Tránh scale quá lớn hoặc âm/bằng 0 khi mới khởi tạo
+                if (scale > 0 && scale < 10) {
+                    group.setScaleX(scale);
+                    group.setScaleY(scale);
                 }
             };
             
@@ -117,18 +112,19 @@ public class SceneManager {
             wrapper.heightProperty().addListener(sizeListener);
             
             stage.setTitle(title);
+            // Kích thước của Stage sẽ dựa trên Scene, hoặc do người dùng kéo thả, auto-fullscreen
             stage.show();
             
+            // Kích hoạt tính toán scale ngay lập tức
             javafx.application.Platform.runLater(() -> {
                 double w = wrapper.getWidth();
                 double h = wrapper.getHeight();
-                if (w > 100 && h > 100) {
+                if (w > 0 && h > 0) {
                     double scaleX = w / baseWidth;
                     double scaleY = h / baseHeight;
                     double scale = Math.min(scaleX, scaleY);
                     group.setScaleX(scale);
                     group.setScaleY(scale);
-                    currentScale = scale;
                 }
                 stage.centerOnScreen();
             });
@@ -137,63 +133,6 @@ public class SceneManager {
             System.err.println("Lỗi nghiêm trọng: Không thể tải giao diện tại " + fxmlPath);
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Áp dụng Global Scaling cho một Stage bất kỳ (thường là Pop-up).
-     * Đồng bộ tỷ lệ với cửa sổ chính và căn giữa so với cửa sổ chính.
-     */
-    public void setupModalStage(Stage modalStage, Parent root, String title) {
-        if (modalStage == null || root == null) return;
-
-        setAppIcon(modalStage);
-        modalStage.setTitle(title);
-
-        // Lấy kích thước thiết kế gốc
-        double targetWidth = root.prefWidth(-1);
-        double targetHeight = root.prefHeight(-1);
-        if (targetWidth <= 0) targetWidth = 1120.0;
-        if (targetHeight <= 0) targetHeight = 850.0;
-
-        if (root instanceof javafx.scene.layout.Region region) {
-            region.setPrefSize(targetWidth, targetHeight);
-            region.setMinSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-            region.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-        }
-
-        // Bọc vào Group và StackPane để scale
-        javafx.scene.Group group = new javafx.scene.Group(root);
-        group.setScaleX(currentScale);
-        group.setScaleY(currentScale);
-
-        javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane(group);
-        wrapper.setStyle("-fx-background-color: transparent;");
-
-        // Scene mới có kích thước đã scale
-        Scene scene = new Scene(wrapper, targetWidth * currentScale, targetHeight * currentScale);
-        String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
-        scene.getStylesheets().add(cssUrl);
-        modalStage.setScene(scene);
-
-        if (modalStage.getOwner() == null) {
-            modalStage.initOwner(this.stage);
-        }
-
-        // Căn giữa so với main stage
-        modalStage.setOnShowing(e -> {
-            double mainX = this.stage.getX();
-            double mainY = this.stage.getY();
-            double mainW = this.stage.getWidth();
-            double mainH = this.stage.getHeight();
-
-            double modalW = modalStage.getWidth();
-            double modalH = modalStage.getHeight();
-
-            if (!Double.isNaN(mainW) && mainW > 0) {
-                modalStage.setX(mainX + (mainW - modalW) / 2);
-                modalStage.setY(mainY + (mainH - modalH) / 2);
-            }
-        });
     }
 
     /**
@@ -210,9 +149,26 @@ public class SceneManager {
             }
 
             Stage modalStage = new Stage();
+            setAppIcon(modalStage);
+            modalStage.setTitle(title);
             modalStage.initModality(Modality.APPLICATION_MODAL);
-            setupModalStage(modalStage, root, title);
+            
+            Scene scene = new Scene(root);
+            String cssUrl = getClass().getResource("/view/style.css").toExternalForm();
+            scene.getStylesheets().add(cssUrl);
+            modalStage.setScene(scene);
+
+            // Tự động điều chỉnh kích thước ban đầu để không vượt quá màn hình
+            // nhưng vẫn cho phép user Maximize cửa sổ nếu muốn.
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            double initialWidth = Math.min(1120, screenBounds.getWidth() * 0.95);
+            double initialHeight = Math.min(850, screenBounds.getHeight() * 0.95);
+            
+            modalStage.setWidth(initialWidth);
+            modalStage.setHeight(initialHeight);
+
             modalStage.show();
+            modalStage.centerOnScreen();
 
         } catch (IOException e) {
             System.err.println("Lỗi mở Modal: " + fxmlPath);
