@@ -35,10 +35,12 @@ public class SceneManager {
     }
 
     public void showLogin() {
+        stage.setMaximized(false);
         switchScene("/view/login.fxml", "BidHub - Đăng nhập");
     }
 
     public void showRegister() {
+        stage.setMaximized(false);
         switchScene("/view/register.fxml", "BidHub - Đăng ký tài khoản");
     }
 
