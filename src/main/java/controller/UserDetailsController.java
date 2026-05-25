@@ -418,7 +418,9 @@ public class UserDetailsController {
             cropCtrl.setImage(new Image(selectedFile.toURI().toString()), this::uploadCroppedAvatar);
             Stage cropStage = new Stage();
             utils.SceneManager.setAppIcon(cropStage);
-            cropStage.setScene(new javafx.scene.Scene(root));
+            cropStage.setTitle("Cắt ảnh đại diện");
+            cropStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            model.manager.AppState.getInstance().getSceneManager().setupModalStage(cropStage, root, "Cắt ảnh đại diện");
             cropStage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -491,9 +493,8 @@ public class UserDetailsController {
             Parent root = loader.load();
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
-            stage.setTitle("Đổi mật khẩu");
-            stage.setScene(new javafx.scene.Scene(root));
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, "Đổi mật khẩu");
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();

@@ -595,10 +595,9 @@ public class ItemDetailsController {
                     Stage stage = new Stage();
                     utils.SceneManager.setAppIcon(stage);
                     stage.setTitle("Thông tin người dùng: " + targetUser.getUsername());
-                    stage.setScene(new Scene(root));
                     stage.initModality(Modality.APPLICATION_MODAL);
+                    model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
                     stage.show();
-                    stage.sizeToScene(); // Đảm bảo cửa sổ thu nhỏ vừa vặn nội dung
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -981,8 +980,8 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Đặt giá cho " + auction.getItemName());
-            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
             stage.showAndWait();
 
         } catch (IOException e) {
@@ -1003,8 +1002,8 @@ public class ItemDetailsController {
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Sửa phiên: " + auction.getItemName());
-            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
+            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
