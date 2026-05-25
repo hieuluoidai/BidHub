@@ -16,6 +16,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -661,9 +662,9 @@ public class DashboardController {
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Nạp tiền vào ví");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setResizable(false);
-            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -720,8 +721,8 @@ public class DashboardController {
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Place Your Bid");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
-            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
@@ -741,11 +742,12 @@ public class DashboardController {
             currentDetailController.setItemData(auction);
             currentDetailStage = new Stage();
             utils.SceneManager.setAppIcon(currentDetailStage);
+            currentDetailStage.setTitle("Item Details");
+            currentDetailStage.setScene(new Scene(root));
             currentDetailStage.initModality(Modality.APPLICATION_MODAL);
-            
-            // Apply scaling
-            model.manager.AppState.getInstance().getSceneManager().setupModalStage(currentDetailStage, root, "Item Details");
-            
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            currentDetailStage.setWidth(Math.min(1120, screenBounds.getWidth() * 0.96));
+            currentDetailStage.setHeight(Math.min(880, screenBounds.getHeight() * 0.96));
             currentDetailStage.setOnHidden(e -> {
                 currentDetailController = null;
                 currentDetailStage = null;
@@ -767,8 +769,8 @@ public class DashboardController {
             Stage stage = new Stage();
             utils.SceneManager.setAppIcon(stage);
             stage.setTitle("Thông tin cá nhân");
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
-            model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
             
             // Hoạt ảnh xuất hiện (Fade-in & Slide-down)
             root.setOpacity(0);
@@ -824,8 +826,8 @@ public class DashboardController {
         Stage stage = new Stage();
         utils.SceneManager.setAppIcon(stage);
         stage.setTitle(title);
+        stage.setScene(new Scene(root));
         stage.initModality(Modality.APPLICATION_MODAL);
-        model.manager.AppState.getInstance().getSceneManager().setupModalStage(stage, root, null);
         stage.showAndWait();
         renderAuctions();
     }

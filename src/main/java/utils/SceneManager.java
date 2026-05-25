@@ -134,48 +134,6 @@ public class SceneManager {
         }
     }
 
-    public void setupModalStage(Stage modalStage, Parent root, String title) {
-        if (title != null) modalStage.setTitle(title);
-        modalStage.initOwner(this.stage);
-        
-        double targetWidth = root.prefWidth(-1) > 0 ? root.prefWidth(-1) : 1120.0;
-        double targetHeight = root.prefHeight(-1) > 0 ? root.prefHeight(-1) : 850.0;
-        
-        if (root instanceof javafx.scene.layout.Region region) {
-            region.setPrefSize(targetWidth, targetHeight);
-            region.setMinSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-            region.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-        }
-
-        javafx.scene.Group group = new javafx.scene.Group(root);
-        group.setScaleX(currentScale);
-        group.setScaleY(currentScale);
-        
-        javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane(group);
-        wrapper.setStyle("-fx-background-color: transparent;");
-
-        double scaledWidth = targetWidth * currentScale;
-        double scaledHeight = targetHeight * currentScale;
-
-        Scene scene = new Scene(wrapper, scaledWidth, scaledHeight);
-        java.net.URL cssUrl = getClass().getResource("/view/style.css");
-        if (cssUrl != null) scene.getStylesheets().add(cssUrl.toExternalForm());
-        modalStage.setScene(scene);
-        modalStage.sizeToScene();
-        
-        modalStage.setOnShowing(e -> {
-            double mainX = this.stage.getX();
-            double mainY = this.stage.getY();
-            double mainWidth = this.stage.getWidth();
-            double mainHeight = this.stage.getHeight();
-
-            if (!Double.isNaN(mainWidth) && mainWidth > 0) {
-                modalStage.setX(mainX + (mainWidth - scaledWidth) / 2);
-                modalStage.setY(mainY + (mainHeight - scaledHeight) / 2);
-            }
-        });
-    }
-
     /**
      * Mở một cửa sổ Pop-up (Modal) mới.
      * Tự động giới hạn kích thước theo màn hình để tránh tràn UI (Overflow).
