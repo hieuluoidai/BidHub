@@ -42,20 +42,21 @@ Dự án bài tập lớn môn **Lập trình nâng cao** - Nhóm 6. Hệ thốn
 * **Biểu đồ giá:** Vẽ đồ thị đường (Line Chart) mô phỏng biến động giá theo thời gian thực.
 
 ### 4.3. Tính năng sáng tạo nổi bật
-* **Live Deployment:** Server và Database được cấu hình và duy trì 24/7 trên VPS Digital Ocean.
-* **Native Packaging:** Sử dụng Launch4j đóng gói Client thành file `.exe`, giúp khởi chạy trên Windows.
-* **Hệ thống Ví & Giao dịch:** Quản lý số dư, nạp tiền, tự động khóa tiền tạm thời khi tham gia đấu giá để đảm bảo khả năng thanh toán.
-* **Thông báo đẩy (Push Notifications):** Cảnh báo thời gian thực về trạng thái đấu giá, tài chính và tương tác xã hội.
-* **Tính năng cộng đồng:** Hỗ trợ kết bạn và nhắn tin trực tiếp (Realtime Chat) giữa các người dùng.
-* **Admin Dashboard:** Giao diện quản trị tập trung để phê duyệt người bán, quản lý phiên đấu giá và dòng tiền.
+* **Live Deployment:** Server và Database được duy trì 24/7 trên VPS Digital Ocean, hỗ trợ kết nối từ xa ổn định.
+* **Native Packaging:** Đóng gói ứng dụng thành file `.exe` duy nhất, tích hợp sẵn các thư viện cần thiết để khởi chạy nhanh trên Windows.
+* **Hệ thống Ví & QR Payment:** Quản lý số dư linh hoạt, hỗ trợ nạp tiền qua yêu cầu hệ thống và tích hợp mã QR để tối ưu quy trình thanh toán.
+* **Bảo mật ẩn danh:** Cho phép người dùng đặt giá (Bid/Auto-bid) ở chế độ ẩn danh để bảo vệ thông tin cá nhân trong phiên đấu giá.
+* **Quản lý đa phương tiện:** Hỗ trợ tải lên và hiển thị ảnh thực tế cho sản phẩm đấu giá, cùng hệ thống ảnh đại diện (avatar) tùy chỉnh cho người dùng.
+* **Trải nghiệm cá nhân hóa:** Tính năng lưu phiên đấu giá vào mục "Yêu thích", phân loại sản phẩm theo danh mục thông minh (Phương tiện, Đồ điện tử, Nghệ thuật).
+* **Giao diện hiện đại (Rich UI/UX):** Tích hợp các hiệu ứng chuyển động (Animations), thông báo đẩy (Push Notifications) thời gian thực và biểu đồ trực quan.
 
 ## 5. Hướng dẫn chạy chương trình (Dành cho người dùng)
 
 Hệ thống Server và CSDL hiện đang hoạt động 24/7 trên VPS, người dùng cần tải Client về để kết nối và sử dụng.
 
-**Cách 1: Sử dụng bản cài đặt đóng gói sẵn**
-1. Truy cập mục **Releases** trên GitHub của dự án (hoặc tải trực tiếp file zip đính kèm).
-2. Giải nén thư mục `BidHub-Release`.
+**Cách 1: Sử dụng bản cài đặt đóng gói sẵn (Khuyến nghị)**
+1. Truy cập mục **Releases** trên GitHub của dự án.
+2. Tải và giải nén file `BidHub-v1.01.zip`.
 3. Chạy file `BidHub.exe` (Yêu cầu máy tính có cài sẵn Java 17 trở lên).
 
 **Cách 2: Build và chạy từ mã nguồn**
@@ -77,7 +78,7 @@ java -jar target/bidhub-client.jar
 *(Lưu ý: File JAR này được tạo ra sau khi chạy lệnh build ở Cách 2).*
 
 ## 6. Tài liệu và Demo
-* **Tải bản Release (.exe):** (https://github.com/hieuluoidai/online-auction-system/releases/tag/v1.0)
+* **Tải bản Release (.exe):** [https://github.com/hieuluoidai/BidHub/releases/tag/v1.01](https://github.com/hieuluoidai/BidHub/releases/tag/v1.01)
 * **Báo cáo chi tiết (PDF):** [Đang cập nhật]
 * **Video Demo hệ thống:** [Đang cập nhật]
 
