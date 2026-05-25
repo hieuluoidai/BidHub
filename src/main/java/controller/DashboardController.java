@@ -648,6 +648,8 @@ public class DashboardController {
         if (user == null) return;
         if (lblBalance != null) lblBalance.setText(String.format("%,.0f ₫", user.getBalance()));
         if (lblLockedBalance != null) lblLockedBalance.setText(String.format("%,.0f ₫", user.getLockedBalance()));
+        if (lblWalletBalance != null) lblWalletBalance.setText(String.format("%,.0f ₫", user.getBalance()));
+        if (lblWalletLocked != null) lblWalletLocked.setText(String.format("%,.0f ₫", user.getLockedBalance()));
     }
 
     @FXML
