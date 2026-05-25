@@ -96,15 +96,20 @@ public class SceneManager {
             final double baseHeight = targetHeight;
             
             javafx.beans.value.ChangeListener<Number> sizeListener = (obs, oldVal, newVal) -> {
-                double scaleX = wrapper.getWidth() / baseWidth;
-                double scaleY = wrapper.getHeight() / baseHeight;
-                double scale = Math.min(scaleX, scaleY);
+                double w = wrapper.getWidth();
+                double h = wrapper.getHeight();
                 
-                // Tránh scale quá lớn hoặc âm/bằng 0 khi mới khởi tạo
-                if (scale > 0 && scale < 10) {
-                    group.setScaleX(scale);
-                    group.setScaleY(scale);
-                    currentScale = scale;
+                // Chỉ tính toán khi wrapper đã có kích thước thực tế (tránh bị tiny scale khi đang resize/maximize)
+                if (w > 100 && h > 100) {
+                    double scaleX = w / baseWidth;
+                    double scaleY = h / baseHeight;
+                    double scale = Math.min(scaleX, scaleY);
+                    
+                    if (scale > 0.1 && scale < 10) {
+                        group.setScaleX(scale);
+                        group.setScaleY(scale);
+                        currentScale = scale;
+                    }
                 }
             };
             
@@ -112,14 +117,12 @@ public class SceneManager {
             wrapper.heightProperty().addListener(sizeListener);
             
             stage.setTitle(title);
-            // Kích thước của Stage sẽ dựa trên Scene, hoặc do người dùng kéo thả, auto-fullscreen
             stage.show();
             
-            // Kích hoạt tính toán scale ngay lập tức
             javafx.application.Platform.runLater(() -> {
                 double w = wrapper.getWidth();
                 double h = wrapper.getHeight();
-                if (w > 0 && h > 0) {
+                if (w > 100 && h > 100) {
                     double scaleX = w / baseWidth;
                     double scaleY = h / baseHeight;
                     double scale = Math.min(scaleX, scaleY);
