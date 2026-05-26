@@ -599,6 +599,7 @@ public class ItemDetailsController {
                     stage.initModality(Modality.APPLICATION_MODAL);
                     stage.show();
                     stage.sizeToScene(); // Đảm bảo cửa sổ thu nhỏ vừa vặn nội dung
+                    stage.centerOnScreen();
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }

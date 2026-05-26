@@ -400,12 +400,9 @@ public class AdminController {
                 stage.setScene(new Scene(root));
                 stage.initModality(Modality.APPLICATION_MODAL);
                 
-                // Giới hạn kích thước theo màn hình
-                javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
-                stage.setWidth(Math.min(950, bounds.getWidth() * 0.9));
-                stage.setHeight(Math.min(850, bounds.getHeight() * 0.9));
-                
                 stage.show();
+                stage.sizeToScene();
+                stage.centerOnScreen();
             }
         } catch (IOException e) {
             e.printStackTrace();

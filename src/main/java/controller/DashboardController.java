@@ -207,7 +207,10 @@ public class DashboardController {
                             User u = AppState.getInstance().getCurrentUser();
                             if (u != null) u.setBalance(newAvail);
                         }
-                        javafx.application.Platform.runLater(this::refreshBalanceLabel);
+                        javafx.application.Platform.runLater(() -> {
+                            refreshBalanceLabel();
+                            refreshWalletData();
+                        });
                     } catch (Exception ignore) {}
                 }
             } else if (msg.equals("SELLER_APPROVED") || msg.equals("SELLER_REVOKED")) {
@@ -504,20 +507,40 @@ public class DashboardController {
         activeList.sort(this::compareAuctions);
         endedList.sort(this::compareAuctions);
 
+        int delayMs = 0;
         for (Auction auction : activeList) {
-            flowPaneAuctions.getChildren().add(createCard(auction));
+            javafx.scene.Node card = createCard(auction);
+            applyEntranceAnimation(card, delayMs);
+            flowPaneAuctions.getChildren().add(card);
+            delayMs += 40; // staggered delay
         }
 
         if (!endedList.isEmpty()) {
             paneEndedSection.setVisible(true);
             paneEndedSection.setManaged(true);
             for (Auction auction : endedList) {
-                flowPaneEnded.getChildren().add(createCard(auction));
+                javafx.scene.Node card = createCard(auction);
+                applyEntranceAnimation(card, delayMs);
+                flowPaneEnded.getChildren().add(card);
+                delayMs += 40;
             }
         } else {
             paneEndedSection.setVisible(false);
             paneEndedSection.setManaged(false);
         }
+    }
+
+    private void applyEntranceAnimation(javafx.scene.Node node, int delayMs) {
+        node.setOpacity(0);
+        node.setTranslateY(20);
+        FadeTransition ft = new FadeTransition(Duration.millis(300), node);
+        ft.setToValue(1);
+        TranslateTransition tt = new TranslateTransition(Duration.millis(300), node);
+        tt.setToY(0);
+        
+        ParallelTransition pt = new ParallelTransition(ft, tt);
+        pt.setDelay(Duration.millis(delayMs));
+        pt.play();
     }
 
     private int compareAuctions(Auction a, Auction b) {
@@ -784,6 +807,7 @@ public class DashboardController {
             stage.setOnShown(e -> anim.play());
             stage.show();
             stage.sizeToScene();
+            stage.centerOnScreen();
         } catch (Exception e) {
             e.printStackTrace();
         }
