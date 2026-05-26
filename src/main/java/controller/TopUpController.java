@@ -70,7 +70,7 @@ public class TopUpController {
             return;
         }
         try {
-            pendingAmount = Double.parseDouble(input);
+            pendingAmount = Double.parseDouble(input.replace(",", "."));
         } catch (NumberFormatException e) {
             showError("Số tiền không hợp lệ");
             return;

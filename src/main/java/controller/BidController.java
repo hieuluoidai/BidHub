@@ -98,13 +98,15 @@ public class BidController {
             double current = 0;
             String text = textBidAmount.getText().trim();
             if (!text.isEmpty()) {
-                current = Double.parseDouble(text);
+                // Dùng Locale.US cho dữ liệu số để Double.parseDouble không bị lỗi ở các máy dùng Locale khác.
+                current = Double.parseDouble(text.replace(",", "."));
             } else {
                 current = currentAuction.getCurrentPrice();
             }
-            textBidAmount.setText(String.format("%.2f", current + amount));
+            textBidAmount.setText(String.format(java.util.Locale.US, "%.2f", current + amount));
         } catch (NumberFormatException e) {
-            textBidAmount.setText(String.format("%.2f", currentAuction.getCurrentPrice() + amount));
+            textBidAmount.setText(String.format(java.util.Locale.US, "%.2f",
+                    currentAuction.getCurrentPrice() + amount));
         }
     }
 
@@ -119,7 +121,7 @@ public class BidController {
                 return;
             }
 
-            double amount = Double.parseDouble(amountStr);
+            double amount = Double.parseDouble(amountStr.replace(",", "."));
             User currentUser = AppState.getInstance().getCurrentUser();
 
             // Sử dụng AuctionService để validate logic nghiệp vụ
