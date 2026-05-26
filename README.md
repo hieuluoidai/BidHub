@@ -78,7 +78,7 @@ java -jar target/bidhub-client.jar
 *(Lưu ý: File JAR này được tạo ra sau khi chạy lệnh build ở Cách 2).*
 
 ## 6. Tài liệu và Demo
-* **Tải bản Release (.exe):** [https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.4](https://github.com/hieuluoidai/BidHub/releases/tag/v1.04)  
+* **Tải bản Release (.exe):** https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.4  
 * **Báo cáo chi tiết (PDF):** [Đang cập nhật]
 * **Video Demo hệ thống:** [Đang cập nhật]
 
