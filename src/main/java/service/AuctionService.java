@@ -38,7 +38,7 @@ public class AuctionService {
 
         double startingPrice;
         try {
-            startingPrice = Double.parseDouble(priceStr);
+            startingPrice = Double.parseDouble(priceStr.replace(",", "."));
         } catch (NumberFormatException e) {
             throw new ValidationException("price", "Giá khởi điểm phải là một con số hợp lệ!");
         }
@@ -75,7 +75,7 @@ public class AuctionService {
 
         double startingPrice;
         try {
-            startingPrice = Double.parseDouble(priceStr);
+            startingPrice = Double.parseDouble(priceStr.replace(",", "."));
         } catch (NumberFormatException ex) {
             throw new ValidationException("price", "Giá khởi điểm phải là một con số!");
         }

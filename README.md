@@ -80,7 +80,7 @@ java -jar target/bidhub-client.jar
 ## 6. Tài liệu và Demo
 * **Tải bản Release (.exe):** https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.4  
 * **Báo cáo chi tiết (PDF):** [Đang cập nhật]
-* **Video Demo hệ thống:** [Đang cập nhật]
+* **Video Demo hệ thống:** [Google Drive Link](https://drive.google.com/file/d/1ngZnf0WsNX6VjMy0b5TCBaMvWOLmwCGe/view?usp=sharing)
 
 ## 7. Thiết kế OOP và Design Patterns
 * **OOP:** Áp dụng triệt để Kế thừa (User, Item), Đóng gói và Đa hình.
