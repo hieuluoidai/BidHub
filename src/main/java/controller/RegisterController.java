@@ -78,7 +78,7 @@ public class RegisterController {
 
     // Formatter dùng để HIỂN THỊ ngày trong DatePicker
     private static final DateTimeFormatter DATE_FMT_DISPLAY =
-            DateTimeFormatter.ofPattern("d/M/yyyy");
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     // CSS classes cho hint state
     private static final String CSS_HINT_OK   = "hint-ok";
