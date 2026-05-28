@@ -78,8 +78,8 @@ java -jar target/bidhub-client.jar
 *(Lưu ý: File JAR này được tạo ra sau khi chạy lệnh build ở Cách 2).*
 
 ## 6. Tài liệu và Demo
-* **Tải bản Release (.exe):** https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.4  
-* **Báo cáo chi tiết (PDF):** [Báo cáo BTL](https://drive.google.com/file/d/1TheOxUw0K-iWkqsl1UU7vM9p-M2jlP2P/view?usp=sharing)
+* **Tải bản Release (.exe):** [https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.6](https://github.com/hieuluoidai/BidHub/releases/tag/v1.0.6)
+* **Báo cáo chi tiết (PDF):** [Google Drive Link](https://drive.google.com/file/d/12yIfSW6cd7wk0Kk9c2iu_9VM4Fm4nwPt/view?usp=sharing)
 * **Video Demo hệ thống:** [Google Drive Link](https://drive.google.com/file/d/1ngZnf0WsNX6VjMy0b5TCBaMvWOLmwCGe/view?usp=sharing)
 
 ## 7. Thiết kế OOP và Design Patterns
