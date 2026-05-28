@@ -4,6 +4,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -16,6 +17,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import model.auction.Auction;
 import model.item.Item;
 import model.item.ItemFactory;
@@ -93,6 +95,22 @@ public class CreateSessionController {
         for (int m = 0; m < 60; m += 5) {
             cbEndMinute.getItems().add(String.format("%02d", m));
         }
+
+        // Cấu hình định dạng ngày dd/MM/yyyy
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        datePickerEndDate.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return (date != null) ? formatter.format(date) : "";
+            }
+            @Override
+            public LocalDate fromString(String string) {
+                if (string != null && !string.isEmpty()) {
+                    return LocalDate.parse(string, formatter);
+                }
+                return null;
+            }
+        });
 
         // Mặc định: 7 ngày sau, lúc 23:55
         datePickerEndDate.setValue(LocalDate.now().plusDays(7));

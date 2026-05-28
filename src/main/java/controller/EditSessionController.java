@@ -3,6 +3,7 @@ package controller;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javafx.concurrent.Task;
 
 import database.AuctionDAO;
@@ -18,6 +19,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import model.auction.Auction;
 import model.item.Art;
 import model.item.Electronics;
@@ -63,6 +65,25 @@ public class EditSessionController {
     private File selectedImageFile;
     private String originalImagePath;        // imagePath ban đầu của item
     private boolean userRemovedOriginal;     // true nếu user nhấn Bỏ chọn khi đã có ảnh sẵn
+
+    @FXML
+    public void initialize() {
+        // Cấu hình định dạng ngày dd/MM/yyyy
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        datePickerEndDate.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return (date != null) ? formatter.format(date) : "";
+            }
+            @Override
+            public LocalDate fromString(String string) {
+                if (string != null && !string.isEmpty()) {
+                    return LocalDate.parse(string, formatter);
+                }
+                return null;
+            }
+        });
+    }
 
     public void setAuction(Auction auction) {
         this.auction = auction;

@@ -20,9 +20,12 @@ import utils.ImageStorageService;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import javafx.util.StringConverter;
 
 public class UserDetailsController {
+// ... (rest of imports if needed, but I should probably just replace the whole section if I want to be safe)
 
     @FXML private Label lblUsername;
     @FXML private Label lblEmail;
@@ -76,6 +79,25 @@ public class UserDetailsController {
     private boolean isEditing = false;
     private Runnable onAvatarChanged;
     private javafx.collections.ListChangeListener<model.auction.Auction> statsListener;
+
+    @FXML
+    public void initialize() {
+        // Cấu hình định dạng ngày dd/MM/yyyy
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        dpDOB.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return (date != null) ? formatter.format(date) : "";
+            }
+            @Override
+            public LocalDate fromString(String string) {
+                if (string != null && !string.isEmpty()) {
+                    return LocalDate.parse(string, formatter);
+                }
+                return null;
+            }
+        });
+    }
 
     public void setOnAvatarChanged(Runnable callback) {
         this.onAvatarChanged = callback;

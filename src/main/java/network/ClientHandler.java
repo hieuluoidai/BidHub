@@ -38,6 +38,7 @@ public class ClientHandler implements Runnable {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private String currentUserId; // Lưu ID người dùng của connection này
+    private boolean isAdminCached = false; // Cache vai trò admin để tránh spam DB query
     private boolean active = true;
 
     private static final Map<String, RequestHandler> HANDLERS = new HashMap<>();
@@ -109,6 +110,18 @@ public class ClientHandler implements Runnable {
 
     public void setUserId(String userId) {
         this.currentUserId = userId;
+        refreshAdminCache();
+    }
+
+    public void refreshAdminCache() {
+        if (currentUserId != null) {
+            User receiver = new UserDAO().findById(currentUserId);
+            this.isAdminCached = (receiver instanceof Admin);
+        }
+    }
+
+    public boolean isAdmin() {
+        return isAdminCached;
     }
 
     public AuctionServer getServer() {
@@ -232,13 +245,7 @@ public class ClientHandler implements Runnable {
     }
 
     private Object sanitizeData(Object data) {
-        boolean isAdmin = false;
-        if (currentUserId != null) {
-            User receiver = new UserDAO().findById(currentUserId);
-            isAdmin = (receiver instanceof Admin);
-        }
-
-        if (isAdmin) {
+        if (isAdminCached) {
             return data;
         }
 
