@@ -1,9 +1,14 @@
 package network.handler;
 
 import database.UserDAO;
+import exception.AuthenticationException;
+import exception.ValidationException;
+import model.auth.AuthRequest;
+import model.auth.AuthResponse;
 import model.notification.Notification;
 import model.user.User;
 import network.ClientHandler;
+import service.AuthService;
 import utils.NotificationService;
 import model.manager.AuctionManager;
 
@@ -11,6 +16,7 @@ import model.manager.AuctionManager;
  * Handles user-related commands.
  */
 public class UserHandler implements RequestHandler {
+    private final AuthService authService = new AuthService();
 
     @Override
     public void handle(ClientHandler context, String msg) {
@@ -34,6 +40,31 @@ public class UserHandler implements RequestHandler {
             handleApproveSeller(context, msg);
         } else if (msg.startsWith("REVOKE_SELLER:")) {
             handleRevokeSeller(context, msg);
+        }
+    }
+
+    public void handleAuth(ClientHandler context, AuthRequest request) {
+        try {
+            if (request.getType() == AuthRequest.Type.LOGIN) {
+                User user = authService.login(request.getUsername(), request.getPassword());
+                context.setUserId(user.getUserId());
+                context.send(AuthResponse.success(user, "LOGIN_OK"));
+                return;
+            }
+
+            User user = authService.register(
+                    request.getFullName(),
+                    request.getDateOfBirth(),
+                    request.getPhone(),
+                    request.getEmail(),
+                    request.getUsername(),
+                    request.getPassword());
+            context.send(AuthResponse.success(user, "REGISTER_OK"));
+            notifyNewUserRegistered(context, user.getUserId());
+        } catch (AuthenticationException | ValidationException e) {
+            context.send(AuthResponse.failure(e.getMessage()));
+        } catch (Exception e) {
+            context.send(AuthResponse.failure("Loi he thong: " + e.getMessage()));
         }
     }
 
@@ -120,6 +151,10 @@ public class UserHandler implements RequestHandler {
 
     private void handleNewUserRegistered(ClientHandler context, String msg) {
         String userId = msg.split(":")[1];
+        notifyNewUserRegistered(context, userId);
+    }
+
+    private void notifyNewUserRegistered(ClientHandler context, String userId) {
         UserDAO userDao = new UserDAO();
         User u = userDao.findById(userId);
         String username = (u != null) ? u.getUsername() : userId;

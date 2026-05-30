@@ -7,6 +7,7 @@ import database.UserDAO;
 import exception.ErrorCode;
 import exception.ErrorResponse;
 import exception.ExceptionMapper;
+import model.auth.AuthRequest;
 import model.auction.Auction;
 import model.manager.AuctionManager;
 import model.notification.Notification;
@@ -46,10 +47,10 @@ public class ClientHandler implements Runnable {
     private boolean active = true;
 
     private static final Map<String, RequestHandler> HANDLERS = new HashMap<>();
+    private static final UserHandler USER_HANDLER = new UserHandler();
 
     static {
         AuctionHandler auctionHandler = new AuctionHandler();
-        UserHandler userHandler = new UserHandler();
         WalletHandler walletHandler = new WalletHandler();
         SocialHandler socialHandler = new SocialHandler();
         NotificationHandler notificationHandler = new NotificationHandler();
@@ -64,14 +65,14 @@ public class ClientHandler implements Runnable {
         HANDLERS.put("RELOAD_AUCTION:", auctionHandler);
         HANDLERS.put("REFRESH_DATA", auctionHandler);
 
-        HANDLERS.put("IDENTIFY:", userHandler);
-        HANDLERS.put("UPDATE_PROFILE:", userHandler);
-        HANDLERS.put("UPDATE_AVATAR:", userHandler);
-        HANDLERS.put("CHANGE_PASSWORD:", userHandler);
-        HANDLERS.put("NEW_USER_REGISTERED:", userHandler);
-        HANDLERS.put("REQUEST_SELLER:", userHandler);
-        HANDLERS.put("APPROVE_SELLER:", userHandler);
-        HANDLERS.put("REVOKE_SELLER:", userHandler);
+        HANDLERS.put("IDENTIFY:", USER_HANDLER);
+        HANDLERS.put("UPDATE_PROFILE:", USER_HANDLER);
+        HANDLERS.put("UPDATE_AVATAR:", USER_HANDLER);
+        HANDLERS.put("CHANGE_PASSWORD:", USER_HANDLER);
+        HANDLERS.put("NEW_USER_REGISTERED:", USER_HANDLER);
+        HANDLERS.put("REQUEST_SELLER:", USER_HANDLER);
+        HANDLERS.put("APPROVE_SELLER:", USER_HANDLER);
+        HANDLERS.put("REVOKE_SELLER:", USER_HANDLER);
 
         HANDLERS.put("TOPUP:", walletHandler);
         HANDLERS.put("DEPOSIT_REQUEST:", walletHandler);
@@ -163,7 +164,9 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRequest(Object request) {
-        if (request instanceof Auction incomingAuction) {
+        if (request instanceof AuthRequest authRequest) {
+            USER_HANDLER.handleAuth(this, authRequest);
+        } else if (request instanceof Auction incomingAuction) {
             if (incomingAuction.getSellerId() != null) {
                 this.currentUserId = incomingAuction.getSellerId();
             }

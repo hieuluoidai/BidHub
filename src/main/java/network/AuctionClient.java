@@ -1,19 +1,24 @@
 package network;
 
+import exception.AuthenticationException;
+import exception.ErrorResponse;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import exception.ErrorResponse;
 import javafx.application.Platform;
+import model.auth.AuthRequest;
+import model.auth.AuthResponse;
 import model.auction.Auction;
 import model.auction.BidResult;
+import model.user.User;
 
 /**
- * Lớp điều phối liên lạc với Server và xử lý dữ liệu phía Client.
+ * Coordinates client-server communication and dispatches updates to the UI.
  */
 public class AuctionClient {
     private final List<Consumer<BidResult>> bidResultListeners = new CopyOnWriteArrayList<>();
@@ -23,113 +28,188 @@ public class AuctionClient {
     private final List<Runnable> notificationRefreshListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<model.chat.ChatMessage>> chatMessageListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<model.chat.ChatMessage.Bundle>> chatBundleListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<model.chat.ChatMessage.SummaryBundle>> chatSummaryListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<model.friendship.Friendship.Bundle>> friendBundleListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<model.friendship.Friendship.SearchBundle>> friendSearchListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.chat.ChatMessage.SummaryBundle>> chatSummaryListeners =
+            new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.friendship.Friendship.Bundle>> friendBundleListeners =
+            new CopyOnWriteArrayList<>();
+    private final List<Consumer<model.friendship.Friendship.SearchBundle>> friendSearchListeners =
+            new CopyOnWriteArrayList<>();
 
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isRunning = false;
 
-    /**
-     * Thêm listener nhận BidResult.
-     */
     public void addBidResultListener(Consumer<BidResult> listener) {
-        if (listener != null) bidResultListeners.add(listener);
+        if (listener != null) {
+            bidResultListeners.add(listener);
+        }
     }
 
     public void removeBidResultListener(Consumer<BidResult> listener) {
         bidResultListeners.remove(listener);
     }
 
-    /**
-     * Thêm listener nhận String message từ server.
-     */
     public void addStringMessageListener(Consumer<String> listener) {
-        if (listener != null) stringMessageListeners.add(listener);
+        if (listener != null) {
+            stringMessageListeners.add(listener);
+        }
     }
 
     public void removeStringMessageListener(Consumer<String> listener) {
         stringMessageListeners.remove(listener);
     }
 
-    public void addNotificationBundleListener(Consumer<model.notification.Notification.Bundle> l) {
-        if (l != null) notificationBundleListeners.add(l);
+    public void addNotificationBundleListener(Consumer<model.notification.Notification.Bundle> listener) {
+        if (listener != null) {
+            notificationBundleListeners.add(listener);
+        }
     }
 
-    public void addNotificationRefreshListener(Runnable l) {
-        if (l != null) notificationRefreshListeners.add(l);
+    public void addNotificationRefreshListener(Runnable listener) {
+        if (listener != null) {
+            notificationRefreshListeners.add(listener);
+        }
     }
 
-    public void addChatMessageListener(Consumer<model.chat.ChatMessage> l) {
-        if (l != null) chatMessageListeners.add(l);
+    public void addChatMessageListener(Consumer<model.chat.ChatMessage> listener) {
+        if (listener != null) {
+            chatMessageListeners.add(listener);
+        }
     }
 
-    public void removeChatMessageListener(Consumer<model.chat.ChatMessage> l) {
-        chatMessageListeners.remove(l);
+    public void removeChatMessageListener(Consumer<model.chat.ChatMessage> listener) {
+        chatMessageListeners.remove(listener);
     }
 
-    public void addChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> l) {
-        if (l != null) chatBundleListeners.add(l);
+    public void addChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> listener) {
+        if (listener != null) {
+            chatBundleListeners.add(listener);
+        }
     }
 
-    public void removeChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> l) {
-        chatBundleListeners.remove(l);
+    public void removeChatBundleListener(Consumer<model.chat.ChatMessage.Bundle> listener) {
+        chatBundleListeners.remove(listener);
     }
 
-    public void addChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> l) {
-        if (l != null) chatSummaryListeners.add(l);
+    public void addChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> listener) {
+        if (listener != null) {
+            chatSummaryListeners.add(listener);
+        }
     }
 
-    public void removeChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> l) {
-        chatSummaryListeners.remove(l);
+    public void removeChatSummaryListener(Consumer<model.chat.ChatMessage.SummaryBundle> listener) {
+        chatSummaryListeners.remove(listener);
     }
 
-    public void addFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> l) {
-        if (l != null) friendBundleListeners.add(l);
-    }
-    public void removeFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> l) {
-        friendBundleListeners.remove(l);
-    }
-    public void addFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> l) {
-        if (l != null) friendSearchListeners.add(l);
-    }
-    public void removeFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> l) {
-        friendSearchListeners.remove(l);
+    public void addFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> listener) {
+        if (listener != null) {
+            friendBundleListeners.add(listener);
+        }
     }
 
-    /**
-     * Hỗ trợ code cũ chỉ truyền một callback chính.
-     * Bên trong vẫn dùng cơ chế add/remove listener mới để tránh lệch cách dispatch sự kiện.
-     */
+    public void removeFriendBundleListener(Consumer<model.friendship.Friendship.Bundle> listener) {
+        friendBundleListeners.remove(listener);
+    }
+
+    public void addFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> listener) {
+        if (listener != null) {
+            friendSearchListeners.add(listener);
+        }
+    }
+
+    public void removeFriendSearchListener(Consumer<model.friendship.Friendship.SearchBundle> listener) {
+        friendSearchListeners.remove(listener);
+    }
+
     private Consumer<BidResult> legacyBidResultCallback;
+
     public void setBidResultCallback(Consumer<BidResult> callback) {
-        if (this.legacyBidResultCallback != null) removeBidResultListener(this.legacyBidResultCallback);
-        this.legacyBidResultCallback = callback;
-        if (callback != null) addBidResultListener(callback);
+        if (legacyBidResultCallback != null) {
+            removeBidResultListener(legacyBidResultCallback);
+        }
+        legacyBidResultCallback = callback;
+        if (callback != null) {
+            addBidResultListener(callback);
+        }
     }
 
     private Consumer<String> legacyStringMessageCallback;
+
     public void setStringMessageCallback(Consumer<String> callback) {
-        if (this.legacyStringMessageCallback != null) removeStringMessageListener(this.legacyStringMessageCallback);
-        this.legacyStringMessageCallback = callback;
-        if (callback != null) addStringMessageListener(callback);
+        if (legacyStringMessageCallback != null) {
+            removeStringMessageListener(legacyStringMessageCallback);
+        }
+        legacyStringMessageCallback = callback;
+        if (callback != null) {
+            addStringMessageListener(callback);
+        }
     }
 
     public void connect(String host, int port) throws IOException {
-        if (socket != null && !socket.isClosed()) return;
+        if (socket != null && !socket.isClosed()) {
+            return;
+        }
 
         socket = new Socket(host, port);
         out = new ObjectOutputStream(socket.getOutputStream());
+        out.flush();
         in = new ObjectInputStream(socket.getInputStream());
         isRunning = true;
+        startListenerThread();
+        System.out.println(">>> Da ket noi toi Server tai " + host + ":" + port);
+    }
 
-        Thread listenerThread = new Thread(this::listen);
-        listenerThread.setDaemon(true);
-        listenerThread.start();
+    public User authenticate(String host, int port, String username, String password)
+            throws IOException, AuthenticationException {
+        close();
 
-        System.out.println(">>> Đã kết nối tới Server tại " + host + ":" + port);
+        socket = new Socket(host, port);
+        out = new ObjectOutputStream(socket.getOutputStream());
+        out.flush();
+        in = new ObjectInputStream(socket.getInputStream());
+
+        send(AuthRequest.login(username, password));
+        Object response = readObjectOnce("dang nhap");
+        if (!(response instanceof AuthResponse authResponse)) {
+            close();
+            throw new IOException("Phan hoi dang nhap tu server khong hop le.");
+        }
+        if (!authResponse.isSuccess() || authResponse.getUser() == null) {
+            close();
+            throw new AuthenticationException(authResponse.getMessage());
+        }
+
+        isRunning = true;
+        startListenerThread();
+        return authResponse.getUser();
+    }
+
+    public User register(String host, int port, String fullName, LocalDate dateOfBirth,
+                         String phone, String email, String username, String password)
+            throws IOException, AuthenticationException {
+        try (Socket tempSocket = new Socket(host, port);
+             ObjectOutputStream tempOut = new ObjectOutputStream(tempSocket.getOutputStream());
+             ObjectInputStream tempIn = new ObjectInputStream(tempSocket.getInputStream())) {
+            tempOut.writeObject(AuthRequest.register(fullName, dateOfBirth, phone, email, username, password));
+            tempOut.flush();
+            tempOut.reset();
+
+            Object response;
+            try {
+                response = tempIn.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Khong the doc phan hoi dang ky tu server.", e);
+            }
+
+            if (!(response instanceof AuthResponse authResponse)) {
+                throw new IOException("Phan hoi dang ky tu server khong hop le.");
+            }
+            if (!authResponse.isSuccess() || authResponse.getUser() == null) {
+                throw new AuthenticationException(authResponse.getMessage());
+            }
+            return authResponse.getUser();
+        }
     }
 
     private void listen() {
@@ -141,7 +221,9 @@ public class AuctionClient {
                 }
             }
         } catch (Exception e) {
-            System.err.println(">>> Mất kết nối tới Server: " + e.getMessage());
+            if (isRunning) {
+                System.err.println(">>> Mat ket noi toi Server: " + e.getMessage());
+            }
             close();
         }
     }
@@ -149,11 +231,10 @@ public class AuctionClient {
     @SuppressWarnings("unchecked")
     private void handleIncomingData(Object data) {
         Platform.runLater(() -> {
-            System.out.println(">>> [CLIENT] Nhận data kiểu: " + data.getClass().getSimpleName());
+            System.out.println(">>> [CLIENT] Nhan data kieu: " + data.getClass().getSimpleName());
 
-            // 1. BidResult — kết quả đặt giá
             if (data instanceof BidResult result) {
-                System.out.println(">>> [CLIENT] BidResult nhận được: " + result);
+                System.out.println(">>> [CLIENT] BidResult nhan duoc: " + result);
                 if (bidResultListeners.isEmpty()) {
                     showBidResultAlert(result);
                 } else {
@@ -161,68 +242,48 @@ public class AuctionClient {
                         listener.accept(result);
                     }
                 }
-
-            // 2. List<Auction> — toàn bộ danh sách phiên
-            } else if (data instanceof List<?>) {
-                List<Auction> auctions = (List<Auction>) data;
-                System.out.println(">>> [CLIENT] Cập nhật danh sách " + auctions.size() + " phiên");
+            } else if (data instanceof List<?> list) {
+                List<Auction> auctions = (List<Auction>) list;
+                System.out.println(">>> [CLIENT] Cap nhat danh sach " + auctions.size() + " phien");
                 model.manager.AppState.getInstance().getAuctionList().setAll(auctions);
-
-            // 3. Auction — cập nhật phiên đơn lẻ
             } else if (data instanceof Auction updatedAuction) {
-                System.out.println(">>> [CLIENT] Cập nhật phiên: " + updatedAuction.getAuctionId());
+                System.out.println(">>> [CLIENT] Cap nhat phien: " + updatedAuction.getAuctionId());
                 updateSingleAuction(updatedAuction);
-
-            // 4. Notification.Bundle — danh sách thông báo trả về cho FETCH_NOTIFICATIONS
             } else if (data instanceof model.notification.Notification.Bundle bundle) {
-                for (var l : notificationBundleListeners) {
-                    l.accept(bundle);
+                for (var listener : notificationBundleListeners) {
+                    listener.accept(bundle);
                 }
-
-            // 5. Notification.RefreshSignal — server báo có thông báo mới, client fetch lại
             } else if (data instanceof model.notification.Notification.RefreshSignal) {
-                for (Runnable l : notificationRefreshListeners) {
-                    l.run();
+                for (Runnable listener : notificationRefreshListeners) {
+                    listener.run();
                 }
-
-            // 5b. ChatMessage — tin nhắn mới hoặc cập nhật (read/like)
             } else if (data instanceof model.chat.ChatMessage chatMsg) {
-                for (var l : chatMessageListeners) {
-                    l.accept(chatMsg);
+                for (var listener : chatMessageListeners) {
+                    listener.accept(chatMsg);
                 }
-
-            // 5c. ChatMessage.Bundle — lịch sử hội thoại
             } else if (data instanceof model.chat.ChatMessage.Bundle chatBundle) {
-                for (var l : chatBundleListeners) {
-                    l.accept(chatBundle);
+                for (var listener : chatBundleListeners) {
+                    listener.accept(chatBundle);
                 }
-
-            // 5d. ChatMessage.SummaryBundle — danh sách hội thoại
-            } else if (data instanceof model.chat.ChatMessage.SummaryBundle sb) {
-                for (var l : chatSummaryListeners) {
-                    l.accept(sb);
+            } else if (data instanceof model.chat.ChatMessage.SummaryBundle summaryBundle) {
+                for (var listener : chatSummaryListeners) {
+                    listener.accept(summaryBundle);
                 }
-
-            // 5e. Friendship.Bundle — danh sách bạn bè + lời mời
-            } else if (data instanceof model.friendship.Friendship.Bundle fb) {
-                for (var l : friendBundleListeners) {
-                    l.accept(fb);
+            } else if (data instanceof model.friendship.Friendship.Bundle friendBundle) {
+                for (var listener : friendBundleListeners) {
+                    listener.accept(friendBundle);
                 }
-
-            // 5f. Friendship.SearchBundle — kết quả tìm kiếm user
-            } else if (data instanceof model.friendship.Friendship.SearchBundle sb2) {
-                for (var l : friendSearchListeners) {
-                    l.accept(sb2);
+            } else if (data instanceof model.friendship.Friendship.SearchBundle searchBundle) {
+                for (var listener : friendSearchListeners) {
+                    listener.accept(searchBundle);
                 }
-
-            // 5g. ErrorResponse — lỗi chuẩn hóa từ server
             } else if (data instanceof ErrorResponse error) {
                 String msg = "ERROR:" + error.getCode() + ":" + error.getMessage();
                 System.out.println(">>> [CLIENT] Server error: " + msg);
                 if (stringMessageListeners.isEmpty()) {
                     javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
                             javafx.scene.control.Alert.AlertType.ERROR);
-                    alert.setTitle("Lỗi");
+                    alert.setTitle("Loi");
                     alert.setHeaderText(null);
                     alert.setContentText(error.getMessage());
                     alert.showAndWait();
@@ -231,14 +292,13 @@ public class AuctionClient {
                         listener.accept(msg);
                     }
                 }
-
-            // 6. String — message từ server (TOPUP_OK, PAY_OK, *_FAILED, ...)
             } else if (data instanceof String msg) {
                 System.out.println(">>> [CLIENT] Server message: " + msg);
 
                 if (msg.startsWith("AUCTION_REMOVED:")) {
                     String id = msg.substring("AUCTION_REMOVED:".length());
-                    model.manager.AppState.getInstance().getAuctionList().removeIf(a -> a.getAuctionId().equals(id));
+                    model.manager.AppState.getInstance().getAuctionList()
+                            .removeIf(auction -> auction.getAuctionId().equals(id));
                 }
 
                 for (Consumer<String> listener : stringMessageListeners) {
@@ -251,12 +311,12 @@ public class AuctionClient {
     private void showBidResultAlert(BidResult result) {
         javafx.scene.control.Alert.AlertType type = switch (result.getStatus()) {
             case SUCCESS -> javafx.scene.control.Alert.AlertType.INFORMATION;
-            case OUTBID  -> javafx.scene.control.Alert.AlertType.WARNING;
+            case OUTBID -> javafx.scene.control.Alert.AlertType.WARNING;
             case FAILURE -> javafx.scene.control.Alert.AlertType.ERROR;
         };
-        
+
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(type);
-        alert.setTitle("Kết quả đặt giá");
+        alert.setTitle("Ket qua dat gia");
         alert.setHeaderText(null);
         alert.setContentText(result.getMessage());
         alert.showAndWait();
@@ -270,17 +330,48 @@ public class AuctionClient {
                 out.reset();
             }
         } catch (IOException e) {
-            System.err.println(">>> Lỗi khi gửi dữ liệu: " + e.getMessage());
+            System.err.println(">>> Loi khi gui du lieu: " + e.getMessage());
         }
     }
 
     public void close() {
         isRunning = false;
         try {
-            if (socket != null) socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (in != null) {
+                in.close();
+            }
+        } catch (IOException ignored) {
         }
+        try {
+            if (out != null) {
+                out.close();
+            }
+        } catch (IOException ignored) {
+        }
+        try {
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (IOException ignored) {
+        } finally {
+            socket = null;
+            out = null;
+            in = null;
+        }
+    }
+
+    private Object readObjectOnce(String action) throws IOException {
+        try {
+            return in.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new IOException("Khong the doc phan hoi " + action + " tu server.", e);
+        }
+    }
+
+    private void startListenerThread() {
+        Thread listenerThread = new Thread(this::listen);
+        listenerThread.setDaemon(true);
+        listenerThread.start();
     }
 
     private void updateSingleAuction(Auction updated) {
@@ -288,9 +379,7 @@ public class AuctionClient {
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getAuctionId().equals(updated.getAuctionId())) {
                 Auction existing = list.get(i);
-                
-                // MẸO QUAN TRỌNG: Nếu bản cập nhật từ server bị thiếu history (do serialization hoặc 
-                // logic server tối giản), ta phải giữ lại history cũ để chart và table không bị trắng.
+
                 if (updated.getBidHistory().isEmpty() && !existing.getBidHistory().isEmpty()) {
                     updated.restoreBidHistory(existing.getBidHistory());
                 }
@@ -300,9 +389,9 @@ public class AuctionClient {
                 boolean bidHistoryChanged = existing.getBidHistory().size() != updated.getBidHistory().size();
                 boolean highestBidAppeared = existing.getHighestBid() == null && updated.getHighestBid() != null;
 
-                // Phát hiện gia hạn thời gian do Anti-Sniping
                 if ("RUNNING".equals(updated.getStatus())
-                        && updated.getEndTime() != null && existing.getEndTime() != null
+                        && updated.getEndTime() != null
+                        && existing.getEndTime() != null
                         && updated.getEndTime().isAfter(existing.getEndTime())) {
                     for (Consumer<String> listener : stringMessageListeners) {
                         listener.accept("ANTI_SNIPE_EXTENDED:" + updated.getAuctionId());

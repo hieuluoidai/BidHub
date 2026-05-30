@@ -26,8 +26,22 @@ import exception.ValidationException;
  * Điều khiển màn hình đăng ký tài khoản mới.
  */
 public class RegisterController {
+    private static final String SERVER_HOST;
+    private static final int SERVER_PORT;
 
     private final AuthService authService = new AuthService();
+
+    static {
+        java.util.Properties props = new java.util.Properties();
+        try (java.io.InputStream in = RegisterController.class.getResourceAsStream("/server.properties")) {
+            if (in != null) {
+                props.load(in);
+            }
+        } catch (java.io.IOException ignored) {
+        }
+        SERVER_HOST = props.getProperty("server.host", "localhost");
+        SERVER_PORT = Integer.parseInt(props.getProperty("server.port", "1234"));
+    }
 
     // ... rest of fields ...
     @FXML private TextField     fullNameField;
@@ -338,7 +352,9 @@ public class RegisterController {
         }
 
         try {
-            User newUser = authService.register(
+            User newUser = AppState.getInstance().getClient().register(
+                SERVER_HOST,
+                SERVER_PORT,
                 safeTrim(fullNameField.getText()),
                 dobPicker.getValue(),
                 safeTrim(phoneField.getText()),
@@ -348,10 +364,6 @@ public class RegisterController {
             );
 
             // Thông báo cho server để gửi notification tới các Admin online
-            try {
-                AppState.getInstance().getClient().send("NEW_USER_REGISTERED:" + newUser.getUserId());
-            } catch (Exception ignore) { }
-
             AlertHelper.show(
                 AlertHelper.Type.SUCCESS,
                 "Đăng ký thành công",
