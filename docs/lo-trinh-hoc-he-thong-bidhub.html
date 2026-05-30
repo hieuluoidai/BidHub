@@ -349,13 +349,14 @@
       <h3>Mục tiêu</h3>
       <ul>
         <li>Hiểu ứng dụng JavaFX được khởi động như thế nào.</li>
-        <li>Hiểu tại sao login xong mới mở socket tới server.</li>
+        <li>Hiểu luồng mới của đăng nhập và đăng ký: UI gọi <code>AuctionClient</code>, gửi request tới server, server mới xác thực với DB.</li>
         <li>Hiểu <code>AppState</code> giữ state toàn cục gì và vì sao cần nó.</li>
         <li>Hiểu client nhận dữ liệu từ server rồi phân phối về UI bằng listener.</li>
       </ul>
       <h3>Điểm dễ bị hỏi</h3>
       <ul>
         <li>Vì sao dùng <code>AppState</code> dạng singleton?</li>
+        <li>Luồng <code>AuthRequest</code> / <code>AuthResponse</code> đi qua những lớp nào?</li>
         <li>Vì sao <code>AuctionClient</code> cần callback / listener thay vì controller đọc socket trực tiếp?</li>
         <li>Vì sao dùng <code>Platform.runLater</code> ở phía client?</li>
       </ul>
@@ -374,6 +375,8 @@
         <li><code>src/main/java/network/handler/RequestHandler.java</code></li>
         <li><code>src/main/java/network/handler/AuctionHandler.java</code></li>
         <li><code>src/main/java/network/handler/UserHandler.java</code></li>
+        <li><code>src/main/java/model/auth/AuthRequest.java</code></li>
+        <li><code>src/main/java/model/auth/AuthResponse.java</code></li>
         <li><code>src/main/java/network/handler/WalletHandler.java</code></li>
         <li><code>src/main/java/network/handler/SocialHandler.java</code></li>
         <li><code>src/main/java/network/handler/NotificationHandler.java</code></li>
@@ -382,7 +385,7 @@
       <ul>
         <li>Hiểu mỗi client kết nối sẽ được tạo <code>ClientHandler</code> riêng.</li>
         <li>Hiểu server route command theo prefix như <code>BID:</code>, <code>TOPUP:</code>, <code>CHAT_SEND:</code>.</li>
-        <li>Hiểu hệ thống dùng kết hợp <code>String command</code> và <code>Serializable object</code>.</li>
+        <li>Hiểu hệ thống dùng kết hợp <code>String command</code> và <code>Serializable object</code>, trong đó auth mới đi bằng object request/response.</li>
         <li>Hiểu vì sao server phải lọc traffic không đúng protocol trước khi tạo object stream.</li>
       </ul>
       <h3>Điểm rất quan trọng</h3>
@@ -393,7 +396,7 @@
       <h3>Câu hỏi tự kiểm tra</h3>
       <ol>
         <li>Vì sao không cho controller thao tác trực tiếp với DAO mà phải đi qua server?</li>
-        <li>Tại sao server cần biết <code>IDENTIFY:userId</code>?</li>
+        <li>Tại sao sau khi login thành công server vẫn cần biết connection này thuộc user nào?</li>
         <li>Tại sao ảnh không đi qua <code>ClientHandler</code>?</li>
       </ol>
       <p><span class="pill untaught">Tự học thêm</span> Socket protocol design, object stream qua mạng, kết hợp TCP và HTTP là phần ngoài phạm vi giảng chính.</p>
@@ -408,9 +411,16 @@
       <ul>
         <li>Tự kể lại bằng miệng 3 luồng: <strong>đăng nhập</strong>, <strong>tạo phiên đấu giá</strong>, <strong>đặt giá thủ công</strong>.</li>
         <li>Mỗi luồng phải nói được: ai gọi ai, dữ liệu đi qua lớp nào, lớp nào là nơi ra quyết định.</li>
+        <li>Đặc biệt với luồng đăng nhập, phải nói đúng bản mới: <code>LoginController -&gt; AuctionClient.authenticate -&gt; ClientHandler -&gt; UserHandler -&gt; AuthService -&gt; UserDAO -&gt; MySQL</code>.</li>
       </ul>
       <h3>File cần đọc</h3>
       <ul>
+        <li><code>src/main/java/controller/LoginController.java</code></li>
+        <li><code>src/main/java/controller/RegisterController.java</code></li>
+        <li><code>src/main/java/network/AuctionClient.java</code></li>
+        <li><code>src/main/java/model/auth/AuthRequest.java</code></li>
+        <li><code>src/main/java/model/auth/AuthResponse.java</code></li>
+        <li><code>src/main/java/network/handler/UserHandler.java</code></li>
         <li><code>src/main/java/service/AuthService.java</code></li>
         <li><code>src/main/java/service/AuctionService.java</code></li>
         <li><code>src/main/java/controller/CreateSessionController.java</code></li>
@@ -423,6 +433,7 @@
         <li>Vẽ lại sequence tạo phiên đấu giá từ UI đến DB.</li>
         <li>Vẽ lại sequence đặt giá thành công và đặt giá thất bại.</li>
       </ol>
+      <p><span class="pill untaught">Cần nói thêm khi vấn đáp</span> Hệ thống đã bắt đầu chuyển đúng sang mô hình client-server ở phần auth, nhưng chưa chuyển hết mọi màn hình; vẫn còn một số chỗ client chạm DB trực tiếp.</p>
       <p><span class="pill taught">Dựa trên phần đã học</span> Đây là nơi bạn áp dụng OOP, MVC, exception handling, service layer.</p>
     </div>
 
@@ -551,7 +562,7 @@
       <tbody>
         <tr>
           <td>Ngày 1</td>
-          <td>Đọc <code>README</code>, <code>UML</code>, <code>Main</code>, <code>LoginController</code>, <code>AppState</code>, <code>AuctionClient</code></td>
+          <td>Đọc <code>README</code>, <code>UML</code>, <code>Main</code>, <code>LoginController</code>, <code>RegisterController</code>, <code>AppState</code>, <code>AuctionClient</code>, <code>AuthRequest</code>, <code>AuthResponse</code></td>
           <td>Nói được kiến trúc tổng thể và luồng client.</td>
         </tr>
         <tr>
@@ -606,6 +617,7 @@
       <li>Tên và vai trò của 8 package chính: <code>application</code>, <code>controller</code>, <code>service</code>, <code>model</code>, <code>database</code>, <code>network</code>, <code>utils</code>, <code>sql</code>.</li>
       <li>3 design pattern chắc chắn phải nói được: <code>Singleton</code>, <code>DAO</code>, <code>Observer</code>.</li>
       <li>3 use case phải kể được bằng miệng: đăng nhập, tạo phiên, đặt giá.</li>
+      <li>Với use case đăng nhập, phải kể đúng bản mới: client không login bằng DB trực tiếp nữa mà gửi request tới server.</li>
       <li>2 tính năng nâng cao phải giải thích được: auto-bid, anti-sniping.</li>
       <li>2 phần ngoài slide phải biết tự nhận diện: socket protocol và production deployment.</li>
     </ul>

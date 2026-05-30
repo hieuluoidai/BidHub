@@ -18,6 +18,7 @@ HelloFx/
 # Release Artifacts
 *.zip
 BidHub-Release*/
+/docs/*.pdf
 /uploads/
 /online-auction-system/target/
 /online-auction-system/bin/
