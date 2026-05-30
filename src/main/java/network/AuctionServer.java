@@ -1,52 +1,59 @@
 package network;
 
 import com.sun.net.httpserver.HttpServer;
+import model.auction.Auction;
+import model.manager.AuctionManager;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import model.auction.Auction;
-import model.manager.AuctionManager;
 
 /**
- * Server chính điều phối kết nối Socket và quản lý luồng dữ liệu đấu giá.
+ * Server chinh dieu phoi ket noi socket va HTTP image service.
  */
 public class AuctionServer {
     private final int port;
+    private final int imagePort;
+    private final ExecutorService clientExecutor;
+    private HttpServer httpServer;
 
-    // Danh sách quản lý các kết nối Client đang hoạt động
     private final List<ClientHandler> clients = new ArrayList<>();
     private final List<ClientHandler> observers = new ArrayList<>();
 
-    public AuctionServer(int port) {
+    public AuctionServer(int port, int imagePort, ExecutorService clientExecutor) {
         this.port = port;
+        this.imagePort = imagePort;
+        this.clientExecutor = clientExecutor;
     }
 
-    /**
-     * Khởi động Server và chấp nhận các kết nối mới từ Client.
-     */
     public void start() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println(">>> Server đấu giá đang chạy trên port " + port + "...");
+        startImageServer();
+
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(port));
+            System.out.println(">>> Server dau gia dang chay tren port " + port + "...");
+
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(clientSocket, this);
                 synchronized (clients) {
                     clients.add(handler);
                 }
-                new Thread(handler).start();
+                clientExecutor.execute(handler);
             }
         } catch (IOException e) {
-            System.err.println("Lỗi Server: " + e.getMessage());
+            System.err.println("Loi Server: " + e.getMessage());
         }
     }
 
-    /**
-     * Gửi dữ liệu tới một người dùng cụ thể dựa trên ID.
-     */
     public void sendToUser(String userId, Object data) {
         synchronized (clients) {
             for (ClientHandler client : clients) {
@@ -57,12 +64,8 @@ public class AuctionServer {
         }
     }
 
-    /**
-     * Phát sóng dữ liệu tới tất cả Client đang kết nối (Real-time Update).
-     */
     public void broadcast(Object data) {
         synchronized (clients) {
-            // Remove các client đã mất kết nối trước khi gửi
             clients.removeIf(client -> !client.isAlive());
             for (ClientHandler client : clients) {
                 client.send(data);
@@ -70,18 +73,11 @@ public class AuctionServer {
         }
     }
 
-    /**
-     * Gửi thông báo tới toàn bộ người dùng có role cụ thể (VD: ADMIN).
-     */
     public void broadcastToRole(String role, Object data) {
         synchronized (clients) {
             for (ClientHandler client : clients) {
                 if (client.getUserId() != null && client.isAlive()) {
-                    String userRole = "BIDDER";
-                    // Giả định đơn giản: nếu là admin thì role=ADMIN, còn lại là BIDDER/SELLER tùy logic
-                    // Ở đây ta dùng hàm isAdmin() đã được cache trong ClientHandler
-                    if (client.isAdmin()) userRole = "ADMIN";
-                    
+                    String userRole = client.isAdmin() ? "ADMIN" : "BIDDER";
                     if (role.equals(userRole)) {
                         client.send(data);
                     }
@@ -90,7 +86,6 @@ public class AuctionServer {
         }
     }
 
-    // Quản lý Observers
     public synchronized void addObserver(ClientHandler observer) {
         observers.add(observer);
     }
@@ -98,40 +93,79 @@ public class AuctionServer {
     public synchronized void removeObserver(ClientHandler observer) {
         observers.remove(observer);
     }
+
+    public void removeClient(ClientHandler client) {
+        synchronized (clients) {
+            clients.remove(client);
+        }
+        removeObserver(client);
+    }
+
     public synchronized void notifyObservers(Object data) {
         for (ClientHandler observer : observers) {
             observer.send(data);
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(">>> Đang khởi động hệ thống...");
-
-        // Graceful shutdown hook
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println(">>> Đang tắt Server...");
-            database.DatabaseConnection.closePool();
-        }));
-
-        List<Auction> savedAuctions = new database.AuctionDAO().findAll();
-        for (Auction a : savedAuctions) {
-            AuctionManager.getInstance().addAuction(a);
+    public void shutdown() {
+        if (httpServer != null) {
+            httpServer.stop(0);
         }
-        System.out.println(">>> Đã nạp " + savedAuctions.size() + " phiên đấu giá.");
+        clientExecutor.shutdownNow();
+        database.DatabaseConnection.closePool();
+    }
 
-        AuctionServer server = new AuctionServer(1234);
-        AuctionManager.getInstance().startAutoClosureService(server);
-
-        // HTTP image server — phục vụ và nhận ảnh từ tất cả client
+    private void startImageServer() {
         try {
-            HttpServer httpServer = HttpServer.create(new InetSocketAddress(8080), 0);
+            httpServer = HttpServer.create(new InetSocketAddress(imagePort), 0);
             httpServer.createContext("/", new ImageHttpHandler());
             httpServer.setExecutor(Executors.newFixedThreadPool(4));
             httpServer.start();
-            System.out.println(">>> HTTP image server đang chạy trên port 8080...");
+            System.out.println(">>> HTTP image server dang chay tren port " + imagePort + "...");
         } catch (IOException e) {
-            System.err.println(">>> Không thể khởi động HTTP image server: " + e.getMessage());
+            System.err.println(">>> Khong the khoi dong HTTP image server: " + e.getMessage());
         }
+    }
+
+    private static Properties loadServerProperties() {
+        Properties props = new Properties();
+        try (InputStream in = AuctionServer.class.getResourceAsStream("/server.properties")) {
+            if (in != null) {
+                props.load(in);
+            }
+        } catch (IOException e) {
+            System.err.println(">>> Khong the doc server.properties, dung gia tri mac dinh.");
+        }
+        return props;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(">>> Dang khoi dong he thong...");
+
+        Properties props = loadServerProperties();
+        int serverPort = Integer.parseInt(props.getProperty("server.port", "1234"));
+        int imagePort = Integer.parseInt(props.getProperty("server.image.port", "8080"));
+
+        List<Auction> savedAuctions = new database.AuctionDAO().findAll();
+        for (Auction auction : savedAuctions) {
+            AuctionManager.getInstance().addAuction(auction);
+        }
+        System.out.println(">>> Da nap " + savedAuctions.size() + " phien dau gia.");
+
+        ExecutorService clientExecutor = Executors.newCachedThreadPool(r -> {
+            Thread thread = new Thread(r);
+            thread.setName("bidhub-client-handler");
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        AuctionServer server = new AuctionServer(serverPort, imagePort, clientExecutor);
+        AuctionManager.getInstance().startAutoClosureService(server);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println(">>> Dang tat Server...");
+            server.shutdown();
+        }));
 
         server.start();
     }

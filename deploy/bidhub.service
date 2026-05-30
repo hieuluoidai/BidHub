@@ -1,0 +1,17 @@
+[Unit]
+Description=BidHub Auction Server
+After=network.target mysql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/bidhub
+ExecStart=/usr/bin/java -jar /root/bidhub/bidhub-server.jar
+Restart=always
+RestartSec=3
+StandardOutput=append:/root/bidhub/server.log
+StandardError=append:/root/bidhub/server.log
+
+[Install]
+WantedBy=multi-user.target

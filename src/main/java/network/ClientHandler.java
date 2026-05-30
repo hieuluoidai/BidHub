@@ -1,14 +1,5 @@
 package network;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.net.SocketException;
-import java.util.HashMap;
-import java.util.Map;
-
 import database.AuctionDAO;
 import database.BidTransactionDAO;
 import database.ItemDAO;
@@ -29,19 +20,33 @@ import network.handler.UserHandler;
 import network.handler.WalletHandler;
 import utils.NotificationService;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PushbackInputStream;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Xử lý từng Client kết nối tới Server.
+ * Xu ly tung client ket noi toi server.
  */
 public class ClientHandler implements Runnable {
+    private static final byte[] OBJECT_STREAM_HEADER =
+            new byte[]{(byte) 0xAC, (byte) 0xED, 0x00, 0x05};
+
     private final Socket socket;
     private final AuctionServer server;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private String currentUserId; // Lưu ID người dùng của connection này
-    private boolean isAdminCached = false; // Cache vai trò admin để tránh spam DB query
+    private String currentUserId;
+    private boolean isAdminCached = false;
     private boolean active = true;
 
     private static final Map<String, RequestHandler> HANDLERS = new HashMap<>();
+
     static {
         AuctionHandler auctionHandler = new AuctionHandler();
         UserHandler userHandler = new UserHandler();
@@ -49,7 +54,6 @@ public class ClientHandler implements Runnable {
         SocialHandler socialHandler = new SocialHandler();
         NotificationHandler notificationHandler = new NotificationHandler();
 
-        // Auction commands
         HANDLERS.put("BID:", auctionHandler);
         HANDLERS.put("DELETE_AUCTION:", auctionHandler);
         HANDLERS.put("CANCEL_AUCTION:", auctionHandler);
@@ -60,7 +64,6 @@ public class ClientHandler implements Runnable {
         HANDLERS.put("RELOAD_AUCTION:", auctionHandler);
         HANDLERS.put("REFRESH_DATA", auctionHandler);
 
-        // User commands
         HANDLERS.put("IDENTIFY:", userHandler);
         HANDLERS.put("UPDATE_PROFILE:", userHandler);
         HANDLERS.put("UPDATE_AVATAR:", userHandler);
@@ -70,12 +73,10 @@ public class ClientHandler implements Runnable {
         HANDLERS.put("APPROVE_SELLER:", userHandler);
         HANDLERS.put("REVOKE_SELLER:", userHandler);
 
-        // Wallet commands
         HANDLERS.put("TOPUP:", walletHandler);
         HANDLERS.put("DEPOSIT_REQUEST:", walletHandler);
         HANDLERS.put("DEPOSIT_REVIEW:", walletHandler);
 
-        // Social commands
         HANDLERS.put("CHAT_SEND:", socialHandler);
         HANDLERS.put("CHAT_FETCH:", socialHandler);
         HANDLERS.put("CHAT_FETCH_LIST:", socialHandler);
@@ -89,7 +90,6 @@ public class ClientHandler implements Runnable {
         HANDLERS.put("FRIEND_STATUS:", socialHandler);
         HANDLERS.put("USER_SEARCH:", socialHandler);
 
-        // Notification commands
         HANDLERS.put("FETCH_NOTIFICATIONS:", notificationHandler);
         HANDLERS.put("MARK_NOTIFICATION_READ:", notificationHandler);
         HANDLERS.put("MARK_ALL_NOTIFICATIONS_READ:", notificationHandler);
@@ -116,7 +116,7 @@ public class ClientHandler implements Runnable {
     public void refreshAdminCache() {
         if (currentUserId != null) {
             User receiver = new UserDAO().findById(currentUserId);
-            this.isAdminCached = (receiver instanceof Admin);
+            this.isAdminCached = receiver instanceof Admin;
         }
     }
 
@@ -131,22 +131,32 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+            PushbackInputStream rawIn = new PushbackInputStream(
+                    socket.getInputStream(), OBJECT_STREAM_HEADER.length);
+            if (!hasValidStreamHeader(rawIn)) {
+                active = false;
+                return;
+            }
+
             out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
+            out.flush();
+            in = new ObjectInputStream(rawIn);
 
             while (active) {
                 Object request = in.readObject();
                 try {
                     handleRequest(request);
                 } catch (Exception e) {
-                    System.err.println(">>> Lỗi xử lý request: " + ExceptionMapper.logMessage(e));
+                    System.err.println(">>> Loi xu ly request: " + ExceptionMapper.logMessage(e));
                     send(ErrorResponse.from(e));
                 }
             }
         } catch (EOFException | SocketException e) {
-            System.out.println(">>> Thông báo: Một Client đã thoát.");
+            if (currentUserId != null) {
+                System.out.println(">>> Thong bao: Client " + currentUserId + " da thoat.");
+            }
         } catch (Exception e) {
-            System.err.println(">>> Lỗi ClientHandler: " + ExceptionMapper.logMessage(e));
+            System.err.println(">>> Loi ClientHandler: " + ExceptionMapper.logMessage(e));
         } finally {
             close();
         }
@@ -157,7 +167,7 @@ public class ClientHandler implements Runnable {
             if (incomingAuction.getSellerId() != null) {
                 this.currentUserId = incomingAuction.getSellerId();
             }
-            
+
             Auction existing = AuctionManager.getInstance().getAuctionById(incomingAuction.getAuctionId());
 
             if (existing != null) {
@@ -168,28 +178,29 @@ public class ClientHandler implements Runnable {
             } else {
                 new ItemDAO().save(incomingAuction.getItem(), incomingAuction.getSellerId());
                 new AuctionDAO().save(incomingAuction);
-                
+
                 AuctionManager.getInstance().addAuction(incomingAuction);
-                System.out.println(">>> [SERVER] Đã tiếp nhận và lưu phiên mới: " + incomingAuction.getAuctionId());
+                System.out.println(">>> [SERVER] Da tiep nhan va luu phien moi: "
+                        + incomingAuction.getAuctionId());
 
                 NotificationService.notifyUser(server, incomingAuction.getSellerId(),
-                    Notification.Type.ITEM_POSTED,
-                    "Đăng bán thành công",
-                    String.format("Sản phẩm \"%s\" của bạn đã được đăng lên hệ thống.", 
-                        incomingAuction.getItem().getItemName()));
+                        Notification.Type.ITEM_POSTED,
+                        "Dang ban thanh cong",
+                        String.format("San pham \"%s\" cua ban da duoc dang len he thong.",
+                                incomingAuction.getItem().getItemName()));
 
                 NotificationService.notifyAdmins(server,
-                    Notification.Type.ADMIN_NEW_AUCTION,
-                    "Phiên đấu giá mới",
-                    String.format("Phiên đấu giá cho \"%s\" vừa được tạo bởi %s.", 
-                        incomingAuction.getItem().getItemName(), incomingAuction.getSellerId()));
+                        Notification.Type.ADMIN_NEW_AUCTION,
+                        "Phien dau gia moi",
+                        String.format("Phien dau gia cho \"%s\" vua duoc tao boi %s.",
+                                incomingAuction.getItem().getItemName(), incomingAuction.getSellerId()));
             }
             server.broadcast(incomingAuction);
         } else if (request instanceof String msg) {
             handleStringRequest(msg);
         } else {
             send(ErrorResponse.of(ErrorCode.COMMAND_FORMAT_INVALID,
-                    "Server không hỗ trợ kiểu dữ liệu request này."));
+                    "Server khong ho tro kieu du lieu request nay."));
         }
     }
 
@@ -209,7 +220,7 @@ public class ClientHandler implements Runnable {
                 System.err.println(">>> [SERVER] Unhandled command: " + msg);
             }
         } catch (Exception e) {
-            System.err.println(">>> Lỗi xử lý lệnh: " + ExceptionMapper.logMessage(e));
+            System.err.println(">>> Loi xu ly lenh: " + ExceptionMapper.logMessage(e));
             send(ExceptionMapper.protocolMessage("ERROR", e));
         }
     }
@@ -218,16 +229,19 @@ public class ClientHandler implements Runnable {
         BidTransactionDAO bidDao = new BidTransactionDAO();
         String auctionId = auction.getAuctionId();
         model.auction.BidTransaction highest = auction.getHighestBid();
-        
-        if (highest == null) return;
-        
+
+        if (highest == null) {
+            return;
+        }
+
         String bidderId = highest.getBidder().getUserId();
         double amount = highest.getBidAmount();
         java.time.LocalDateTime time = highest.getTimestamp();
         model.auction.BidTransaction.BidType type = highest.getBidType();
 
-        if (bidDao.save(auctionId, bidderId, amount, type, time)) {
-            System.out.println(">>> Backup thành công giá $" + amount + " cho phiên " + auctionId);
+        if (bidDao.save(auctionId, bidderId, amount, type, time,
+                highest.isAnonymous(), highest.getAnonymousDisplayName())) {
+            System.out.println(">>> Backup thanh cong gia $" + amount + " cho phien " + auctionId);
         }
     }
 
@@ -259,22 +273,22 @@ public class ClientHandler implements Runnable {
             }
 
             if (hasAnon) {
-                Auction safeAuction = new Auction(auction.getAuctionId(), auction.getItem(), 
-                                                 auction.getStartTime(), auction.getEndTime());
+                Auction safeAuction = new Auction(
+                        auction.getAuctionId(), auction.getItem(), auction.getStartTime(), auction.getEndTime());
                 safeAuction.setSellerId(auction.getSellerId());
                 safeAuction.setStatus(auction.getStatus());
-                
+
                 java.util.List<model.auction.BidTransaction> safeHistory = new java.util.ArrayList<>();
                 for (model.auction.BidTransaction tx : auction.getBidHistory()) {
                     if (tx.isAnonymous()) {
                         User fakeUser = new model.user.Bidder(
-                                "anon_id", 
-                                tx.getAnonymousDisplayName(), 
-                                "anon@hidden.com", 
+                                "anon_id",
+                                tx.getAnonymousDisplayName(),
+                                "anon@hidden.com",
                                 ""
                         );
                         fakeUser.setAvatarPath("https://cdn-icons-png.flaticon.com/512/3208/3208903.png");
-                        
+
                         model.auction.BidTransaction safeTx = new model.auction.BidTransaction(
                                 fakeUser, tx.getBidAmount(), tx.getTimestamp(), tx.getBidType(), true
                         );
@@ -303,10 +317,29 @@ public class ClientHandler implements Runnable {
     private void close() {
         active = false;
         try {
-            if (socket != null) socket.close();
-            server.removeObserver(this);
+            if (socket != null) {
+                socket.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            server.removeClient(this);
         }
+    }
+
+    private boolean hasValidStreamHeader(PushbackInputStream rawIn) throws IOException {
+        byte[] header = new byte[OBJECT_STREAM_HEADER.length];
+        int read = rawIn.read(header);
+        if (read < OBJECT_STREAM_HEADER.length) {
+            return false;
+        }
+        rawIn.unread(header, 0, read);
+
+        for (int i = 0; i < OBJECT_STREAM_HEADER.length; i++) {
+            if (header[i] != OBJECT_STREAM_HEADER[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
